@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'social_button.dart';
-import 'auth_button.dart';
-import 'auth_text_field.dart';
+import 'package:trackntrain/pages/home_page.dart';
+import '../components/social_button.dart';
+import '../components/auth_button.dart';
+import '../components/auth_text_field.dart';
 
 class LoginTab extends StatefulWidget {
   // const LoginTab({Key? key}) : super(key: key);
@@ -17,6 +18,7 @@ class _LoginTabState extends State<LoginTab> {
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
   bool _rememberMe = false;
+  bool isLoading = false;
 
   @override
   void dispose() {
@@ -25,12 +27,22 @@ class _LoginTabState extends State<LoginTab> {
     super.dispose();
   }
 
-  void _login() {
+  void _login() async{
     if (_formKey.currentState!.validate()) {
       // Implement login logic
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Processing Login')),
+      setState(() {
+        isLoading = true;
+      });
+      await Future.delayed(const Duration(seconds: 2));
+
+      if(!mounted) return;
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder:(context)=> HomePage() )
       );
+      setState(() {
+        isLoading = false;
+      });
     }
   }
 
@@ -134,6 +146,7 @@ class _LoginTabState extends State<LoginTab> {
             AuthButton(
               text: 'Login',
               onPressed: _login,
+              isLoading: isLoading,
             ),
             
             // OR divider
@@ -162,12 +175,6 @@ class _LoginTabState extends State<LoginTab> {
                   icon: 'assets/images/google.png',
                   onPressed: () {
                     // Handle Google login
-                  },
-                ),
-                SocialButton(
-                  icon: 'assets/images/facebook.png',
-                  onPressed: () {
-                    // Handle Facebook login
                   },
                 ),
                 SocialButton(

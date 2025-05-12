@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'auth_page.dart';
+import 'pages/auth_page.dart';
+
+
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -14,7 +16,8 @@ void main() {
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+  // const MyApp({Key? key}) : super(key: key);
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +25,7 @@ class MyApp extends StatelessWidget {
       title: 'Auth App',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        primaryColor: const Color(0xFF6C63FF),
+        primaryColor: const Color.fromARGB(255, 247, 2, 2),
         scaffoldBackgroundColor: Colors.white,
         fontFamily: 'Poppins',
         appBarTheme: const AppBarTheme(
@@ -36,6 +39,7 @@ class MyApp extends StatelessWidget {
           ),
         ),
       ),
+      themeMode: ThemeMode.system,
       home: const AuthPage(),
     );
   }

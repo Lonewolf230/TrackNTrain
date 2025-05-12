@@ -24,7 +24,7 @@ class AuthButton extends StatelessWidget {
           ),
           backgroundColor: Theme.of(context).primaryColor,
           foregroundColor: Colors.white,
-          elevation: 2,
+          elevation: 5,
           shadowColor: Theme.of(context).primaryColor.withOpacity(0.3),
         ),
         child: isLoading
@@ -32,7 +32,7 @@ class AuthButton extends StatelessWidget {
                 height: 24,
                 width: 24,
                 child: CircularProgressIndicator(
-                  color: Colors.white,
+                  color: Colors.red,
                   strokeWidth: 2,
                 ),
               )

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'social_button.dart';
-import 'auth_button.dart';
-import 'auth_text_field.dart';
+import 'package:trackntrain/pages/home_page.dart';
+import '../components/social_button.dart';
+import '../components/auth_button.dart';
+import '../components/auth_text_field.dart';
 
 class SignUpTab extends StatefulWidget {
   // const SignUpTab({Key? key}) : super(key: key);
@@ -20,6 +21,7 @@ class _SignUpTabState extends State<SignUpTab> {
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _agreeToTerms = false;
+  bool isLoading = false;
 
   @override
   void dispose() {
@@ -30,15 +32,36 @@ class _SignUpTabState extends State<SignUpTab> {
     super.dispose();
   }
 
-  void _signUp() {
+  void _signUp() async{
     if (_formKey.currentState!.validate() && _agreeToTerms) {
-      // Implement signup logic
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Processing Sign Up')),
+      setState(() {
+        isLoading = true;
+      });
+      await Future.delayed(const Duration(seconds: 2));
+      if(!mounted) return;
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => const HomePage(),
+        ),
       );
+      setState(() {
+        isLoading = false;
+      });
+      // Implement signup logic
     } else if (!_agreeToTerms) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please agree to Terms & Conditions')),
+        const SnackBar(
+          duration: Duration(seconds: 2),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(8)),
+          ),
+          backgroundColor: Color.fromARGB(255, 252, 181, 1),
+          content: Text(
+            'Please agree to Terms & Conditions',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+        ),
       );
     }
   }
@@ -65,7 +88,7 @@ class _SignUpTabState extends State<SignUpTab> {
               },
             ),
             const SizedBox(height: 16),
-            
+
             // Email field
             AuthTextField(
               controller: _emailController,
@@ -76,14 +99,16 @@ class _SignUpTabState extends State<SignUpTab> {
                 if (value == null || value.isEmpty) {
                   return 'Please enter your email';
                 }
-                if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                if (!RegExp(
+                  r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                ).hasMatch(value)) {
                   return 'Please enter a valid email';
                 }
                 return null;
               },
             ),
             const SizedBox(height: 16),
-            
+
             // Password field
             AuthTextField(
               controller: _passwordController,
@@ -92,7 +117,9 @@ class _SignUpTabState extends State<SignUpTab> {
               obscureText: _obscurePassword,
               suffixIcon: IconButton(
                 icon: Icon(
-                  _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                  _obscurePassword
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined,
                   color: Colors.grey,
                 ),
                 onPressed: () {
@@ -112,7 +139,7 @@ class _SignUpTabState extends State<SignUpTab> {
               },
             ),
             const SizedBox(height: 16),
-            
+
             // Confirm Password field
             AuthTextField(
               controller: _confirmPasswordController,
@@ -121,7 +148,9 @@ class _SignUpTabState extends State<SignUpTab> {
               obscureText: _obscureConfirmPassword,
               suffixIcon: IconButton(
                 icon: Icon(
-                  _obscureConfirmPassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                  _obscureConfirmPassword
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined,
                   color: Colors.grey,
                 ),
                 onPressed: () {
@@ -140,7 +169,7 @@ class _SignUpTabState extends State<SignUpTab> {
                 return null;
               },
             ),
-            
+
             // Terms and Conditions
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 16.0),
@@ -180,13 +209,10 @@ class _SignUpTabState extends State<SignUpTab> {
                 ],
               ),
             ),
-            
+
             // Sign Up button
-            AuthButton(
-              text: 'Sign Up',
-              onPressed: _signUp,
-            ),
-            
+            AuthButton(text: 'Sign Up', onPressed: _signUp,isLoading: isLoading,),
+
             // OR divider
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 24.0),
@@ -204,7 +230,7 @@ class _SignUpTabState extends State<SignUpTab> {
                 ],
               ),
             ),
-            
+
             // Social signup buttons
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -213,12 +239,6 @@ class _SignUpTabState extends State<SignUpTab> {
                   icon: 'assets/images/google.png',
                   onPressed: () {
                     // Handle Google signup
-                  },
-                ),
-                SocialButton(
-                  icon: 'assets/images/facebook.png',
-                  onPressed: () {
-                    // Handle Facebook signup
                   },
                 ),
                 SocialButton(

@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'login_tab.dart';
-import 'signup_tab.dart';
+import '../tabs/login_tab.dart';
+import '../tabs/signup_tab.dart';
 
 class AuthPage extends StatefulWidget {
-  // const AuthPage({Key? key}) : super(key: key);
   const AuthPage({super.key});
   @override
   State<AuthPage> createState() => _AuthPageState();
@@ -39,16 +38,15 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
                 children: [
                   // App logo
                   Container(
-                    height: 70,
+                    height: 100,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: Theme.of(context).primaryColor.withOpacity(0.1),
                     ),
                     child: Center(
-                      child: Icon(
-                        Icons.lock_outlined,
-                        size: 40,
-                        color: Theme.of(context).primaryColor,
+                      child: Image.asset(
+                        'assets/images/logo.png',
+                        height: 100,
+                        width: 100,
                       ),
                     ),
                   ),
