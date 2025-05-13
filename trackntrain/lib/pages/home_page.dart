@@ -1,7 +1,32 @@
 import 'package:flutter/material.dart';
+import 'package:trackntrain/pages/profile_page.dart';
+import 'package:trackntrain/tabs/home_tab.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  int _selectedIndex=0;
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
+
+  static final List<Widget> _widgetOptions=<Widget>[
+    const HomeTab(),
+    Center(
+      child: Text(
+        'Settings',
+        style: TextStyle(fontSize: 35, fontWeight: FontWeight.bold),
+      ),
+    ),
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -14,30 +39,30 @@ class HomePage extends StatelessWidget {
         backgroundColor: Theme.of(context).primaryColor,
         actions: [
           IconButton(
-            onPressed: () {},
+            onPressed: () async{
+              await Navigator.of(context).push(
+                MaterialPageRoute(builder: (context) => ProfilePage(),)
+              );
+            },
             icon: Icon(Icons.person, color: Colors.white),
           ),
         ],
       ),
-      body: Center(
-        child: Column(
-          children: [
-            const Text(
-              'Welcome to TrackNTrain',
-            ),
-          ],
-        ),
-      ),
-      bottomNavigationBar: BottomNavigationBar(
+      body: _widgetOptions[_selectedIndex],
+      bottomNavigationBar: BottomNavigationBar(     
         backgroundColor: Colors.white,
         selectedItemColor: Colors.red,
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home), 
+            label: 'Home'),
           BottomNavigationBarItem(
             icon: Icon(Icons.settings),
             label: 'Settings',
           ),
         ],
+        currentIndex: _selectedIndex,
+        onTap: _onItemTapped,
       ),
     );
   }
