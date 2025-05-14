@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:trackntrain/pages/profile_page.dart';
 import 'package:trackntrain/tabs/home_tab.dart';
+import 'package:trackntrain/tabs/train_tab.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -20,12 +21,7 @@ class _HomePageState extends State<HomePage> {
 
   static final List<Widget> _widgetOptions=<Widget>[
     const HomeTab(),
-    Center(
-      child: Text(
-        'Settings',
-        style: TextStyle(fontSize: 35, fontWeight: FontWeight.bold),
-      ),
-    ),
+    const TrainTab()
   ];
 
   @override
@@ -57,8 +53,8 @@ class _HomePageState extends State<HomePage> {
             icon: Icon(Icons.home), 
             label: 'Home'),
           BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: 'Settings',
+            icon: Icon(Icons.fitness_center),
+            label: 'Train',
           ),
         ],
         currentIndex: _selectedIndex,

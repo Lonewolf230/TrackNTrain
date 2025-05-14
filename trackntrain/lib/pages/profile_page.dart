@@ -7,7 +7,8 @@ class ProfilePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        automaticallyImplyLeading: false,
+        // automaticallyImplyLeading: false,
+        iconTheme: const IconThemeData(color: Colors.white),
         centerTitle: true,
         title: const Text('Profile', style: TextStyle(color: Colors.white)),
         backgroundColor: Theme.of(context).primaryColor,
@@ -101,8 +102,8 @@ class ProfilePage extends StatelessWidget {
             mainAxisSize: MainAxisSize.max,
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.white),
+              TextButton.icon(
+                style: TextButton.styleFrom(backgroundColor: Colors.white),
                 onPressed: () {},
                 label: Text(
                   'Logout',
@@ -110,8 +111,9 @@ class ProfilePage extends StatelessWidget {
                 ),
                 icon: Icon(Icons.logout, color: Theme.of(context).primaryColor),
               ),
-              ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.white),
+          
+              TextButton.icon(
+                style: TextButton.styleFrom(backgroundColor: Colors.white),
                 onPressed: () {},
                 label: Text(
                   'Delete Account',
