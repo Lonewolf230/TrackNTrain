@@ -1,5 +1,7 @@
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter/material.dart';
+import 'package:trackntrain/components/meal_logger.dart';
+import 'package:trackntrain/components/stat.dart';
 
 class HomeTab extends StatefulWidget {
   const HomeTab({super.key});
@@ -10,10 +12,16 @@ class HomeTab extends StatefulWidget {
 
 class _HomeTabState extends State<HomeTab> {
   String? _mood;
-  TextEditingController _textController = TextEditingController();
+  final TextEditingController _weightController = TextEditingController();
+  
+  @override
+  void dispose() {
+    _weightController.dispose();
+    super.dispose();
+  }
+  
   @override
   Widget build(BuildContext context) {
-    // TODO: implement build
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24.0),
       child: Column(
@@ -63,107 +71,123 @@ class _HomeTabState extends State<HomeTab> {
             ),
           ),
           const SizedBox(height: 20),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 90),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Icon(
-                  FontAwesomeIcons.fire,
-                  color: Colors.deepOrange,
-                  size: 40,
-                ),
-                const SizedBox(width: 10),
-                Column(
-                  children: [
-                    const Text(
-                      '100',
-                      style: TextStyle(
-                        fontSize: 30,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const Text(
-                      'Calories Burnt',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+          Stat(
+            icon: FontAwesomeIcons.fire,
+            count: 100,
+            subtitle: 'Calories Burnt',
           ),
-          const SizedBox(height: 20),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 90),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Icon(
-                  FontAwesomeIcons.boltLightning,
-                  color: Colors.deepOrange,
-                  size: 40,
-                ),
-                const SizedBox(width: 10),
-                Column(
-                  children: [
-                    const Text(
-                      '69',
-                      style: TextStyle(
-                        fontSize: 30,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const Text(
-                      'Streak Days',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+          Stat(icon: FontAwesomeIcons.bolt, count: 69, subtitle: 'Streak Days'),
+          Stat(
+            icon: FontAwesomeIcons.personWalking,
+            count: 10000,
+            subtitle: 'Steps Taken',
           ),
-          const SizedBox(height: 20),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 90),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Icon(
-                  FontAwesomeIcons.personWalking,
-                  color: Colors.deepOrange,
-                  size: 40,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: TextButton.icon(
+                  onPressed: () {
+                    _showWeightInputDialog(context);
+                  },
+                  icon: Icon(
+                    FontAwesomeIcons.weightScale,
+                    color: Theme.of(context).primaryColor,
+                  ),
+                  label: Text(
+                    'Log weight',
+                    style: TextStyle(color: Theme.of(context).primaryColor),
+                  ),
                 ),
-                const SizedBox(width: 10),
-                Column(
-                  children: [
-                    const Text(
-                      '10000',
-                      style: TextStyle(
-                        fontSize: 30,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const Text(
-                      'Steps taken',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
+              ),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: TextButton.icon(
+                  onPressed: () {
+                    _showMealLoggerSheet(context);
+                  },
+                  icon: Icon(
+                    FontAwesomeIcons.utensils,
+                    color: Theme.of(context).primaryColor,
+                  ),
+                  label: Text(
+                    'Log meal',
+                    style: TextStyle(color: Theme.of(context).primaryColor),
+                  ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-          const SizedBox(height: 20),
         ],
       ),
     );
   }
+
+  void _showWeightInputDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Log Weight'),
+        content: TextField(
+          controller: _weightController,
+          keyboardType: TextInputType.number,
+          decoration: InputDecoration(
+            labelText: 'Weight (kg)',
+            labelStyle: TextStyle(
+              color: Theme.of(context).primaryColor,
+            ),
+            hintText: 'Enter your weight',
+            focusedBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: Theme.of(context).primaryColor),
+            ),
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+            },
+            child: Text('Cancel',style: TextStyle(fontSize: 16,color: Theme.of(context).primaryColor)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              // Save weight logic here
+              if (_weightController.text.isNotEmpty) {
+                final double? weight = double.tryParse(_weightController.text);
+                if (weight != null) {
+                  print('Weight saved: $weight kg');
+                  // TODO: Add logic to save weight to database
+                  _weightController.clear();
+                  Navigator.pop(context);
+                  
+                  // Show confirmation
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Weight logged: $weight kg')),
+                  );
+                }
+              }
+            },
+            child: Text('Save', style: TextStyle(fontSize: 16,color: Theme.of(context).primaryColor)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Show bottom sheet for meal logging
+  void _showMealLoggerSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => const MealLoggerSheet(),
+    );
+  }
 }
+
+
+
