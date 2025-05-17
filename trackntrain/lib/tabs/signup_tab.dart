@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:trackntrain/pages/home_page.dart';
+import 'package:go_router/go_router.dart';
 import '../components/social_button.dart';
 import '../components/auth_button.dart';
 import '../components/auth_text_field.dart';
@@ -39,11 +39,7 @@ class _SignUpTabState extends State<SignUpTab> {
       });
       await Future.delayed(const Duration(seconds: 2));
       if(!mounted) return;
-      await Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) => const HomePage(),
-        ),
-      );
+      context.goNamed('home');
       setState(() {
         isLoading = false;
       });

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:trackntrain/pages/profile_page.dart';
 import 'package:trackntrain/tabs/home_tab.dart';
 import 'package:trackntrain/tabs/train_tab.dart';
@@ -36,9 +37,7 @@ class _HomePageState extends State<HomePage> {
         actions: [
           IconButton(
             onPressed: () async{
-              await Navigator.of(context).push(
-                MaterialPageRoute(builder: (context) => ProfilePage(),)
-              );
+              context.goNamed('profile');
             },
             icon: Icon(Icons.person, color: Colors.white),
           ),

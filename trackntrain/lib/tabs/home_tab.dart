@@ -13,13 +13,13 @@ class HomeTab extends StatefulWidget {
 class _HomeTabState extends State<HomeTab> {
   String? _mood;
   final TextEditingController _weightController = TextEditingController();
-  
+
   @override
   void dispose() {
     _weightController.dispose();
     super.dispose();
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -127,52 +127,81 @@ class _HomeTabState extends State<HomeTab> {
   void _showWeightInputDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Log Weight'),
-        content: TextField(
-          controller: _weightController,
-          keyboardType: TextInputType.number,
-          decoration: InputDecoration(
-            labelText: 'Weight (kg)',
-            labelStyle: TextStyle(
-              color: Theme.of(context).primaryColor,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Log Weight'),
+            content: TextField(
+              controller: _weightController,
+              decoration: InputDecoration(
+                labelText: 'Log your weight (Kg)',
+                labelStyle: TextStyle(color: Colors.grey[600], fontSize: 14),
+                floatingLabelBehavior: FloatingLabelBehavior.auto,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.grey[400]!, width: 1),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.grey[400]!, width: 1),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color: Theme.of(context).primaryColor,
+                    width: 2,
+                  ),
+                ),
+              ),
+              keyboardType: TextInputType.number,
+              style: const TextStyle(fontSize: 14),
             ),
-            hintText: 'Enter your weight',
-            focusedBorder: OutlineInputBorder(
-              borderSide: BorderSide(color: Theme.of(context).primaryColor),
-            ),
-            border: OutlineInputBorder(),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-            },
-            child: Text('Cancel',style: TextStyle(fontSize: 16,color: Theme.of(context).primaryColor)),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              // Save weight logic here
-              if (_weightController.text.isNotEmpty) {
-                final double? weight = double.tryParse(_weightController.text);
-                if (weight != null) {
-                  print('Weight saved: $weight kg');
-                  // TODO: Add logic to save weight to database
-                  _weightController.clear();
+            actions: [
+              TextButton(
+                onPressed: () {
                   Navigator.pop(context);
-                  
-                  // Show confirmation
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Weight logged: $weight kg')),
-                  );
-                }
-              }
-            },
-            child: Text('Save', style: TextStyle(fontSize: 16,color: Theme.of(context).primaryColor)),
+                },
+                child: Text(
+                  'Cancel',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Theme.of(context).primaryColor,
+                  ),
+                ),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  // Save weight logic here
+                  if (_weightController.text.isNotEmpty) {
+                    final double? weight = double.tryParse(
+                      _weightController.text,
+                    );
+                    if (weight != null) {
+                      print('Weight saved: $weight kg');
+                      // TODO: Add logic to save weight to database
+                      _weightController.clear();
+                      Navigator.pop(context);
+
+                      // Show confirmation
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Weight logged: $weight kg')),
+                      );
+                    }
+                  }
+                },
+                child: Text(
+                  'Save',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Theme.of(context).primaryColor,
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
@@ -188,6 +217,3 @@ class _HomeTabState extends State<HomeTab> {
     );
   }
 }
-
-
-
