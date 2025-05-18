@@ -38,6 +38,7 @@ dependencies:
   skeletonizer: ^1.4.3
   font_awesome_flutter: ^10.8.0
   go_router: ^15.1.2
+  fl_chart: ^1.0.0
 
 dev_dependencies:
   flutter_test:

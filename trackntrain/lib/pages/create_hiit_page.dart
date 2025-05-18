@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:trackntrain/components/exercise_brief.dart';
 import 'package:trackntrain/utils/hiit_exercises.dart';
 
@@ -17,9 +18,6 @@ class _CreateHiitPageState extends State<CreateHiitPage> {
   late TextEditingController roundsController;
 
   void displayConfigSettings() {
-    exerciseDurationController.text = '30';
-    restDurationController.text = '15';
-    roundsController.text = '5';
     showDialog(
       context: context,
       builder: (context) {
@@ -183,62 +181,73 @@ class _CreateHiitPageState extends State<CreateHiitPage> {
     super.dispose();
   }
 
-void showTopBanner(BuildContext context, String message) {
-  final overlay = Overlay.of(context);
-  late OverlayEntry overlayEntry; 
-  overlayEntry=OverlayEntry(
-    builder: (context) => Positioned(
-      top: MediaQuery.of(context).padding.top + 10,
-      left: 20,
-      right: 20,
-      child: Material(
-        color: Colors.transparent,
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(8),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black26,
-                blurRadius: 10,
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Icon(Icons.error_outline, color: Theme.of(context).primaryColor, size: 20),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  message,
-                  style: TextStyle(color: Theme.of(context).primaryColor),  
+  void showTopBanner(BuildContext context, String message) {
+    final overlay = Overlay.of(context);
+    late OverlayEntry overlayEntry;
+    overlayEntry = OverlayEntry(
+      builder:
+          (context) => Positioned(
+            top: MediaQuery.of(context).padding.top + 10,
+            left: 20,
+            right: 20,
+            child: Material(
+              color: Colors.transparent,
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 10)],
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.error_outline,
+                      color: Theme.of(context).primaryColor,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        message,
+                        style: TextStyle(color: Theme.of(context).primaryColor),
+                      ),
+                    ),
+                    IconButton(
+                      icon: Icon(
+                        Icons.close,
+                        size: 20,
+                        color: Theme.of(context).primaryColor,
+                      ),
+                      onPressed: () => overlayEntry.remove(),
+                    ),
+                  ],
                 ),
               ),
-              IconButton(
-                icon:  Icon(Icons.close, size: 20, color: Theme.of(context).primaryColor),
-                onPressed: () => overlayEntry.remove(),
-              ),
-            ],
+            ),
           ),
-        ),
-      ),
-    ),
-  );
+    );
 
-  overlay.insert(overlayEntry);
-  Future.delayed(const Duration(seconds: 3), () => overlayEntry.remove());
-}
-
+    overlay.insert(overlayEntry);
+    Future.delayed(const Duration(seconds: 2), () => overlayEntry.remove());
+  }
 
   void startWorkout() {
-    // Start the HIIT workout with the selected exercises
-    print('Checked states: $checkedStates');
-    print('Starting HIIT workout with exercises: $finalExercises');
+
     if (mounted && finalExercises.isEmpty) {
       showTopBanner(context, 'Please select at least one exercise');
       return;
-    } 
+    }
+    final exerciseNames = finalExercises.map((e) => e['name'] as String).toList();
+    context.goNamed(
+      'hiit-started',
+      queryParameters: {
+        'rounds': roundsController.text,
+        'rest': restDurationController.text,
+        'work': exerciseDurationController.text,
+      },
+      extra: exerciseNames,
+    );
   }
 
   @override

@@ -49,12 +49,28 @@ class _MealLoggerSheetState extends State<MealLoggerSheet> {
             ),
             const SizedBox(height: 16),
             
-            // Meal Type Dropdown
             DropdownButtonFormField<String>(
-              decoration: const InputDecoration(
-                labelText: 'Meal Type',
-                border: OutlineInputBorder(),
-              ),
+                  decoration: InputDecoration(
+                    labelText: 'Meal Type',
+                    labelStyle: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 14,
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: Theme.of(context).primaryColor,
+                        width: 2,
+                      ),
+                    ),
+                  ),
               value: _selectedMealType,
               items: _mealTypes.map((String type) {
                 return DropdownMenuItem<String>(
@@ -76,10 +92,27 @@ class _MealLoggerSheetState extends State<MealLoggerSheet> {
             // Meal Name
             TextField(
               controller: _mealNameController,
-              decoration: const InputDecoration(
-                labelText: 'Food Item',
-                border: OutlineInputBorder(),
-              ),
+              decoration: InputDecoration(
+                    labelText: 'Food Item',
+                    labelStyle: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 14,
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: Theme.of(context).primaryColor,
+                        width: 2,
+                      ),
+                    ),
+                  ),
             ),
             
             const SizedBox(height: 16),
@@ -88,15 +121,31 @@ class _MealLoggerSheetState extends State<MealLoggerSheet> {
             TextField(
               controller: _caloriesController,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Calories',
-                border: OutlineInputBorder(),
-              ),
+              decoration: InputDecoration(
+                    labelText: 'Calories (approx)',
+                    labelStyle: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 14,
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: Theme.of(context).primaryColor,
+                        width: 2,
+                      ),
+                    ),
+                  ),
             ),
             
             const SizedBox(height: 24),
             
-            // Save Button
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(

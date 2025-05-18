@@ -25,9 +25,8 @@ class PrevWorkoutCard extends StatelessWidget{
             children: [
               const Text('Workout Name',style: TextStyle(fontSize: 18,fontWeight: FontWeight.bold),),
               const SizedBox(height: 10,),
-              const Text('Date',style: TextStyle(fontSize: 16,fontWeight: FontWeight.w400),),
+              const Text('Last done on',style: TextStyle(fontSize: 16,fontWeight: FontWeight.w400),),
               const SizedBox(height: 10,),
-              const Text('Duration',style: TextStyle(fontSize: 16,fontWeight: FontWeight.w400),),
             ],
           ),
         ),
