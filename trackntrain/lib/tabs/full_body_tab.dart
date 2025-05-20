@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:trackntrain/components/prev_workout_card.dart';
 
 class FullBodyTab extends StatelessWidget {
@@ -74,6 +75,7 @@ class FullBodyTab extends StatelessWidget {
                 child: ElevatedButton(
                   onPressed: () {
                     print('Create your Workout');
+                    context.goNamed('create-full-body');
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Color.fromARGB(247, 250, 2, 2),

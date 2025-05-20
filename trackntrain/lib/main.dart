@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:trackntrain/pages/create_full_body.dart';
 import 'package:trackntrain/pages/hiit_workout.dart';
 import 'package:trackntrain/pages/home_page.dart';
 import 'package:trackntrain/pages/profile_page.dart';
@@ -32,6 +33,13 @@ final _router = GoRouter(
           path: 'full-body',
           name: 'full-body',
           builder: (context, state) => const FullBodyTab(),
+          routes: <RouteBase>[
+            GoRoute(
+              path:'create-full-body',
+              name: 'create-full-body',
+              builder: (context,state)=>const CreateFullBody()
+            )
+          ]
         ),
         GoRoute(
           path: 'walking',
