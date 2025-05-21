@@ -18,7 +18,6 @@ class MuscleGroupExpansion extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ExpansionTile(
-      backgroundColor: Color.fromARGB(71, 245, 162, 53),
       title: Text(
         muscleGroup.toUpperCase(),
         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),

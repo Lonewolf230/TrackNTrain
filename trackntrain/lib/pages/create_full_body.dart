@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:trackntrain/components/filters.dart';
 import 'package:trackntrain/components/muscle_group_expansion.dart';
+import 'package:trackntrain/components/order_config.dart';
 import 'package:trackntrain/utils/split_exercises.dart';
 
 
@@ -16,17 +17,67 @@ class CreateFullBody extends StatefulWidget{
 class _CreateFullBodyState extends State<CreateFullBody> {
   final Map<String,bool> selectedExercises={};
   final List<Map<String,dynamic>> selectedExercisesList=[];
-  final Map<String,List<Map<String,dynamic>>> muscleSpecifcExercises=muscleSpecificExercises;
+  final Map<String,List<Map<String,dynamic>>> localMuscleSpecifcExercises=muscleSpecificExercises;
+  Map<String,List<Map<String,dynamic>>> filteredExercises={};
+  final List<Map<String,dynamic>> filters=[];
+  bool filtersApplied=false;
 
     @override
   void initState() {
     super.initState();
-    for (var muscleGroup in muscleSpecificExercises.values) {
+    for (var muscleGroup in localMuscleSpecifcExercises.values) {
       for (var exercise in muscleGroup) {
         selectedExercises[exercise['exerciseName']] = false;
       }
     }
+    for(var muscleGroup in localMuscleSpecifcExercises.entries) {
+       filters.add({
+        'muscleGroup':muscleGroup.key,
+        'selected':false,
+        'type':'muscle'
+       });
+    }
+    filters.add({
+      'muscleGroup':'No Equipment',
+      'selected':false,
+      'type':'equipment'
+    });
   }
+
+   void _applyFilters() {
+    setState(() {
+      final selectedMuscles = filters
+          .where((f) => f['type'] == 'muscle' && f['selected'] == true)
+          .map((f) => f['muscleGroup'])
+          .toList();
+      
+      final noEquipmentSelected = filters
+          .firstWhere((f) => f['muscleGroup'] == 'No Equipment')['selected'];
+      
+      filteredExercises = {};
+      
+      for (var entry in localMuscleSpecifcExercises.entries) {
+        if (selectedMuscles.isNotEmpty && !selectedMuscles.contains(entry.key)) {
+          continue;
+        }
+        
+        final filteredExercisesInGroup = entry.value.where((exercise) {
+          if (noEquipmentSelected) {
+            final equipment = exercise['equipmentRequired'] ?? '';
+            if (equipment.isNotEmpty) return false;
+          }
+          return true;
+        }).toList();
+        
+        if (filteredExercisesInGroup.isNotEmpty) {
+          filteredExercises[entry.key] = filteredExercisesInGroup;
+        }
+      }
+      
+      filtersApplied = selectedMuscles.isNotEmpty || noEquipmentSelected;
+    });
+  }
+
 
   void _toggleExercise(Map<String,dynamic> exercise, bool isSelected) {
       final Map<String,dynamic> finExercise = {
@@ -44,8 +95,47 @@ class _CreateFullBodyState extends State<CreateFullBody> {
     });
   }
 
+  void _toggleFilter(String muscleGroup, bool value) {
+    setState(() {
+      final index=filters.indexWhere((filter)=>filter['muscleGroup'] == muscleGroup);
+      if(index!=-1){
+        filters[index]['selected']=value;
+    }});
+  }
+
+  void _showFilterSheet(BuildContext context){
+  showModalBottomSheet(
+    context: context, 
+    // isScrollControlled: true,
+    builder: (context) => StatefulBuilder(
+      builder: (BuildContext context, StateSetter setModalState) {
+        return Filters(
+          filters: filters,
+          toggleFilters: (muscleGroup, value) {
+            _toggleFilter(muscleGroup, value);
+            setModalState(() {});
+          },
+          onApply:(){
+            Navigator.pop(context);
+            _applyFilters();
+          }
+        );
+      }
+    )
+  );
+  }
+
+  void _showOrderSheet(BuildContext context){
+    showDialog(context: context, builder: (context){
+      return OrderConfig(selectedExercisesList: selectedExercisesList,);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (filteredExercises.isEmpty) {
+      filteredExercises = localMuscleSpecifcExercises;
+    }
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -72,7 +162,7 @@ class _CreateFullBodyState extends State<CreateFullBody> {
             Expanded(
               child: SingleChildScrollView(
                 child: Column(
-                  children: muscleSpecificExercises.entries.map((entry) {
+                  children: filteredExercises.entries.map((entry) {
                     return MuscleGroupExpansion(
                       muscleGroup: entry.key,
                       exercises: entry.value,
@@ -97,6 +187,7 @@ class _CreateFullBodyState extends State<CreateFullBody> {
                       onPressed: () {
                         print('Start Workout');
                         print('Selected Exercises: $selectedExercisesList');
+                        _showOrderSheet(context);
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Theme.of(context).primaryColor,
@@ -121,6 +212,7 @@ class _CreateFullBodyState extends State<CreateFullBody> {
                     ),
                     child: ElevatedButton(
                       onPressed: () {
+                        print(filters);
                         _showFilterSheet(context);
                       },
                       style: ElevatedButton.styleFrom(
@@ -149,9 +241,3 @@ class _CreateFullBodyState extends State<CreateFullBody> {
   } 
 }
 
-void _showFilterSheet(BuildContext context){
-  showModalBottomSheet(
-    context: context, 
-    builder: (context)=>const Filters()
-  );
-}
