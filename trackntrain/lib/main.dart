@@ -59,7 +59,7 @@ final _router = GoRouter(
         GoRoute(
           path: 'hiit',
           name: 'hiit',
-          builder: (context, state) => const HiitTab(),
+          builder: (context, state) => HiitTab(),
           routes: <RouteBase>[
             GoRoute(
               path: 'create-hiit',
