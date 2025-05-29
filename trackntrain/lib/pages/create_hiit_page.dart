@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:trackntrain/components/exercise_brief.dart';
 import 'package:trackntrain/utils/hiit_exercises.dart';
@@ -181,64 +182,10 @@ class _CreateHiitPageState extends State<CreateHiitPage> {
     super.dispose();
   }
 
-  void showTopBanner(BuildContext context, String message) {
-    final overlay = Overlay.of(context);
-    late OverlayEntry overlayEntry;
-    overlayEntry = OverlayEntry(
-      builder:
-          (context) => Positioned(
-            top: MediaQuery.of(context).padding.top + 10,
-            left: 20,
-            right: 20,
-            child: Material(
-              color: Colors.transparent,
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(8),
-                  boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 10)],
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.error_outline,
-                      color: Theme.of(context).primaryColor,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        message,
-                        style: TextStyle(color: Theme.of(context).primaryColor),
-                      ),
-                    ),
-                    IconButton(
-                      icon: Icon(
-                        Icons.close,
-                        size: 20,
-                        color: Theme.of(context).primaryColor,
-                      ),
-                      onPressed: () => overlayEntry.remove(),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-    );
-
-    overlay.insert(overlayEntry);
-    Future.delayed(const Duration(seconds: 2), () => overlayEntry.remove());
-  }
-
   void startWorkout() {
-
-    if (mounted && finalExercises.isEmpty) {
-      showTopBanner(context, 'Please select at least one exercise');
-      return;
-    }
-    final exerciseNames = finalExercises.map((e) => e['name'] as String).toList();
+    print(finalExercises);
+    final exerciseNames =
+        finalExercises.map((e) => e['name'] as String).toList();
     context.goNamed(
       'hiit-started',
       queryParameters: {
@@ -265,13 +212,73 @@ class _CreateHiitPageState extends State<CreateHiitPage> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const SizedBox(height: 20),
-          const Text(
-            'Choose your preferred exercises',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+          Container(
+            padding: const EdgeInsets.all(16),
+            margin: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Colors.grey[50]!, Colors.white],
+              ),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Colors.grey[200]!,
+                width: 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black26,
+                  blurRadius: 3,
+                  offset: const Offset(0, 2),
+                ),
+              ]
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color.fromARGB(255,247,2,2,).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    size: 24,
+                    FontAwesomeIcons.heartPulse,
+                    color: Theme.of(context).primaryColor,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Choose your preferred exercises',
+                    style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                            fontFamily: 'Poppins',
+                    ),
+                  ),
+                ),
+                if(finalExercises.isNotEmpty)
+                   Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).primaryColor,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      '${finalExercises.length}',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  )
+              ],
+            ),
           ),
-          const SizedBox(height: 40),
+          const SizedBox(height: 20),
           Expanded(
             child: ListView.builder(
               itemBuilder: (context, index) {
@@ -303,8 +310,10 @@ class _CreateHiitPageState extends State<CreateHiitPage> {
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 ElevatedButton(
-                  onPressed: startWorkout,
+                  onPressed: finalExercises.isEmpty?null: startWorkout,
                   style: ElevatedButton.styleFrom(
+                    disabledBackgroundColor: Colors.grey[300],
+                    disabledForegroundColor: Colors.grey[600],
                     backgroundColor: Theme.of(context).primaryColor,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),

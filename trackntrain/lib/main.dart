@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:trackntrain/pages/create_full_body.dart';
+import 'package:trackntrain/pages/full_body_workout.dart';
 import 'package:trackntrain/pages/hiit_workout.dart';
 import 'package:trackntrain/pages/home_page.dart';
 import 'package:trackntrain/pages/profile_page.dart';
@@ -13,6 +15,7 @@ import 'package:trackntrain/tabs/split_tab.dart';
 import 'package:trackntrain/tabs/walking_tab.dart';
 import 'package:trackntrain/utils/slide_left_transition_builder.dart';
 import 'pages/auth_page.dart';
+
 
 final _router = GoRouter(
   initialLocation: '/',
@@ -38,6 +41,11 @@ final _router = GoRouter(
               path:'create-full-body',
               name: 'create-full-body',
               builder: (context,state)=>const CreateFullBody()
+            ),
+            GoRoute(
+              path:'start-full-body',
+              name: 'start-full-body',
+              builder: (context,state)=>const FullBodyWorkout()
             )
           ]
         ),
@@ -59,7 +67,7 @@ final _router = GoRouter(
         GoRoute(
           path: 'hiit',
           name: 'hiit',
-          builder: (context, state) => const HiitTab(),
+          builder: (context, state) => HiitTab(),
           routes: <RouteBase>[
             GoRoute(
               path: 'create-hiit',
@@ -112,7 +120,7 @@ void main() {
       statusBarIconBrightness: Brightness.dark,
     ),
   );
-  runApp(const MyApp());
+  runApp(ProviderScope(child: const MyApp()));
 }
 
 class MyApp extends StatelessWidget {
