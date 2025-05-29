@@ -1,85 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-
-// class OrderConfig extends StatefulWidget {
-//   const OrderConfig({super.key,required this.selectedExercisesList});
-//   final List<Map<String,dynamic>> selectedExercisesList;
-
-//   @override
-//   State<OrderConfig> createState() => _OrderConfigState();
-// }
-
-// class _OrderConfigState extends State<OrderConfig> {
-//   @override
-//   Widget build(BuildContext context) {
-//     return AlertDialog(
-//       content: SizedBox(
-//         height: 400, 
-//         width: double.maxFinite,
-//         child: Column(
-//           children: [
-//             const Text('Arrange your exercises',style: TextStyle(fontSize: 15,fontWeight: FontWeight.w700),),
-//             const SizedBox(height: 15),
-//             Expanded(
-//             child: ReorderableListView.builder(
-//               itemBuilder:(context, index){
-//                 final exercise=widget.selectedExercisesList[index]['exerciseName'];
-//                 return Card(
-//                     key: ValueKey(index),
-//                     margin: const EdgeInsets.symmetric(vertical: 4),
-//                     child: ListTile(
-//                       title: Text(exercise),
-//                     ),
-//                 );
-//               },
-//               itemCount: widget.selectedExercisesList.length,
-              
-//               onReorder: (oldIndex, newIndex) {
-//                 if (newIndex > oldIndex) {
-//                   newIndex--;
-//                 }
-//                 final item = widget.selectedExercisesList.removeAt(oldIndex);
-//                 widget.selectedExercisesList.insert(newIndex, item);
-//               },
-//             ),
-//           ),
-//         ]),
-//       ),
-//       actions: [
-//         IconButton(
-//           icon: const Icon(FontAwesomeIcons.wandMagicSparkles),
-//           onPressed: () => Navigator.pop(context),
-//         ),
-//         TextButton(
-//           onPressed: () => Navigator.pop(context),
-//           child: const Text('Cancel'),
-//         ),
-//         TextButton(
-//           onPressed: () {
-//             Navigator.pop(context);
-//           },
-//           child: const Text('Start Workout'),
-//         ),
-//       ],
-//     );
-//   }
-// }
-
-class OrderConfig extends StatefulWidget {
-  const OrderConfig({
-    super.key,
-    required this.selectedExercisesList,
-  });
-  
-  final List<Map<String, dynamic>> selectedExercisesList;
+import 'package:go_router/go_router.dart';
+import 'package:trackntrain/providers/workout_providers.dart';
+class OrderConfig extends ConsumerWidget {
+  const OrderConfig({super.key});
 
   @override
-  State<OrderConfig> createState() => _OrderConfigState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final selectedExercisesList = ref.watch(selectedExercisesListProvider);
 
-class _OrderConfigState extends State<OrderConfig> {
-  @override
-  Widget build(BuildContext context) {
     return AlertDialog(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(24),
@@ -131,7 +61,7 @@ class _OrderConfigState extends State<OrderConfig> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
-                          'Arrange Your Exercises',
+                          'Drag and Drop to Reorder',
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -140,7 +70,7 @@ class _OrderConfigState extends State<OrderConfig> {
                           ),
                         ),
                         Text(
-                          'Drag to reorder ${widget.selectedExercisesList.length} exercises',
+                          'Sets and reps is decided according to your comfort',
                           style: TextStyle(
                             fontSize: 14,
                             color: Colors.grey[600],
@@ -161,7 +91,7 @@ class _OrderConfigState extends State<OrderConfig> {
                 child: ReorderableListView.builder(
                   shrinkWrap: true,
                   itemBuilder: (context, index) {
-                    final exercise = widget.selectedExercisesList[index]['exerciseName'];
+                    final exercise = selectedExercisesList[index]['exerciseName'];
                     return Container(
                       key: ValueKey(index),
                       margin: const EdgeInsets.symmetric(vertical: 4),
@@ -216,15 +146,9 @@ class _OrderConfigState extends State<OrderConfig> {
                       ),
                     );
                   },
-                  itemCount: widget.selectedExercisesList.length,
+                  itemCount: selectedExercisesList.length,
                   onReorder: (oldIndex, newIndex) {
-                    setState(() {
-                      if (newIndex > oldIndex) {
-                        newIndex--;
-                      }
-                      final item = widget.selectedExercisesList.removeAt(oldIndex);
-                      widget.selectedExercisesList.insert(newIndex, item);
-                    });
+                    ref.read(workoutProvider.notifier).reorderExercises(oldIndex, newIndex);
                   },
                 ),
               ),
@@ -249,7 +173,11 @@ class _OrderConfigState extends State<OrderConfig> {
                     color: Color.fromARGB(255, 247, 2, 2),
                     size: 18,
                   ),
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: () {
+                    // You can implement auto-arrange logic here
+                    // For example, sort by muscle groups or difficulty
+                    Navigator.pop(context);
+                  },
                   tooltip: 'Auto-arrange',
                 ),
               ),
@@ -278,7 +206,8 @@ class _OrderConfigState extends State<OrderConfig> {
               // Start Workout button
               ElevatedButton(
                 onPressed: () {
-                  Navigator.pop(context);
+                  print(selectedExercisesList);
+                  context.goNamed('start-full-body');
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color.fromARGB(255, 247, 2, 2),
@@ -289,12 +218,12 @@ class _OrderConfigState extends State<OrderConfig> {
                   ),
                   elevation: 0,
                 ),
-                child: Row(
+                child: const Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.play_arrow, size: 18),
-                    const SizedBox(width: 4),
-                    const Text(
+                    Icon(Icons.play_arrow, size: 18),
+                    SizedBox(width: 4),
+                    Text(
                       'Start Workout',
                       style: TextStyle(
                         fontWeight: FontWeight.w600,

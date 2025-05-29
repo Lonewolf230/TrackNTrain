@@ -1,160 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:trackntrain/components/filters.dart';
 import 'package:trackntrain/components/muscle_group_expansion.dart';
 import 'package:trackntrain/components/order_config.dart';
-import 'package:trackntrain/utils/split_exercises.dart';
+import 'package:trackntrain/providers/workout_providers.dart';
 
-class CreateFullBody extends StatefulWidget {
+class CreateFullBody extends ConsumerWidget {
   const CreateFullBody({super.key});
 
   @override
-  State<CreateFullBody> createState() => _CreateFullBodyState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final selectedExercises = ref.watch(selectedExercisesProvider);
+    final selectedExercisesList = ref.watch(selectedExercisesListProvider);
+    final filteredExercises = ref.watch(filteredExercisesProvider);
+    final filters = ref.watch(filtersProvider);
+    final filtersApplied = ref.watch(filtersAppliedProvider);
+    final selectedCount = ref.watch(selectedExercisesCountProvider);
 
-class _CreateFullBodyState extends State<CreateFullBody> {
-  final Map<String, bool> selectedExercises = {};
-  final List<Map<String, dynamic>> selectedExercisesList = [];
-  final Map<String, List<Map<String, dynamic>>> localMuscleSpecifcExercises = muscleSpecificExercises;
-  Map<String, List<Map<String, dynamic>>> filteredExercises = {};
-  final List<Map<String, dynamic>> filters = [];
-  bool filtersApplied = false;
-
-  @override
-  void initState() {
-    super.initState();
-    for (var muscleGroup in localMuscleSpecifcExercises.values) {
-      for (var exercise in muscleGroup) {
-        selectedExercises[exercise['exerciseName']] = false;
-      }
-    }
-    for (var muscleGroup in localMuscleSpecifcExercises.entries) {
-      filters.add({
-        'muscleGroup': muscleGroup.key,
-        'selected': false,
-        'type': 'muscle'
-      });
-    }
-    filters.add({
-      'muscleGroup': 'No Equipment',
-      'selected': false,
-      'type': 'equipment'
-    });
-  }
-
-  void _applyFilters() {
-    setState(() {
-      final selectedMuscles = filters
-          .where((f) => f['type'] == 'muscle' && f['selected'] == true)
-          .map((f) => f['muscleGroup'])
-          .toList();
-
-      final noEquipmentSelected = filters
-          .firstWhere((f) => f['muscleGroup'] == 'No Equipment')['selected'];
-
-      filteredExercises = {};
-
-      for (var entry in localMuscleSpecifcExercises.entries) {
-        if (selectedMuscles.isNotEmpty && !selectedMuscles.contains(entry.key)) {
-          continue;
-        }
-
-        final filteredExercisesInGroup = entry.value.where((exercise) {
-          if (noEquipmentSelected) {
-            final equipment = exercise['equipmentRequired'] ?? '';
-            if (equipment.isNotEmpty) return false;
-          }
-          return true;
-        }).toList();
-
-        if (filteredExercisesInGroup.isNotEmpty) {
-          filteredExercises[entry.key] = filteredExercisesInGroup;
-        }
-      }
-
-      filtersApplied = selectedMuscles.isNotEmpty || noEquipmentSelected;
-    });
-  }
-
-  // void _toggleExercise(Map<String, dynamic> exercise, bool isSelected) {
-  //   final Map<String, dynamic> finExercise = {
-  //     'exerciseName': exercise['exerciseName'],
-  //     'primaryMuscleGroup': exercise['primaryMuscleTargeted'],
-  //     'secondaryMuscleGroup': exercise['secondaryMusclesTargeted'],
-  //   };
-  //   if (isSelected) {
-  //     selectedExercisesList.add(finExercise);
-  //   } else {
-  //     selectedExercisesList.remove(finExercise);
-  //   }
-  //   setState(() {
-  //     selectedExercises[exercise['exerciseName']] = isSelected;
-  //   });
-  // }
-
-  void _toggleExercise(Map<String,dynamic> exercise,bool isSelected){
-    final exerciseName= exercise['exerciseName'];
-    setState(() {
-      selectedExercises[exerciseName]=isSelected;
-      if(isSelected){
-        if(!selectedExercisesList.any((e)=>e['exerciseName']==exerciseName)){
-          selectedExercisesList.add({
-            'exerciseName': exerciseName,
-            'primaryMuscleGroup': exercise['primaryMuscleTargeted'],
-            'secondaryMuscleGroup': exercise['secondaryMusclesTargeted'],
-          });
-        }
-      }
-      else{
-        selectedExercisesList.removeWhere((e) => e['exerciseName'] == exerciseName);
-      }
-    });
-  }
-
-  void _toggleFilter(String muscleGroup, bool value) {
-    setState(() {
-      final index = filters.indexWhere((filter) => filter['muscleGroup'] == muscleGroup);
-      if (index != -1) {
-        filters[index]['selected'] = value;
-      }
-    });
-  }
-
-  void _showFilterSheet(BuildContext context) {
-    showModalBottomSheet(
-        context: context,
-        isScrollControlled: true,
-        backgroundColor: Colors.transparent,
-        builder: (context) => StatefulBuilder(
-            builder: (BuildContext context, StateSetter setModalState) {
-          return Filters(
-            filters: filters,
-            toggleFilters: (muscleGroup, value) {
-              _toggleFilter(muscleGroup, value);
-              setModalState(() {});
-            },
-            onApply: () {
-              Navigator.pop(context);
-              _applyFilters();
-            }
-          );
-        }));
-  }
-
-  void _showOrderSheet(BuildContext context) {
-    showDialog(
-        context: context,
-        builder: (context) {
-          return OrderConfig(
-            selectedExercisesList: selectedExercisesList,
-          );
-        });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (filteredExercises.isEmpty) {
-      filteredExercises = localMuscleSpecifcExercises;
-    }
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -218,9 +80,9 @@ class _CreateFullBodyState extends State<CreateFullBody> {
                       color: const Color.fromARGB(255, 247, 2, 2).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Icon(
+                    child: const Icon(
                       Icons.fitness_center,
-                      color: const Color.fromARGB(255, 247, 2, 2),
+                      color: Color.fromARGB(255, 247, 2, 2),
                       size: 24,
                     ),
                   ),
@@ -229,9 +91,9 @@ class _CreateFullBodyState extends State<CreateFullBody> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        const Text(
                           'Muscle Categories',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
                             color: Colors.black87,
@@ -250,7 +112,7 @@ class _CreateFullBodyState extends State<CreateFullBody> {
                       ],
                     ),
                   ),
-                  if (selectedExercisesList.isNotEmpty)
+                  if (selectedCount > 0)
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
@@ -258,7 +120,7 @@ class _CreateFullBodyState extends State<CreateFullBody> {
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
-                        '${selectedExercisesList.length}',
+                        '$selectedCount',
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
@@ -296,7 +158,9 @@ class _CreateFullBodyState extends State<CreateFullBody> {
                           muscleGroup: entry.key,
                           exercises: entry.value,
                           selectedExercises: selectedExercises,
-                          onExerciseSelected: _toggleExercise,
+                          onExerciseSelected: (exercise, isSelected) {
+                            ref.read(workoutProvider.notifier).toggleExercise(exercise, isSelected);
+                          },
                         );
                       }).toList(),
                     ),
@@ -330,7 +194,7 @@ class _CreateFullBodyState extends State<CreateFullBody> {
                           : () {
                               print('Start Workout');
                               print('Selected Exercises: $selectedExercisesList');
-                              _showOrderSheet(context);
+                              _showOrderSheet(context, ref);
                             },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color.fromARGB(255, 247, 2, 2),
@@ -343,9 +207,9 @@ class _CreateFullBodyState extends State<CreateFullBody> {
                         ),
                         elevation: 0,
                       ),
-                      child: Row(
+                      child: const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
-                        children: const [
+                        children: [
                           Icon(Icons.play_arrow, size: 20),
                           SizedBox(width: 8),
                           Text(
@@ -365,7 +229,7 @@ class _CreateFullBodyState extends State<CreateFullBody> {
                     child: OutlinedButton(
                       onPressed: () {
                         print(filters);
-                        _showFilterSheet(context);
+                        _showFilterSheet(context, ref);
                       },
                       style: OutlinedButton.styleFrom(
                         foregroundColor: const Color.fromARGB(255, 247, 2, 2),
@@ -381,9 +245,9 @@ class _CreateFullBodyState extends State<CreateFullBody> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.filter_list, size: 20),
+                          const Icon(Icons.filter_list, size: 20),
                           const SizedBox(width: 8),
-                          Text(
+                          const Text(
                             'Filters',
                             style: TextStyle(
                               fontSize: 16,
@@ -411,6 +275,44 @@ class _CreateFullBodyState extends State<CreateFullBody> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showFilterSheet(BuildContext context, WidgetRef ref) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Consumer(
+        builder: (context, ref, child) {
+          final filters = ref.watch(filtersProvider);
+          return Filters(
+            filters: filters.map((f) => {
+              'muscleGroup': f.muscleGroup,
+              'selected': f.selected,
+              'type': f.type,
+            }).toList(),
+            toggleFilters: (muscleGroup, value) {
+              ref.read(workoutProvider.notifier).toggleFilter(muscleGroup, value);
+            },
+            onApply: () {
+              Navigator.pop(context);
+              ref.read(workoutProvider.notifier).applyFilters();
+            },
+          );
+        },
+      ),
+    );
+  }
+
+  void _showOrderSheet(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (context) => Consumer(
+        builder: (context, ref, child) {
+          return const OrderConfig();
+        },
       ),
     );
   }

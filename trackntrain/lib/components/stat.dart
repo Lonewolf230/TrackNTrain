@@ -80,18 +80,6 @@ class Stat extends StatelessWidget {
               ],
             ),
           ),
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: const Color.fromARGB(255, 247, 2, 2).withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(
-              Icons.trending_up,
-              color: const Color.fromARGB(255, 247, 2, 2),
-              size: 16,
-            ),
-          ),
         ],
       ),
     );

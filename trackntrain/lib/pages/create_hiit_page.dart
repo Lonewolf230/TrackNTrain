@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:trackntrain/components/exercise_brief.dart';
-import 'package:trackntrain/components/top_banner.dart';
 import 'package:trackntrain/utils/hiit_exercises.dart';
 
 class CreateHiitPage extends StatefulWidget {
