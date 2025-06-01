@@ -44,18 +44,51 @@ class _FullBodyWorkoutState extends ConsumerState<FullBodyWorkout> {
 
   void _updateProgress() {
     final sets = int.tryParse(setsController.text) ?? 0;
-    final reps = int.tryParse(repsController.text) ?? 0;
-    final maxWeight = double.tryParse(maxWeightController.text) ?? 0.0;
+    final reps = repsController.text
+                          .split(',')
+                          .map((e) => int.tryParse(e.trim()) ?? 0)
+                          .toList();
+    final weightList = maxWeightController.text
+                         .split(',')
+                         .map((e)=>double.tryParse(e.trim())?? 0.0)
+                         .toList();
 
     ref
         .read(workoutProgressProvider.notifier)
-        .updateCurrentExercise(sets: sets, reps: reps, maxWeight: maxWeight);
+        .updateCurrentExercise(sets: sets, reps: reps, weightsList: weightList);
   }
 
   void _completeExercise(int currentIndex) {
     final sets = int.tryParse(setsController.text) ?? 0;
-    final reps = int.tryParse(repsController.text) ?? 0;
-    final maxWeight = double.tryParse(maxWeightController.text) ?? 0.0;
+    final reps = repsController.text
+                          .split(',')
+                          .map((e) => int.tryParse(e.trim()) ?? 0)
+                          .toList();
+    final weightsList=maxWeightController.text
+                         .split(',')
+                         .map((e)=>double.tryParse(e.trim())?? 0.0)
+                         .toList();
+      if(reps.length != sets) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Number of reps must match number of sets'),
+            duration: Duration(seconds: 2),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      if(weightsList.length != sets) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Number of weights must match number of sets'),
+            duration: Duration(seconds: 2),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
 
     if (currentIndex >= ref.read(totalExercisesProvider) - 1) {
       WorkoutCompletionDialog.show(
@@ -76,16 +109,19 @@ class _FullBodyWorkoutState extends ConsumerState<FullBodyWorkout> {
               .initializeWorkout(ref.read(selectedExercisesListProvider));
         },
       );
+      print('Workout completed');
+      print(ref.read(workoutProgressProvider));
       return;
     }
 
-    if (sets > 0 && reps > 0) {
+    if (sets > 0 && reps.isNotEmpty) {
+
       ref
           .read(workoutProgressProvider.notifier)
           .completeCurrentExercise(
             sets: sets,
             reps: reps,
-            maxWeight: maxWeight,
+            weightsList: weightsList,
           );
       setsController.clear();
       repsController.clear();
@@ -108,25 +144,7 @@ class _FullBodyWorkoutState extends ConsumerState<FullBodyWorkout> {
     final totalExercises = ref.watch(totalExercisesProvider);
     final isWorkoutCompleted = ref.watch(isWorkoutCompletedProvider);
 
-    @override
-    void initState() {
-      // TODO: implement initState
-      super.initState();
-
-      Future.microtask(() {
-        try {
-          final selectedExercises = ref.read(selectedExercisesListProvider);
-          if (selectedExercises.isNotEmpty) {
-            ref
-                .read(workoutProgressProvider.notifier)
-                .initializeWorkout(selectedExercises);
-          }
-        } catch (e) {
-          debugPrint('Error initializing workout: $e');
-        }
-      });
-    }
-
+    
     if (currentExercise == null) {
       return Scaffold(
         appBar: AppBar(
@@ -351,7 +369,7 @@ class _FullBodyWorkoutState extends ConsumerState<FullBodyWorkout> {
                         const SizedBox(height: 16),
 
                         ModernTextField(
-                          label: 'Max Weight (kg)',
+                          label: 'Weights per set (enter as comma separated values)',
                           icon: Icons.fitness_center_rounded,
                           keyboardType: TextInputType.number,
                           suffixText: 'kg',

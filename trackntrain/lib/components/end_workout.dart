@@ -30,6 +30,7 @@ class WorkoutCompletionDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
+
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(24),
       ),
@@ -301,7 +302,6 @@ class WorkoutCompletionDialog extends StatelessWidget {
   }) {
     showDialog(
       context: context,
-      barrierDismissible: false,
       builder: (BuildContext context) {
         return WorkoutCompletionDialog(
           title: title ?? 'Workout Complete!',

@@ -8,8 +8,8 @@ class ExerciseProgress {
   final String specialConsiderations;
   final String avoidWhenUserHasFollowingIssues;
   final int sets;
-  final int reps;
-  final double maxWeight;
+  final List<int> reps;
+  final List<double> weightsList;
   final int currentExerciseIndex;
   final bool isCompleted;
 
@@ -19,8 +19,8 @@ class ExerciseProgress {
     required this.specialConsiderations,
     required this.avoidWhenUserHasFollowingIssues,
     this.sets=0,
-    this.reps=0,
-    this.maxWeight=0.0,
+    this.reps=const [],
+    this.weightsList=const [],
     this.currentExerciseIndex=0,
     this.isCompleted=false,
   });
@@ -31,8 +31,8 @@ class ExerciseProgress {
     String? specialConsiderations,
     String? avoidWhenUserHasFollowingIssues,
     int? sets,
-    int? reps,
-    double? maxWeight,
+    List<int>? reps,
+    List<double>? weightsList,
     int? currentExerciseIndex,
     bool? isCompleted,
   }) {
@@ -43,7 +43,7 @@ class ExerciseProgress {
       avoidWhenUserHasFollowingIssues: avoidWhenUserHasFollowingIssues ?? this.avoidWhenUserHasFollowingIssues,
       sets: sets ?? this.sets,
       reps: reps ?? this.reps,
-      maxWeight: maxWeight ?? this.maxWeight,
+      weightsList: weightsList ?? this.weightsList,
       currentExerciseIndex: currentExerciseIndex ?? this.currentExerciseIndex,
       isCompleted: isCompleted ?? this.isCompleted,
     );
@@ -57,6 +57,12 @@ class ExerciseProgress {
       avoidWhenUserHasFollowingIssues: exercise['avoidWhenUserHasFollowingIssues'] ?? '',
       currentExerciseIndex: index
     );
+  }
+
+  @override
+  String toString() {
+    // TODO: implement toString
+    return 'ExerciseProgress(exerciseName: $exerciseName, howToPerform: $howToPerform, specialConsiderations: $specialConsiderations, avoidWhenUserHasFollowingIssues: $avoidWhenUserHasFollowingIssues, sets: $sets, reps: $reps, weightsList: $weightsList, currentExerciseIndex: $currentExerciseIndex, isCompleted: $isCompleted)';
   }
 }
 
@@ -92,6 +98,12 @@ class WorkoutProgressState{
 
   int get totalExercises=>exercises.length;
   bool get hasNextExercise=> currentExerciseIndex < exercises.length-1;
+
+  @override
+  String toString() {
+    // TODO: implement toString
+    return 'WorkoutProgressState(exercises: $exercises, currentExerciseIndex: $currentExerciseIndex, isWorkoutCompleted: $isWorkoutCompleted)';
+  }
 }
 
 class WorkoutProgressNotifier extends StateNotifier<WorkoutProgressState>{
@@ -111,8 +123,8 @@ class WorkoutProgressNotifier extends StateNotifier<WorkoutProgressState>{
 
   void updateCurrentExercise({
     int? sets,
-    int? reps,
-    double? maxWeight,
+    List<int>? reps,
+    List<double>? weightsList,
   }){
     if(state.currentExercise == null) return;
     final updatedExercises=List<ExerciseProgress>.from(state.exercises);
@@ -121,7 +133,7 @@ class WorkoutProgressNotifier extends StateNotifier<WorkoutProgressState>{
     updatedExercises[currentIndex]=updatedExercises[currentIndex].copyWith(
       sets:sets,
       reps: reps,
-      maxWeight: maxWeight,
+      weightsList: weightsList,
     );
 
     state=state.copyWith(exercises: updatedExercises);
@@ -129,8 +141,8 @@ class WorkoutProgressNotifier extends StateNotifier<WorkoutProgressState>{
 
   void completeCurrentExercise({
     required int sets,
-    required int reps,
-    required double maxWeight,
+    required List<int> reps,
+    required List<double> weightsList,
   }){
     if(state.currentExercise == null) return;
     final updatedExercises=List<ExerciseProgress>.from(state.exercises);
@@ -140,7 +152,7 @@ class WorkoutProgressNotifier extends StateNotifier<WorkoutProgressState>{
     updatedExercises[currentIndex]=updatedExercises[currentIndex].copyWith(
       sets: sets,
       reps: reps,
-      maxWeight: maxWeight,
+      weightsList: weightsList,
       isCompleted: true,
     );
 

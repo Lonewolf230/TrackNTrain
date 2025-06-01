@@ -8,10 +8,9 @@ import 'package:trackntrain/pages/hiit_workout.dart';
 import 'package:trackntrain/pages/home_page.dart';
 import 'package:trackntrain/pages/profile_page.dart';
 import 'package:trackntrain/pages/create_hiit_page.dart';
+import 'package:trackntrain/pages/walk_or_run.dart';
 import 'package:trackntrain/tabs/full_body_tab.dart';
 import 'package:trackntrain/tabs/hiit_tab.dart';
-import 'package:trackntrain/tabs/running_tab.dart';
-import 'package:trackntrain/tabs/split_tab.dart';
 import 'package:trackntrain/tabs/walking_tab.dart';
 import 'package:trackntrain/utils/slide_left_transition_builder.dart';
 import 'pages/auth_page.dart';
@@ -53,17 +52,20 @@ final _router = GoRouter(
           path: 'walking',
           name: 'walking',
           builder: (context, state) => const WalkingTab(),
+          routes: <RouteBase>[
+            GoRoute(path: 'walk-progress', name: 'walk-progress', builder: (context, state) => const WalkProgress())
+          ]
         ),
-        GoRoute(
-          path: 'running',
-          name: 'running',
-          builder: (context, state) => const RunningTab(),
-        ),
-        GoRoute(
-          path: 'splits',
-          name: 'splits',
-          builder: (context, state) => const SplitTab(),
-        ),
+        // GoRoute(
+        //   path: 'running',
+        //   name: 'running',
+        //   builder: (context, state) => const RunningTab(),
+        // ),
+        // GoRoute(
+        //   path: 'splits',
+        //   name: 'splits',
+        //   builder: (context, state) => const SplitTab(),
+        // ),
         GoRoute(
           path: 'hiit',
           name: 'hiit',
@@ -106,7 +108,7 @@ final _router = GoRouter(
               ],
             ),
           ],
-        ),
+        ), 
       ],
     ),
   ],
