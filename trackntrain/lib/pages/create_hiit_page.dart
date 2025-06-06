@@ -222,24 +222,26 @@ class _CreateHiitPageState extends State<CreateHiitPage> {
                 colors: [Colors.grey[50]!, Colors.white],
               ),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: Colors.grey[200]!,
-                width: 1,
-              ),
+              border: Border.all(color: Colors.grey[200]!, width: 1),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black26,
                   blurRadius: 3,
                   offset: const Offset(0, 2),
                 ),
-              ]
+              ],
             ),
             child: Row(
               children: [
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: const Color.fromARGB(255,247,2,2,).withOpacity(0.1),
+                    color: const Color.fromARGB(
+                      255,
+                      247,
+                      2,
+                      2,
+                    ).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
@@ -253,16 +255,19 @@ class _CreateHiitPageState extends State<CreateHiitPage> {
                   child: Text(
                     'Choose your preferred exercises',
                     style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87,
-                            fontFamily: 'Poppins',
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                      fontFamily: 'Poppins',
                     ),
                   ),
                 ),
-                if(finalExercises.isNotEmpty)
-                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                if (finalExercises.isNotEmpty)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: Theme.of(context).primaryColor,
                       borderRadius: BorderRadius.circular(20),
@@ -274,7 +279,7 @@ class _CreateHiitPageState extends State<CreateHiitPage> {
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                  )
+                  ),
               ],
             ),
           ),
@@ -305,44 +310,67 @@ class _CreateHiitPageState extends State<CreateHiitPage> {
           ),
           const SizedBox(height: 20),
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 10, 10, 40),
+            padding: const EdgeInsets.fromLTRB(20, 10, 20, 40),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                ElevatedButton(
-                  onPressed: finalExercises.isEmpty?null: startWorkout,
-                  style: ElevatedButton.styleFrom(
-                    disabledBackgroundColor: Colors.grey[300],
-                    disabledForegroundColor: Colors.grey[600],
-                    backgroundColor: Theme.of(context).primaryColor,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                Expanded(
+                  flex: 2,
+                  child: ElevatedButton(
+                    onPressed: finalExercises.isEmpty ? null : startWorkout,
+                    style: ElevatedButton.styleFrom(
+                      disabledBackgroundColor: Colors.grey[300],
+                      disabledForegroundColor: Colors.grey[600],
+                      backgroundColor: Theme.of(context).primaryColor,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 16,
+                        horizontal: 8,
+                      ),
                     ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 12,
+                    child: const FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        'Start Workout',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
-                  ),
-                  child: const Text(
-                    'Start HIIT Workout',
-                    style: TextStyle(color: Colors.white),
                   ),
                 ),
-                ElevatedButton(
-                  onPressed: displayConfigSettings,
-                  style: ElevatedButton.styleFrom(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                const SizedBox(width: 12),
+                Expanded(
+                  flex: 2,
+                  child: ElevatedButton(
+                    onPressed: displayConfigSettings,
+                    style: ElevatedButton.styleFrom(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 16,
+                        horizontal: 8,
+                      ),
+                      backgroundColor: Colors.transparent,
+                      side: BorderSide(
+                        color: Theme.of(context).primaryColor,
+                        width: 1.5,
+                      ),
+                      elevation: 0,
                     ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 12,
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        'Configure',
+                        style: TextStyle(
+                          color: Theme.of(context).primaryColor,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
-                    backgroundColor: Theme.of(context).primaryColor,
-                  ),
-                  child: Text(
-                    'Set up additional details',
-                    style: TextStyle(color: Colors.white),
                   ),
                 ),
               ],

@@ -31,7 +31,6 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
         child: Column(
           children: [
             const SizedBox(height: 40),
-            // Logo and Welcome Text
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24.0),
               child: Column(

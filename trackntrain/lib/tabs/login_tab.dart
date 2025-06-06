@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:trackntrain/utils/auth_service.dart';
+import 'package:trackntrain/utils/google_auth_utils.dart';
+import 'package:trackntrain/utils/normal_auth_utils.dart';
 import '../components/social_button.dart';
 import '../components/auth_button.dart';
 import '../components/auth_text_field.dart';
 
 class LoginTab extends StatefulWidget {
-  // const LoginTab({Key? key}) : super(key: key);
   const LoginTab({super.key});
 
   @override
@@ -17,7 +19,6 @@ class _LoginTabState extends State<LoginTab> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
-  bool _rememberMe = false;
   bool isLoading = false;
 
   @override
@@ -29,19 +30,68 @@ class _LoginTabState extends State<LoginTab> {
 
   void _login() async{
     if (_formKey.currentState!.validate()) {
-      // Implement login logic
       setState(() {
         isLoading = true;
       });
-      await Future.delayed(const Duration(seconds: 2));
+        final message=await signInWithEmailAndPassword(
+          _emailController.text.trim(),
+          _passwordController.text.trim()
+        );
+        print(AuthService.currentUser);
+        if (mounted) {
+          setState(() {
+            isLoading = false;
+          });
+          if(message != null || message?.isNotEmpty == true) {
+ 
 
-      if(!mounted) return;
-      context.goNamed('home');
-      setState(() {
-        isLoading = false;
-      });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              duration: const Duration(seconds: 2),
+              shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.all(Radius.circular(8)),
+              ),
+              backgroundColor: Colors.red,
+              content: Text(
+                message??'Login failed',
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+          );
+        }
+        }
+      }
     }
-  }
+
+    void _loginViaGoogle() async{
+      setState(() {
+        isLoading = true;
+      });
+      final message=await signInWithGoogle();
+      if (mounted) { 
+        setState(() {
+          isLoading = false;
+        });
+        if(message != null || message?.isNotEmpty == true) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              duration: const Duration(seconds: 2),
+              shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.all(Radius.circular(8)),
+              ),
+              backgroundColor: Colors.red,
+              content: Text(
+                message??'Google login failed',
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+          );
+        }
+      }
+    }
+  
 
   @override
   Widget build(BuildContext context) {
@@ -52,7 +102,6 @@ class _LoginTabState extends State<LoginTab> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Email field
             AuthTextField(
               controller: _emailController,
               hintText: 'Email',
@@ -70,7 +119,6 @@ class _LoginTabState extends State<LoginTab> {
             ),
             const SizedBox(height: 16),
             
-            // Password field
             AuthTextField(
               controller: _passwordController,
               hintText: 'Password',
@@ -102,30 +150,10 @@ class _LoginTabState extends State<LoginTab> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Row(
-                    children: [
-                      SizedBox(
-                        height: 24,
-                        width: 24,
-                        child: Checkbox(
-                          value: _rememberMe,
-                          activeColor: Theme.of(context).primaryColor,
-                          onChanged: (value) {
-                            setState(() {
-                              _rememberMe = value!;
-                            });
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Remember me',
-                        style: TextStyle(color: Colors.grey[700]),
-                      ),
-                    ],
+                    
                   ),
                   TextButton(
                     onPressed: () {
-                      // Handle forgot password
                     },
                     child: Text(
                       'Forgot Password?',
@@ -164,20 +192,13 @@ class _LoginTabState extends State<LoginTab> {
               ),
             ),
             
-            // Social login buttons
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 SocialButton(
                   icon: 'assets/images/google.png',
                   onPressed: () {
-                    // Handle Google login
-                  },
-                ),
-                SocialButton(
-                  icon: 'assets/images/apple.png',
-                  onPressed: () {
-                    // Handle Apple login
+                    _loginViaGoogle();
                   },
                 ),
               ],

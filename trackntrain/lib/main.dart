@@ -12,15 +12,36 @@ import 'package:trackntrain/pages/walk_or_run.dart';
 import 'package:trackntrain/tabs/full_body_tab.dart';
 import 'package:trackntrain/tabs/hiit_tab.dart';
 import 'package:trackntrain/tabs/walking_tab.dart';
+import 'package:trackntrain/utils/auth_notifier.dart';
+import 'package:trackntrain/utils/auth_service.dart';
 import 'package:trackntrain/utils/slide_left_transition_builder.dart';
 import 'pages/auth_page.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
+final AuthNotifier _authNotifier= AuthNotifier();
 
 final _router = GoRouter(
-  initialLocation: '/',
+  initialLocation: '/auth',
   observers: [HeroController()],
+  redirect: (context, state) {
+    final isAuthenticated=AuthService.isAuthenticated;
+    final isAuthRoute=state.matchedLocation.startsWith('/auth');
+    print('Redirect check - Auth: $isAuthenticated, Auth Route: ${state.matchedLocation}');
+    print('Current User: ${AuthService.currentUser}');
+    if(!isAuthenticated && !isAuthRoute){
+      print('Redirecting to auth page');
+      return '/auth';
+    } 
+    if(isAuthenticated && isAuthRoute) {
+      print('Redirecting to home page');
+      return '/home';
+    }
+    return null;
+  } ,
+  refreshListenable: _authNotifier,
   routes: [
-    GoRoute(path: '/', name: 'auth', builder: (context, state) =>const AuthPage()),
+    GoRoute(path: '/auth', name: 'auth', builder: (context, state) =>const AuthPage()),
     GoRoute(
       path: '/home',
       name: 'home',
@@ -56,16 +77,6 @@ final _router = GoRouter(
             GoRoute(path: 'walk-progress', name: 'walk-progress', builder: (context, state) => const WalkProgress())
           ]
         ),
-        // GoRoute(
-        //   path: 'running',
-        //   name: 'running',
-        //   builder: (context, state) => const RunningTab(),
-        // ),
-        // GoRoute(
-        //   path: 'splits',
-        //   name: 'splits',
-        //   builder: (context, state) => const SplitTab(),
-        // ),
         GoRoute(
           path: 'hiit',
           name: 'hiit',
@@ -114,8 +125,17 @@ final _router = GoRouter(
   ],
 );
 
-void main() {
+
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+
+  );
+  SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
