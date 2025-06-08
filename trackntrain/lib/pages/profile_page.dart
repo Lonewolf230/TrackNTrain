@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:trackntrain/utils/auth_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:trackntrain/utils/classes.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -10,9 +12,75 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  double _height = 170; 
-  double _weight = 70; 
-  double _age = 23; 
+  double? _height; 
+  double? _weight ; 
+  double? _age; 
+
+  void _getUserInfo( )async{
+    final user = AuthService.currentUser;
+    if (user != null) {
+      DocumentReference userDoc=FirebaseFirestore.instance.collection('users').doc(user.uid);
+      DocumentSnapshot userSnapshot = await userDoc.get();
+      if(userSnapshot.exists){
+        final data=userSnapshot.data() as Map<String, dynamic>;
+        setState(() {
+          _height = data['height']?.toDouble() ;
+          _weight = data['weight']?.toDouble() ;
+          _age = data['age']?.toDouble() ;
+        });
+        print('User Info: Height: $_height, Weight: $_weight, Age: $_age');
+      }
+      print('User Document: ${userSnapshot.data()}');
+      return;
+    }
+    print('No user is currently signed in.');
+  }
+
+  void _updateUserInfo()async {
+    final user = AuthService.currentUser;
+    if (user != null) {
+      try {
+        DocumentReference userDoc=FirebaseFirestore.instance.collection('users').doc(user.uid);
+        DocumentSnapshot userSnapshot = await userDoc.get();
+        UserData userData=UserData(
+          userId: user.uid,
+          age: _age?.toInt(),
+          weight: _weight?.toInt(),
+          height: _height?.toInt(),
+          createdAt: userSnapshot.exists ? ((userSnapshot.data() as Map<String, dynamic>)['createdAt'] as Timestamp?)?.toDate() : DateTime.now(),
+        );
+        
+        await userDoc.set(userData.toMap(isUpdate: userSnapshot.exists),SetOptions(merge: true));
+        print('User info updated successfully: $userData');
+      } catch (e) {
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            duration: const Duration(seconds: 2),
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.all(Radius.circular(8)),
+            ),
+            backgroundColor: Colors.red,
+            content: Text(
+              'Error updating user info: $e',
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+        );
+      }
+
+    } else {
+      print('No user is currently signed in.');
+    }
+  }
+
+  @override
+  void initState(){
+    // TODO: implement initState
+    super.initState();
+    _getUserInfo();
+  }
 
   void _logout(BuildContext context)async{
     try {
@@ -145,40 +213,9 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
                 child: Column(
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            Color.fromARGB(255, 247, 2, 2),
-                            Color.fromARGB(255, 220, 20, 20),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(40),
-                      ),
-                      child: Container(
-                        padding: const EdgeInsets.all(2),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(36),
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(34),
-                          child: Image.asset(
-                            'assets/images/user.jpg',
-                            height: 80,
-                            width: 80,
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      ),
-                    ),
                     const SizedBox(height: 16),
-                    
                     Text(
-                      AuthService.currentUser?.displayName ?? 'Manish Jangid',
+                      AuthService.currentUser?.displayName ?? 'User',
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
@@ -195,7 +232,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
-                        AuthService.currentUser?.email ?? '',
+                        AuthService.currentUser?.email ?? 'user@gmail.com',
                         style: TextStyle(
                           fontSize: 14,
                           color: Colors.grey[600],
@@ -257,21 +294,21 @@ class _ProfilePageState extends State<ProfilePage> {
                     
                     _buildSelectorCard(
                       title: 'Height',
-                      value: '${_height.toInt()} cm',
+                      value: _height!=null?'${_height?.toInt()} cm':'Please set your height',
                       icon: Icons.height,
                       onTap: () => _showHeightPicker(context),
                     ),
                     
                     _buildSelectorCard(
                       title: 'Weight',
-                      value: '${_weight.toInt()} kg',
+                      value: _weight!=null?'${_weight?.toInt()} kg':'Please set your weight',
                       icon: Icons.monitor_weight_outlined,
                       onTap: () => _showWeightPicker(context),
                     ),
                     
                     _buildSelectorCard(
                       title: 'Age',
-                      value: '${_age.toInt()} years',
+                      value: _age!=null?'${_age?.toInt()} years':'Please set your age',
                       icon: Icons.cake_outlined,
                       onTap: () => _showAgePicker(context),
                     ),
@@ -678,7 +715,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     });
                   },
                   scrollController: FixedExtentScrollController(
-                    initialItem: (_height - 120).toInt(),
+                    initialItem: (_height! - 120).toInt(),
                   ),
                   children: List<Widget>.generate(121, (int index) {
                     return Center(
@@ -698,6 +735,7 @@ class _ProfilePageState extends State<ProfilePage> {
   }
   
   void _showMaterialHeightPicker(BuildContext context) {
+    final double initialHeight = _height ?? 120.0;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -716,7 +754,11 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                     actions: [
                       TextButton(
-                        onPressed: () => Navigator.of(context).pop(),
+                        onPressed: (){
+                          _updateUserInfo();
+                          setState(() {});
+                          Navigator.of(context).pop();
+                        },
                         child: Text(
                           'Done',
                           style: TextStyle(color: Theme.of(context).primaryColor),
@@ -731,13 +773,12 @@ class _ProfilePageState extends State<ProfilePage> {
                       diameterRatio: 1.5,
                       physics: const FixedExtentScrollPhysics(),
                       controller: FixedExtentScrollController(
-                        initialItem: (_height - 120).toInt(),
+                        initialItem: (initialHeight - 120).toInt(),
                       ),
                       onSelectedItemChanged: (int index) {
                         setModalState(() {
                           _height = 120 + index.toDouble();
                         });
-                        setState(() {});
                       },
                       childDelegate: ListWheelChildBuilderDelegate(
                         childCount: 121,
@@ -781,6 +822,7 @@ class _ProfilePageState extends State<ProfilePage> {
     showCupertinoModalPopup(
       context: context,
       builder: (BuildContext context) {
+        final double initialWeight = _weight ?? 30.0; 
         return Container(
           height: 300,
           color: Colors.white,
@@ -812,7 +854,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     });
                   },
                   scrollController: FixedExtentScrollController(
-                    initialItem: (_weight - 30).toInt(),
+                    initialItem: (initialWeight - 30).toInt(),
                   ),
                   children: List<Widget>.generate(171, (int index) {
                     return Center(
@@ -832,6 +874,7 @@ class _ProfilePageState extends State<ProfilePage> {
   }
   
   void _showMaterialWeightPicker(BuildContext context) {
+    final double initialWeight = _weight ?? 30.0; 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -850,7 +893,11 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                     actions: [
                       TextButton(
-                        onPressed: () => Navigator.of(context).pop(),
+                        onPressed: () { 
+                          _updateUserInfo();
+                          setState(() {});
+                          Navigator.of(context).pop();
+                        },
                         child: Text(
                           'Done',
                           style: TextStyle(color: Theme.of(context).primaryColor),
@@ -865,13 +912,12 @@ class _ProfilePageState extends State<ProfilePage> {
                       diameterRatio: 1.5,
                       physics: const FixedExtentScrollPhysics(),
                       controller: FixedExtentScrollController(
-                        initialItem: (_weight - 30).toInt(),
+                        initialItem: (initialWeight - 30).toInt(),
                       ),
                       onSelectedItemChanged: (int index) {
                         setModalState(() {
                           _weight = 30 + index.toDouble();
                         });
-                        setState(() {});
                       },
                       childDelegate: ListWheelChildBuilderDelegate(
                         childCount: 171,
@@ -915,6 +961,7 @@ class _ProfilePageState extends State<ProfilePage> {
     showCupertinoModalPopup(
       context: context,
       builder: (BuildContext context) {
+        final double initialAge = _age ?? 25.0;
         return Container(
           height: 300,
           color: Colors.white,
@@ -946,7 +993,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     });
                   },
                   scrollController: FixedExtentScrollController(
-                    initialItem: (_age - 12).toInt(),
+                    initialItem: (_age! - 12).toInt(),
                   ),
                   children: List<Widget>.generate(89, (int index) {
                     return Center(
@@ -970,6 +1017,7 @@ class _ProfilePageState extends State<ProfilePage> {
       context: context,
       isScrollControlled: true,
       builder: (BuildContext context) {
+        final double initialAge = _age ?? 25.0;
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setModalState) {
             return Container(
@@ -984,7 +1032,11 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                     actions: [
                       TextButton(
-                        onPressed: () => Navigator.of(context).pop(),
+                        onPressed: () { 
+                          _updateUserInfo();
+                          setState(() {});
+                          Navigator.of(context).pop();
+                        },
                         child: Text(
                           'Done',
                           style: TextStyle(color: Theme.of(context).primaryColor),
@@ -999,13 +1051,12 @@ class _ProfilePageState extends State<ProfilePage> {
                       diameterRatio: 1.5,
                       physics: const FixedExtentScrollPhysics(),
                       controller: FixedExtentScrollController(
-                        initialItem: (_age - 12).toInt(),
+                        initialItem: (initialAge - 12).toInt(),
                       ),
                       onSelectedItemChanged: (int index) {
                         setModalState(() {
                           _age = 12 + index.toDouble();
                         });
-                        setState(() {});
                       },
                       childDelegate: ListWheelChildBuilderDelegate(
                         childCount: 89,

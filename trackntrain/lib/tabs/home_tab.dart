@@ -200,7 +200,6 @@ class _HomeTabState extends State<HomeTab> {
             ),
             const SizedBox(height: 32),
             
-            // Stats Section
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -228,11 +227,11 @@ class _HomeTabState extends State<HomeTab> {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  Stat(
-                    icon: FontAwesomeIcons.fire,
-                    count: 100,
-                    subtitle: 'Calories Burnt',
-                  ),
+                  // Stat(
+                  //   icon: FontAwesomeIcons.fire,
+                  //   count: 100,
+                  //   subtitle: 'Calories Burnt',
+                  // ),
                   Stat(icon: FontAwesomeIcons.bolt, count: 69, subtitle: 'Streak Days'),
                   Stat(
                     icon: FontAwesomeIcons.personWalking,
@@ -244,7 +243,6 @@ class _HomeTabState extends State<HomeTab> {
             ),
             const SizedBox(height: 24),
             
-            // Action Buttons
             Row(
               children: [
                 Expanded(
