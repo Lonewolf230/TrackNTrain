@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:trackntrain/components/prev_workout_card.dart';
 
@@ -69,7 +70,7 @@ class HiitTab extends StatelessWidget {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(
-                        Icons.fitness_center,
+                        FontAwesomeIcons.heartCircleBolt,
                         color: const Color.fromARGB(255, 247, 2, 2),
                         size: 32,
                       ),
@@ -143,11 +144,11 @@ class HiitTab extends StatelessWidget {
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
                       children: const [
-                        PrevWorkoutCard(),
+                        PrevWorkoutCard(icon: FontAwesomeIcons.heartCircleBolt,),
                         SizedBox(height: 12),
-                        PrevWorkoutCard(),
+                        PrevWorkoutCard(icon: FontAwesomeIcons.heartCircleBolt,),
                         SizedBox(height: 12),
-                        PrevWorkoutCard(),
+                        PrevWorkoutCard(icon: FontAwesomeIcons.heartCircleBolt,),
                       ],
                     ),
                   ],

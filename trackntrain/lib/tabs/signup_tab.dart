@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:trackntrain/utils/google_auth_utils.dart';
 import '../components/social_button.dart';
 import '../components/auth_button.dart';
 import '../components/auth_text_field.dart';
+import 'package:trackntrain/utils/normal_auth_utils.dart';
 
 class SignUpTab extends StatefulWidget {
-  // const SignUpTab({Key? key}) : super(key: key);
   const SignUpTab({super.key});
 
   @override
@@ -20,7 +21,6 @@ class _SignUpTabState extends State<SignUpTab> {
   final _confirmPasswordController = TextEditingController();
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
-  bool _agreeToTerms = false;
   bool isLoading = false;
 
   @override
@@ -32,33 +32,65 @@ class _SignUpTabState extends State<SignUpTab> {
     super.dispose();
   }
 
-  void _signUp() async{
-    if (_formKey.currentState!.validate() && _agreeToTerms) {
+  void _signUp() async {
+    if (_formKey.currentState!.validate()) {
       setState(() {
         isLoading = true;
       });
-      await Future.delayed(const Duration(seconds: 2));
-      if(!mounted) return;
-      context.goNamed('home');
+      final message = await signUpWithEmailAndPassword(
+        _emailController.text.trim(),
+        _passwordController.text.trim(),
+        _nameController.text.trim(),
+      );
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+        if (message != null || message?.isNotEmpty == true) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              duration: const Duration(seconds: 2),
+              shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.all(Radius.circular(8)),
+              ),
+              backgroundColor: Colors.red,
+              content: Text(
+                message ?? 'Sign up failed',
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  void _signUpWithGoogle() async{
+    setState(() {
+      isLoading = true;
+    });
+    final message = await signInWithGoogle();
+    if (mounted) {
       setState(() {
         isLoading = false;
       });
-      // Implement signup logic
-    } else if (!_agreeToTerms) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          duration: Duration(seconds: 2),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(8)),
+      if (message != null || message.isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            duration: const Duration(seconds: 2),
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.all(Radius.circular(8)),
+            ),
+            backgroundColor: Colors.red,
+            content: Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
           ),
-          backgroundColor: Color.fromARGB(255, 252, 181, 1),
-          content: Text(
-            'Please agree to Terms & Conditions',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
-        ),
-      );
+        );
+      }
     }
   }
 
@@ -85,7 +117,6 @@ class _SignUpTabState extends State<SignUpTab> {
             ),
             const SizedBox(height: 16),
 
-            // Email field
             AuthTextField(
               controller: _emailController,
               hintText: 'Email',
@@ -105,7 +136,6 @@ class _SignUpTabState extends State<SignUpTab> {
             ),
             const SizedBox(height: 16),
 
-            // Password field
             AuthTextField(
               controller: _passwordController,
               hintText: 'Password',
@@ -136,7 +166,6 @@ class _SignUpTabState extends State<SignUpTab> {
             ),
             const SizedBox(height: 16),
 
-            // Confirm Password field
             AuthTextField(
               controller: _confirmPasswordController,
               hintText: 'Confirm Password',
@@ -165,51 +194,14 @@ class _SignUpTabState extends State<SignUpTab> {
                 return null;
               },
             ),
+            const SizedBox(height: 24),
 
-            // Terms and Conditions
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 16.0),
-              child: Row(
-                children: [
-                  SizedBox(
-                    height: 24,
-                    width: 24,
-                    child: Checkbox(
-                      value: _agreeToTerms,
-                      activeColor: Theme.of(context).primaryColor,
-                      onChanged: (value) {
-                        setState(() {
-                          _agreeToTerms = value!;
-                        });
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: RichText(
-                      text: TextSpan(
-                        style: TextStyle(color: Colors.grey[700], fontSize: 14),
-                        children: [
-                          const TextSpan(text: 'I agree to the '),
-                          TextSpan(
-                            text: 'Terms & Conditions',
-                            style: TextStyle(
-                              color: Theme.of(context).primaryColor,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+            AuthButton(
+              text: 'Sign Up',
+              onPressed: _signUp,
+              isLoading: isLoading,
             ),
 
-            // Sign Up button
-            AuthButton(text: 'Sign Up', onPressed: _signUp,isLoading: isLoading,),
-
-            // OR divider
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 24.0),
               child: Row(
@@ -227,20 +219,13 @@ class _SignUpTabState extends State<SignUpTab> {
               ),
             ),
 
-            // Social signup buttons
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 SocialButton(
                   icon: 'assets/images/google.png',
                   onPressed: () {
-                    // Handle Google signup
-                  },
-                ),
-                SocialButton(
-                  icon: 'assets/images/apple.png',
-                  onPressed: () {
-                    // Handle Apple signup
+                    _signUpWithGoogle();
                   },
                 ),
               ],

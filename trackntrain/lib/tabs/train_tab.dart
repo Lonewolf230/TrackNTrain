@@ -3,8 +3,6 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:trackntrain/components/workout_category.dart';
 import 'package:trackntrain/tabs/hiit_tab.dart';
-import 'package:trackntrain/tabs/running_tab.dart';
-import 'package:trackntrain/tabs/split_tab.dart';
 import 'package:trackntrain/tabs/full_body_tab.dart';
 import 'package:trackntrain/tabs/walking_tab.dart';
 import 'package:trackntrain/utils/quotes.dart';
@@ -16,8 +14,6 @@ class TrainTab extends StatelessWidget {
   static final Map<String, Widget Function()> workoutPages = {
     'full-body': () => const FullBodyTab(),
     'walking': () => const WalkingTab(),
-    'running': () => const RunningTab(),
-    'splits': () => const SplitTab(),
     'hiit': () => const HiitTab(),
   };
 
@@ -36,22 +32,10 @@ class TrainTab extends StatelessWidget {
       ),
       WorkoutCategory(
         icon: const Icon(FontAwesomeIcons.personWalking),
-        title: 'Walking',
-        subtitle: 'Go for a nice walk in a pleasant environment',
+        title: 'Walking/Running',
+        subtitle: 'Get your steps in with this workout',
         onTap: () => onTap(context, 'walking'),
       ),
-      WorkoutCategory(
-        icon: const Icon(FontAwesomeIcons.personRunning),
-        title: 'Running',
-        subtitle: 'Go for a nice run to get your heart rate pumped up',
-        onTap: () => onTap(context, 'running'),
-      ),
-      // WorkoutCategory(
-      //   icon: const Icon(FontAwesomeIcons.weightHanging),
-      //   title: 'Splits',
-      //   subtitle: 'Hit specific muscle group every day',
-      //   onTap: () => onTap(context, 'splits'),
-      // ),
       WorkoutCategory(
         icon: const Icon(FontAwesomeIcons.heartCircleBolt),
         title: 'HIIT',

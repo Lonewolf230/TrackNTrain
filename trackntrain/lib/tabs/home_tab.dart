@@ -2,6 +2,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:trackntrain/components/meal_logger.dart';
 import 'package:trackntrain/components/stat.dart';
+import 'package:trackntrain/utils/auth_service.dart';
 
 class HomeTab extends StatefulWidget {
   const HomeTab({super.key});
@@ -73,8 +74,8 @@ class _HomeTabState extends State<HomeTab> {
                     ),
                   ),
                   const SizedBox(height: 4),
-                  const Text(
-                    'Manish',
+                  Text(
+                    AuthService.currentUser?.displayName ?? 'User',
                     style: TextStyle(
                       fontSize: 32,
                       fontWeight: FontWeight.bold,
@@ -106,7 +107,6 @@ class _HomeTabState extends State<HomeTab> {
             ),
             const SizedBox(height: 24),
             
-            // Mood Selector Card
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -200,7 +200,6 @@ class _HomeTabState extends State<HomeTab> {
             ),
             const SizedBox(height: 32),
             
-            // Stats Section
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -228,11 +227,11 @@ class _HomeTabState extends State<HomeTab> {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  Stat(
-                    icon: FontAwesomeIcons.fire,
-                    count: 100,
-                    subtitle: 'Calories Burnt',
-                  ),
+                  // Stat(
+                  //   icon: FontAwesomeIcons.fire,
+                  //   count: 100,
+                  //   subtitle: 'Calories Burnt',
+                  // ),
                   Stat(icon: FontAwesomeIcons.bolt, count: 69, subtitle: 'Streak Days'),
                   Stat(
                     icon: FontAwesomeIcons.personWalking,
@@ -244,7 +243,6 @@ class _HomeTabState extends State<HomeTab> {
             ),
             const SizedBox(height: 24),
             
-            // Action Buttons
             Row(
               children: [
                 Expanded(

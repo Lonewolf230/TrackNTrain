@@ -1,167 +1,8 @@
-// import 'package:flutter/material.dart';
-// import 'package:flutter/cupertino.dart';
-
-// class ProfilePage extends StatefulWidget {
-//   const ProfilePage({super.key});
-
-//   @override
-//   State<ProfilePage> createState() => _ProfilePageState();
-// }
-
-// class _ProfilePageState extends State<ProfilePage> {
-//   // Default values
-//   double _height = 170; 
-//   double _weight = 70; 
-//   double _age = 23; 
-  
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(
-//         iconTheme: const IconThemeData(color: Colors.white),
-//         centerTitle: true,
-//         title: const Text('Profile', style: TextStyle(color: Colors.white)),
-//         backgroundColor: Theme.of(context).primaryColor,
-//       ),
-//       body: SingleChildScrollView(
-//         child: Column(
-//           crossAxisAlignment: CrossAxisAlignment.center,
-//           children: [
-//             const SizedBox(height: 20),
-//             Row(
-//               mainAxisAlignment: MainAxisAlignment.spaceAround,
-//               children: [
-//                 Image.asset(
-//                   'assets/images/user.jpg',
-//                   height: 60,
-//                   width: 60,
-//                   fit: BoxFit.cover,
-//                 ),
-//                 Column(
-//                   crossAxisAlignment: CrossAxisAlignment.start,
-//                   children: [
-//                     Text(
-//                       'Manish',
-//                       style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: Theme.of(context).primaryColor),
-//                     ),
-//                     const SizedBox(height: 5),
-//                     const Text('manish2306j@gmail.com'),
-//                   ],
-//                 ),
-//               ],
-//             ),
-//             const SizedBox(height: 20),
-//             Container(
-//               width: double.infinity,
-//               padding: const EdgeInsets.symmetric(horizontal: 20),
-//               child: Column(
-//                 crossAxisAlignment: CrossAxisAlignment.center,
-//                 children: [
-//                   const Text(
-//                     'Your Info',
-//                     textAlign: TextAlign.center,
-//                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
-//                   ),
-//                   const SizedBox(height: 20),
-                  
-//                   // Height Selector
-//                   _buildSelectorCard(
-//                     title: 'Height',
-//                     value: '${_height.toInt()} cm',
-//                     onTap: () => _showHeightPicker(context),
-//                   ),
-                  
-//                   // Weight Selector
-//                   _buildSelectorCard(
-//                     title: 'Weight',
-//                     value: '${_weight.toInt()} kg',
-//                     onTap: () => _showWeightPicker(context),
-//                   ),
-                  
-//                   // Age Selector
-//                   _buildSelectorCard(
-//                     title: 'Age',
-//                     value: '${_age.toInt()} years',
-//                     onTap: () => _showAgePicker(context),
-//                   ),
-//                 ],
-//               ),
-//             ),
-//             const SizedBox(height: 20),
-//             Row(
-//               mainAxisSize: MainAxisSize.max,
-//               mainAxisAlignment: MainAxisAlignment.spaceAround,
-//               children: [
-//                 TextButton.icon(
-//                   style: TextButton.styleFrom(backgroundColor: Colors.white),
-//                   onPressed: () {},
-//                   label: Text(
-//                     'Logout',
-//                     style: TextStyle(color: Theme.of(context).primaryColor),
-//                   ),
-//                   icon: Icon(Icons.logout, color: Theme.of(context).primaryColor),
-//                 ),
-            
-//                 TextButton.icon(
-//                   style: TextButton.styleFrom(backgroundColor: Colors.white),
-//                   onPressed: () {},
-//                   label: Text(
-//                     'Delete Account',
-//                     style: TextStyle(color: Theme.of(context).primaryColor),
-//                   ),
-//                   icon: Icon(
-//                     Icons.delete_forever,
-//                     color: Theme.of(context).primaryColor,
-//                   ),
-//                 ),
-//               ],
-//             ),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-  
-//   // Helper method to build selector cards
-//   Widget _buildSelectorCard({
-//     required String title,
-//     required String value,
-//     required VoidCallback onTap,
-//   }) {
-//     return Card(
-//       color: Theme.of(context).primaryColor,
-//       margin: const EdgeInsets.only(bottom: 12),
-//       elevation: 2,
-//       child: InkWell(
-//         onTap: onTap,
-//         child: Padding(
-//           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-//           child: Row(
-//             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//             children: [
-//               Text(
-//                 title,
-//                 style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 16,color: Colors.white),
-//               ),
-//               Row(
-//                 children: [
-//                   Text(
-//                     value,
-//                     style: const TextStyle(fontSize: 16,color: Colors.white),
-//                   ),
-//                   const SizedBox(width: 8),
-//                   const Icon(Icons.arrow_forward_ios, size: 16,color: Colors.white,),
-//                 ],
-//               ),
-//             ],
-//           ),
-//         ),
-//       ),
-//     );
-//   }
-
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:trackntrain/utils/auth_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:trackntrain/utils/classes.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -171,10 +12,117 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  // Default values
-  double _height = 170; 
-  double _weight = 70; 
-  double _age = 23; 
+  double? _height; 
+  double? _weight ; 
+  double? _age; 
+
+  void _getUserInfo( )async{
+    final user = AuthService.currentUser;
+    if (user != null) {
+      DocumentReference userDoc=FirebaseFirestore.instance.collection('users').doc(user.uid);
+      DocumentSnapshot userSnapshot = await userDoc.get();
+      if(userSnapshot.exists){
+        final data=userSnapshot.data() as Map<String, dynamic>;
+        setState(() {
+          _height = data['height']?.toDouble() ;
+          _weight = data['weight']?.toDouble() ;
+          _age = data['age']?.toDouble() ;
+        });
+        print('User Info: Height: $_height, Weight: $_weight, Age: $_age');
+      }
+      print('User Document: ${userSnapshot.data()}');
+      return;
+    }
+    print('No user is currently signed in.');
+  }
+
+  void _updateUserInfo()async {
+    final user = AuthService.currentUser;
+    if (user != null) {
+      try {
+        DocumentReference userDoc=FirebaseFirestore.instance.collection('users').doc(user.uid);
+        DocumentSnapshot userSnapshot = await userDoc.get();
+        UserData userData=UserData(
+          userId: user.uid,
+          age: _age?.toInt(),
+          weight: _weight?.toInt(),
+          height: _height?.toInt(),
+          createdAt: userSnapshot.exists ? ((userSnapshot.data() as Map<String, dynamic>)['createdAt'] as Timestamp?)?.toDate() : DateTime.now(),
+        );
+        
+        await userDoc.set(userData.toMap(isUpdate: userSnapshot.exists),SetOptions(merge: true));
+        print('User info updated successfully: $userData');
+      } catch (e) {
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            duration: const Duration(seconds: 2),
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.all(Radius.circular(8)),
+            ),
+            backgroundColor: Colors.red,
+            content: Text(
+              'Error updating user info: $e',
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+        );
+      }
+
+    } else {
+      print('No user is currently signed in.');
+    }
+  }
+
+  @override
+  void initState(){
+    // TODO: implement initState
+    super.initState();
+    _getUserInfo();
+  }
+
+  void _logout(BuildContext context)async{
+    try {
+      await AuthService.signOut();
+    } catch (e) {
+      if (!context.mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            duration: const Duration(seconds: 2),
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.all(Radius.circular(8)),
+            ),
+            backgroundColor: Colors.red,
+            content: Text(
+              e.toString(),
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+        );
+      }
+    
+  }
+
+  void _deleteAccount() async{
+    await AuthService.deleteAccount();
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        duration: Duration(seconds: 2),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(8)),
+        ),
+        backgroundColor: Colors.red,
+        content: Text(
+          'Account deleted successfully',
+          textAlign: TextAlign.center,
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+      ),
+    );
+  }
   
   @override
   Widget build(BuildContext context) {
@@ -241,7 +189,6 @@ class _ProfilePageState extends State<ProfilePage> {
             children: [
               const SizedBox(height: 10),
               
-              // Profile Card
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(24),
@@ -266,42 +213,9 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
                 child: Column(
                   children: [
-                    // Profile Picture
-                    Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            Color.fromARGB(255, 247, 2, 2),
-                            Color.fromARGB(255, 220, 20, 20),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(40),
-                      ),
-                      child: Container(
-                        padding: const EdgeInsets.all(2),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(36),
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(34),
-                          child: Image.asset(
-                            'assets/images/user.jpg',
-                            height: 80,
-                            width: 80,
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      ),
-                    ),
                     const SizedBox(height: 16),
-                    
-                    // Name
                     Text(
-                      'Manish',
+                      AuthService.currentUser?.displayName ?? 'User',
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
@@ -311,7 +225,6 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                     const SizedBox(height: 8),
                     
-                    // Email
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
@@ -319,7 +232,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
-                        'manish2306j@gmail.com',
+                        AuthService.currentUser?.email ?? 'user@gmail.com',
                         style: TextStyle(
                           fontSize: 14,
                           color: Colors.grey[600],
@@ -333,7 +246,6 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
               const SizedBox(height: 24),
               
-              // Your Info Section
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),
@@ -380,26 +292,23 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                     const SizedBox(height: 20),
                     
-                    // Height Selector
                     _buildSelectorCard(
                       title: 'Height',
-                      value: '${_height.toInt()} cm',
+                      value: _height!=null?'${_height?.toInt()} cm':'Please set your height',
                       icon: Icons.height,
                       onTap: () => _showHeightPicker(context),
                     ),
                     
-                    // Weight Selector
                     _buildSelectorCard(
                       title: 'Weight',
-                      value: '${_weight.toInt()} kg',
+                      value: _weight!=null?'${_weight?.toInt()} kg':'Please set your weight',
                       icon: Icons.monitor_weight_outlined,
                       onTap: () => _showWeightPicker(context),
                     ),
                     
-                    // Age Selector
                     _buildSelectorCard(
                       title: 'Age',
-                      value: '${_age.toInt()} years',
+                      value: _age!=null?'${_age?.toInt()} years':'Please set your age',
                       icon: Icons.cake_outlined,
                       onTap: () => _showAgePicker(context),
                     ),
@@ -408,7 +317,6 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
               const SizedBox(height: 24),
               
-              // Action Buttons
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),
@@ -426,7 +334,6 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
                 child: Column(
                   children: [
-                    // Logout Button
                     Container(
                       width: double.infinity,
                       margin: const EdgeInsets.only(bottom: 12),
@@ -448,7 +355,9 @@ class _ProfilePageState extends State<ProfilePage> {
                       child: Material(
                         color: Colors.transparent,
                         child: InkWell(
-                          onTap: () {},
+                          onTap: () {
+                            _logout(context);
+                          },
                           borderRadius: BorderRadius.circular(12),
                           child: Padding(
                             padding: const EdgeInsets.all(16),
@@ -484,7 +393,6 @@ class _ProfilePageState extends State<ProfilePage> {
                       ),
                     ),
                     
-                    // Delete Account Button
                     Container(
                       width: double.infinity,
                       decoration: BoxDecoration(
@@ -505,7 +413,9 @@ class _ProfilePageState extends State<ProfilePage> {
                       child: Material(
                         color: Colors.transparent,
                         child: InkWell(
-                          onTap: () {},
+                          onTap: () {
+                            _showConfirmationDialog(context);
+                          },
                           borderRadius: BorderRadius.circular(12),
                           child: Padding(
                             padding: const EdgeInsets.all(16),
@@ -549,6 +459,123 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
     );
   }
+
+  void _showConfirmationDialog(BuildContext context) {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.red.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(
+                Icons.delete_forever_outlined,
+                color: Colors.red,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Text(
+              'Delete Account',
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontWeight: FontWeight.bold,
+                fontSize: 20,
+              ),
+            ),
+          ],
+        ),
+        content: Container(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: const Text(
+            'Are you sure you want to delete your account? This action cannot be undone.',
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              fontSize: 16,
+              color: Colors.black87,
+              height: 1.4,
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: Text(
+              'Cancel',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey[600],
+                fontFamily: 'Poppins',
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [
+                  Colors.red,
+                  Color.fromARGB(255, 180, 10, 10),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.red.withOpacity(0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () {
+                  Navigator.of(context).pop();
+                  _deleteAccount();
+                },
+                borderRadius: BorderRadius.circular(12),
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.delete_rounded, color: Colors.white, size: 18),
+                      SizedBox(width: 8),
+                      Text(
+                        'Delete Account',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontFamily: 'Poppins',
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+        actionsPadding: const EdgeInsets.fromLTRB(24, 8, 24, 20),
+      );
+    },
+  );
+}
 
   Widget _buildSelectorCard({
     required String title,
@@ -688,7 +715,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     });
                   },
                   scrollController: FixedExtentScrollController(
-                    initialItem: (_height - 120).toInt(),
+                    initialItem: (_height! - 120).toInt(),
                   ),
                   children: List<Widget>.generate(121, (int index) {
                     return Center(
@@ -708,6 +735,7 @@ class _ProfilePageState extends State<ProfilePage> {
   }
   
   void _showMaterialHeightPicker(BuildContext context) {
+    final double initialHeight = _height ?? 120.0;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -726,7 +754,11 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                     actions: [
                       TextButton(
-                        onPressed: () => Navigator.of(context).pop(),
+                        onPressed: (){
+                          _updateUserInfo();
+                          setState(() {});
+                          Navigator.of(context).pop();
+                        },
                         child: Text(
                           'Done',
                           style: TextStyle(color: Theme.of(context).primaryColor),
@@ -741,13 +773,12 @@ class _ProfilePageState extends State<ProfilePage> {
                       diameterRatio: 1.5,
                       physics: const FixedExtentScrollPhysics(),
                       controller: FixedExtentScrollController(
-                        initialItem: (_height - 120).toInt(),
+                        initialItem: (initialHeight - 120).toInt(),
                       ),
                       onSelectedItemChanged: (int index) {
                         setModalState(() {
                           _height = 120 + index.toDouble();
                         });
-                        setState(() {});
                       },
                       childDelegate: ListWheelChildBuilderDelegate(
                         childCount: 121,
@@ -791,6 +822,7 @@ class _ProfilePageState extends State<ProfilePage> {
     showCupertinoModalPopup(
       context: context,
       builder: (BuildContext context) {
+        final double initialWeight = _weight ?? 30.0; 
         return Container(
           height: 300,
           color: Colors.white,
@@ -822,7 +854,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     });
                   },
                   scrollController: FixedExtentScrollController(
-                    initialItem: (_weight - 30).toInt(),
+                    initialItem: (initialWeight - 30).toInt(),
                   ),
                   children: List<Widget>.generate(171, (int index) {
                     return Center(
@@ -842,6 +874,7 @@ class _ProfilePageState extends State<ProfilePage> {
   }
   
   void _showMaterialWeightPicker(BuildContext context) {
+    final double initialWeight = _weight ?? 30.0; 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -860,7 +893,11 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                     actions: [
                       TextButton(
-                        onPressed: () => Navigator.of(context).pop(),
+                        onPressed: () { 
+                          _updateUserInfo();
+                          setState(() {});
+                          Navigator.of(context).pop();
+                        },
                         child: Text(
                           'Done',
                           style: TextStyle(color: Theme.of(context).primaryColor),
@@ -875,13 +912,12 @@ class _ProfilePageState extends State<ProfilePage> {
                       diameterRatio: 1.5,
                       physics: const FixedExtentScrollPhysics(),
                       controller: FixedExtentScrollController(
-                        initialItem: (_weight - 30).toInt(),
+                        initialItem: (initialWeight - 30).toInt(),
                       ),
                       onSelectedItemChanged: (int index) {
                         setModalState(() {
                           _weight = 30 + index.toDouble();
                         });
-                        setState(() {});
                       },
                       childDelegate: ListWheelChildBuilderDelegate(
                         childCount: 171,
@@ -925,6 +961,7 @@ class _ProfilePageState extends State<ProfilePage> {
     showCupertinoModalPopup(
       context: context,
       builder: (BuildContext context) {
+        final double initialAge = _age ?? 25.0;
         return Container(
           height: 300,
           color: Colors.white,
@@ -956,7 +993,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     });
                   },
                   scrollController: FixedExtentScrollController(
-                    initialItem: (_age - 12).toInt(),
+                    initialItem: (_age! - 12).toInt(),
                   ),
                   children: List<Widget>.generate(89, (int index) {
                     return Center(
@@ -980,6 +1017,7 @@ class _ProfilePageState extends State<ProfilePage> {
       context: context,
       isScrollControlled: true,
       builder: (BuildContext context) {
+        final double initialAge = _age ?? 25.0;
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setModalState) {
             return Container(
@@ -994,7 +1032,11 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                     actions: [
                       TextButton(
-                        onPressed: () => Navigator.of(context).pop(),
+                        onPressed: () { 
+                          _updateUserInfo();
+                          setState(() {});
+                          Navigator.of(context).pop();
+                        },
                         child: Text(
                           'Done',
                           style: TextStyle(color: Theme.of(context).primaryColor),
@@ -1009,13 +1051,12 @@ class _ProfilePageState extends State<ProfilePage> {
                       diameterRatio: 1.5,
                       physics: const FixedExtentScrollPhysics(),
                       controller: FixedExtentScrollController(
-                        initialItem: (_age - 12).toInt(),
+                        initialItem: (initialAge - 12).toInt(),
                       ),
                       onSelectedItemChanged: (int index) {
                         setModalState(() {
                           _age = 12 + index.toDouble();
                         });
-                        setState(() {});
                       },
                       childDelegate: ListWheelChildBuilderDelegate(
                         childCount: 89,

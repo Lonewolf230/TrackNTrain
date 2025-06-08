@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:go_router/go_router.dart';
+import 'package:trackntrain/components/end_workout.dart';
+import 'package:trackntrain/components/stop_without_finishing.dart';
 
 class HiitWorkout extends StatefulWidget {
   const HiitWorkout({
@@ -161,7 +163,18 @@ class _HiitWorkoutState extends State<HiitWorkout>
       _isRestPhase = false;
       _isCompleted = true;
     });
-    _endingDialog(context);
+    WorkoutCompletionDialog.show(
+      context,
+      summaryItems: [
+        WorkoutSummaryItem(value: '${widget.rounds}', label: 'Rounds'),
+        WorkoutSummaryItem(
+            value: '${widget.exercises.length}', label: 'Exercises'),
+      ],
+      onRestart: (){
+        Navigator.of(context).pop();
+        _resetWorkout();
+      }
+      );
   }
 
   void _resetWorkout() {
@@ -506,7 +519,9 @@ class _HiitWorkoutState extends State<HiitWorkout>
                         if (_currentRound == 0 && !_isRunning) {
                           _startWorkout();
                         } else {
-                          _stopWorkoutWithConfirmation(context);
+                          showDialog(
+                            context: context, builder:(context)=> StopWithoutFinishing()
+                          );
                         }
                       },
                       borderRadius: BorderRadius.circular(16),
@@ -553,412 +568,280 @@ class _HiitWorkoutState extends State<HiitWorkout>
     );
   }
 
-  void _stopWorkoutWithConfirmation(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          title: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color.fromARGB(255, 247, 2, 2).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(
-                  Icons.stop_circle_outlined,
-                  color: Color.fromARGB(255, 247, 2, 2),
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 12),
-              const Text(
-                'Stop Workout?',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20,
-                ),
-              ),
-            ],
-          ),
-          content: Container(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: const Text(
-              'Are you sure you want to stop your current workout? Your progress will be lost.',
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 16,
-                color: Colors.black87,
-                height: 1.4,
-              ),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 12,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: Text(
-                'Cancel',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey[600],
-                  fontFamily: 'Poppins',
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Container(
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Color.fromARGB(255, 247, 2, 2),
-                    Color.fromARGB(255, 220, 20, 20),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color.fromARGB(
-                      255,
-                      247,
-                      2,
-                      2,
-                    ).withOpacity(0.3),
-                    spreadRadius: 0,
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: () {
-                    context.goNamed('home');
-                  },
-                  borderRadius: BorderRadius.circular(12),
-                  child: const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.stop_rounded, color: Colors.white, size: 18),
-                        SizedBox(width: 8),
-                        Text(
-                          'Stop Workout',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontFamily: 'Poppins',
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-          actionsPadding: const EdgeInsets.fromLTRB(24, 8, 24, 20),
-        );
-      },
-    );
-  }
+  // void _endingDialog(BuildContext context) {
+  //   showDialog(
+  //     context: context,
+  //     barrierDismissible: false,
+  //     builder: (BuildContext context) {
+  //       return AlertDialog(
+  //         shape: RoundedRectangleBorder(
+  //           borderRadius: BorderRadius.circular(24),
+  //         ),
+  //         contentPadding: EdgeInsets.zero,
+  //         content: Container(
+  //           decoration: BoxDecoration(
+  //             gradient: LinearGradient(
+  //               begin: Alignment.topCenter,
+  //               end: Alignment.bottomCenter,
+  //               colors: [Colors.white, Colors.grey[50]!],
+  //             ),
+  //             borderRadius: BorderRadius.circular(24),
+  //           ),
+  //           child: Column(
+  //             mainAxisSize: MainAxisSize.min,
+  //             children: [
+  //               Container(
+  //                 width: double.infinity,
+  //                 padding: const EdgeInsets.fromLTRB(32, 32, 32, 24),
+  //                 decoration: BoxDecoration(
+  //                   gradient: LinearGradient(
+  //                     begin: Alignment.topLeft,
+  //                     end: Alignment.bottomRight,
+  //                     colors: [
+  //                       const Color.fromARGB(255, 247, 2, 2),
+  //                       const Color.fromARGB(255, 220, 20, 20),
+  //                     ],
+  //                   ),
+  //                   borderRadius: const BorderRadius.only(
+  //                     topLeft: Radius.circular(24),
+  //                     topRight: Radius.circular(24),
+  //                   ),
+  //                 ),
+  //                 child: Column(
+  //                   children: [
+  //                     const Text(
+  //                       'Workout Complete!',
+  //                       style: TextStyle(
+  //                         fontSize: 28,
+  //                         fontWeight: FontWeight.bold,
+  //                         color: Colors.white,
+  //                         fontFamily: 'Poppins',
+  //                       ),
+  //                     ),
+  //                     const SizedBox(height: 8),
+  //                     const Text(
+  //                       'Congratulations! You crushed it!',
+  //                       style: TextStyle(
+  //                         fontSize: 16,
+  //                         color: Colors.white,
+  //                         fontFamily: 'Poppins',
+  //                       ),
+  //                     ),
+  //                   ],
+  //                 ),
+  //               ),
 
-  void _endingDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
-          ),
-          contentPadding: EdgeInsets.zero,
-          content: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Colors.white, Colors.grey[50]!],
-              ),
-              borderRadius: BorderRadius.circular(24),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.fromLTRB(32, 32, 32, 24),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        const Color.fromARGB(255, 247, 2, 2),
-                        const Color.fromARGB(255, 220, 20, 20),
-                      ],
-                    ),
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(24),
-                      topRight: Radius.circular(24),
-                    ),
-                  ),
-                  child: Column(
-                    children: [
-                      const Text(
-                        'Workout Complete!',
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                          fontFamily: 'Poppins',
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'Congratulations! You crushed it!',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.white,
-                          fontFamily: 'Poppins',
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Content Section
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(32, 24, 32, 32),
-                  child: Column(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: const Color.fromARGB(255,247,2,2,).withOpacity(0.1),
-                            width: 1,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.grey.withOpacity(0.1),
-                              spreadRadius: 0,
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          children: [
-                            Text(
-                              'Workout Summary',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.grey[800],
-                                fontFamily: 'Poppins',
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceAround,
-                              children: [
-                                Column(
-                                  children: [
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      '${widget.rounds}',
-                                      style: const TextStyle(
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.bold,
-                                        fontFamily: 'Poppins',
-                                      ),
-                                    ),
-                                    const Text(
-                                      'Rounds',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.grey,
-                                        fontFamily: 'Poppins',
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                Column(
-                                  children: [
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      '${widget.exercises.length}',
-                                      style: const TextStyle(
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.bold,
-                                        fontFamily: 'Poppins',
-                                      ),
-                                    ),
-                                    const Text(
-                                      'Exercises',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.grey,
-                                        fontFamily: 'Poppins',
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Container(
-                              margin: const EdgeInsets.only(right: 8),
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                  colors: [Colors.white, Colors.grey[50]!],
-                                ),
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(
-                                  color: const Color.fromARGB(255,247,2,2).withOpacity(0.2),
-                                  width: 1,
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.grey.withOpacity(0.1),
-                                    spreadRadius: 0,
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: Material(
-                                color: Colors.transparent,
-                                child: InkWell(
-                                  onTap: () {
-                                    Navigator.of(context).pop();
-                                    _resetWorkout();
-                                  },
-                                  borderRadius: BorderRadius.circular(16),
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 16,
-                                    ),
-                                    child: Column(
-                                      children: [
-                                        Icon(
-                                          Icons.restart_alt_rounded,
-                                          color: const Color.fromARGB(255,247,2,2,),
-                                          size: 24,
-                                        ),
-                                        const SizedBox(height: 8),
-                                        Text(
-                                          'Restart',
-                                          style: TextStyle(
-                                            color: const Color.fromARGB(255,247,2,2,),
-                                            fontWeight: FontWeight.w600,
-                                            fontSize: 16,
-                                            fontFamily: 'Poppins',
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          Expanded(
-                            child: Container(
-                              margin: const EdgeInsets.only(left: 8),
-                              decoration: BoxDecoration(
-                                gradient: const LinearGradient(
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                  colors: [
-                                    Color.fromARGB(255, 247, 2, 2),
-                                    Color.fromARGB(255, 220, 20, 20),
-                                  ],
-                                ),
-                                borderRadius: BorderRadius.circular(16),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: const Color.fromARGB(255,247,2,2,).withOpacity(0.3),
-                                    spreadRadius: 0,
-                                    blurRadius: 12,
-                                    offset: const Offset(0, 4),
-                                  ),
-                                ],
-                              ),
-                              child: Material(
-                                color: Colors.transparent,
-                                child: InkWell(
-                                  onTap: () {
-                                    context.goNamed('home');
-                                  },
-                                  borderRadius: BorderRadius.circular(16),
-                                  child: const Padding(
-                                    padding: EdgeInsets.symmetric(vertical: 16),
-                                    child: Column(
-                                      children: [
-                                        Icon(
-                                          Icons.check_circle_rounded,
-                                          color: Colors.white,
-                                          size: 24,
-                                        ),
-                                        SizedBox(height: 8),
-                                        Text(
-                                          'Done',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.w600,
-                                            fontSize: 16,
-                                            fontFamily: 'Poppins',
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
+  //               Padding(
+  //                 padding: const EdgeInsets.fromLTRB(32, 24, 32, 32),
+  //                 child: Column(
+  //                   children: [
+  //                     Container(
+  //                       padding: const EdgeInsets.all(20),
+  //                       decoration: BoxDecoration(
+  //                         color: Colors.white,
+  //                         borderRadius: BorderRadius.circular(16),
+  //                         border: Border.all(
+  //                           color: const Color.fromARGB(255,247,2,2,).withOpacity(0.1),
+  //                           width: 1,
+  //                         ),
+  //                         boxShadow: [
+  //                           BoxShadow(
+  //                             color: Colors.grey.withOpacity(0.1),
+  //                             spreadRadius: 0,
+  //                             blurRadius: 8,
+  //                             offset: const Offset(0, 2),
+  //                           ),
+  //                         ],
+  //                       ),
+  //                       child: Column(
+  //                         children: [
+  //                           Text(
+  //                             'Workout Summary',
+  //                             style: TextStyle(
+  //                               fontSize: 18,
+  //                               fontWeight: FontWeight.bold,
+  //                               color: Colors.grey[800],
+  //                               fontFamily: 'Poppins',
+  //                             ),
+  //                           ),
+  //                           const SizedBox(height: 16),
+  //                           Row(
+  //                             mainAxisAlignment: MainAxisAlignment.spaceAround,
+  //                             children: [
+  //                               Column(
+  //                                 children: [
+  //                                   const SizedBox(height: 8),
+  //                                   Text(
+  //                                     '${widget.rounds}',
+  //                                     style: const TextStyle(
+  //                                       fontSize: 20,
+  //                                       fontWeight: FontWeight.bold,
+  //                                       fontFamily: 'Poppins',
+  //                                     ),
+  //                                   ),
+  //                                   const Text(
+  //                                     'Rounds',
+  //                                     style: TextStyle(
+  //                                       fontSize: 12,
+  //                                       color: Colors.grey,
+  //                                       fontFamily: 'Poppins',
+  //                                     ),
+  //                                   ),
+  //                                 ],
+  //                               ),
+  //                               Column(
+  //                                 children: [
+  //                                   const SizedBox(height: 8),
+  //                                   Text(
+  //                                     '${widget.exercises.length}',
+  //                                     style: const TextStyle(
+  //                                       fontSize: 20,
+  //                                       fontWeight: FontWeight.bold,
+  //                                       fontFamily: 'Poppins',
+  //                                     ),
+  //                                   ),
+  //                                   const Text(
+  //                                     'Exercises',
+  //                                     style: TextStyle(
+  //                                       fontSize: 12,
+  //                                       color: Colors.grey,
+  //                                       fontFamily: 'Poppins',
+  //                                     ),
+  //                                   ),
+  //                                 ],
+  //                               ),
+  //                             ],
+  //                           ),
+  //                         ],
+  //                       ),
+  //                     ),
+  //                     const SizedBox(height: 24),
+  //                     Row(
+  //                       children: [
+  //                         Expanded(
+  //                           child: Container(
+  //                             margin: const EdgeInsets.only(right: 8),
+  //                             decoration: BoxDecoration(
+  //                               gradient: LinearGradient(
+  //                                 begin: Alignment.topLeft,
+  //                                 end: Alignment.bottomRight,
+  //                                 colors: [Colors.white, Colors.grey[50]!],
+  //                               ),
+  //                               borderRadius: BorderRadius.circular(16),
+  //                               border: Border.all(
+  //                                 color: const Color.fromARGB(255,247,2,2).withOpacity(0.2),
+  //                                 width: 1,
+  //                               ),
+  //                               boxShadow: [
+  //                                 BoxShadow(
+  //                                   color: Colors.grey.withOpacity(0.1),
+  //                                   spreadRadius: 0,
+  //                                   blurRadius: 8,
+  //                                   offset: const Offset(0, 2),
+  //                                 ),
+  //                               ],
+  //                             ),
+  //                             child: Material(
+  //                               color: Colors.transparent,
+  //                               child: InkWell(
+  //                                 onTap: () {
+  //                                   Navigator.of(context).pop();
+  //                                   _resetWorkout();
+  //                                 },
+  //                                 borderRadius: BorderRadius.circular(16),
+  //                                 child: Padding(
+  //                                   padding: const EdgeInsets.symmetric(
+  //                                     vertical: 16,
+  //                                   ),
+  //                                   child: Column(
+  //                                     children: [
+  //                                       Icon(
+  //                                         Icons.restart_alt_rounded,
+  //                                         color: const Color.fromARGB(255,247,2,2,),
+  //                                         size: 24,
+  //                                       ),
+  //                                       const SizedBox(height: 8),
+  //                                       Text(
+  //                                         'Restart',
+  //                                         style: TextStyle(
+  //                                           color: const Color.fromARGB(255,247,2,2,),
+  //                                           fontWeight: FontWeight.w600,
+  //                                           fontSize: 16,
+  //                                           fontFamily: 'Poppins',
+  //                                         ),
+  //                                       ),
+  //                                     ],
+  //                                   ),
+  //                                 ),
+  //                               ),
+  //                             ),
+  //                           ),
+  //                         ),
+  //                         Expanded(
+  //                           child: Container(
+  //                             margin: const EdgeInsets.only(left: 8),
+  //                             decoration: BoxDecoration(
+  //                               gradient: const LinearGradient(
+  //                                 begin: Alignment.topLeft,
+  //                                 end: Alignment.bottomRight,
+  //                                 colors: [
+  //                                   Color.fromARGB(255, 247, 2, 2),
+  //                                   Color.fromARGB(255, 220, 20, 20),
+  //                                 ],
+  //                               ),
+  //                               borderRadius: BorderRadius.circular(16),
+  //                               boxShadow: [
+  //                                 BoxShadow(
+  //                                   color: const Color.fromARGB(255,247,2,2,).withOpacity(0.3),
+  //                                   spreadRadius: 0,
+  //                                   blurRadius: 12,
+  //                                   offset: const Offset(0, 4),
+  //                                 ),
+  //                               ],
+  //                             ),
+  //                             child: Material(
+  //                               color: Colors.transparent,
+  //                               child: InkWell(
+  //                                 onTap: () {
+  //                                   context.goNamed('home');
+  //                                 },
+  //                                 borderRadius: BorderRadius.circular(16),
+  //                                 child: const Padding(
+  //                                   padding: EdgeInsets.symmetric(vertical: 16),
+  //                                   child: Column(
+  //                                     children: [
+  //                                       Icon(
+  //                                         Icons.check_circle_rounded,
+  //                                         color: Colors.white,
+  //                                         size: 24,
+  //                                       ),
+  //                                       SizedBox(height: 8),
+  //                                       Text(
+  //                                         'Done',
+  //                                         style: TextStyle(
+  //                                           color: Colors.white,
+  //                                           fontWeight: FontWeight.w600,
+  //                                           fontSize: 16,
+  //                                           fontFamily: 'Poppins',
+  //                                         ),
+  //                                       ),
+  //                                     ],
+  //                                   ),
+  //                                 ),
+  //                               ),
+  //                             ),
+  //                           ),
+  //                         ),
+  //                       ],
+  //                     ),
+  //                   ],
+  //                 ),
+  //               ),
+  //             ],
+  //           ),
+  //         ),
+  //       );
+  //     },
+  //   );
+  // }
 }

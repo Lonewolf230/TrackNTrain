@@ -160,28 +160,29 @@ class OrderConfig extends ConsumerWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               // Magic wand button
-              Container(
-                decoration: BoxDecoration(
-                  color: const Color.fromARGB(255, 247, 2, 2).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: IconButton(
-                  icon: const Icon(
-                    FontAwesomeIcons.wandMagicSparkles,
-                    color: Color.fromARGB(255, 247, 2, 2),
-                    size: 18,
-                  ),
-                  onPressed: () {
-                    // You can implement auto-arrange logic here
-                    // For example, sort by muscle groups or difficulty
-                    Navigator.pop(context);
-                  },
-                  tooltip: 'Auto-arrange',
-                ),
-              ),
-              const Spacer(),
+              // Container(
+              //   decoration: BoxDecoration(
+              //     color: const Color.fromARGB(255, 247, 2, 2).withOpacity(0.1),
+              //     borderRadius: BorderRadius.circular(12),
+              //   ),
+              //   child: IconButton(
+              //     icon: const Icon(
+              //       FontAwesomeIcons.wandMagicSparkles,
+              //       color: Color.fromARGB(255, 247, 2, 2),
+              //       size: 18,
+              //     ),
+              //     onPressed: () {
+              //       // You can implement auto-arrange logic here
+              //       // For example, sort by muscle groups or difficulty
+              //       Navigator.pop(context);
+              //     },
+              //     tooltip: 'Auto-arrange',
+              //   ),
+              // ),
+              // const Spacer(),
               
               // Cancel button
               TextButton(

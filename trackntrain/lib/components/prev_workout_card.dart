@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
 class PrevWorkoutCard extends StatelessWidget {
-  const PrevWorkoutCard({super.key});
+  const PrevWorkoutCard({super.key,required this.icon});
+  final IconData icon;
   
   @override
   Widget build(BuildContext context) {
@@ -48,7 +49,7 @@ class PrevWorkoutCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
-                  Icons.fitness_center,
+                  icon,
                   color: const Color.fromARGB(255, 247, 2, 2),
                   size: 24,
                 ),
