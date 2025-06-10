@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:trackntrain/components/appbar_text_field.dart';
 import 'package:trackntrain/components/end_workout.dart';
 import 'package:trackntrain/components/modern_text_field.dart';
 import 'package:trackntrain/components/stop_without_finishing.dart';
 import 'package:trackntrain/providers/full_body_progress_provider.dart';
 import 'package:trackntrain/providers/workout_providers.dart';
+import 'package:trackntrain/utils/db_util_funcs.dart';
 
 class FullBodyWorkout extends ConsumerStatefulWidget {
   const FullBodyWorkout({super.key});
@@ -17,6 +20,7 @@ class _FullBodyWorkoutState extends ConsumerState<FullBodyWorkout> {
   final TextEditingController setsController = TextEditingController();
   final TextEditingController repsController = TextEditingController();
   final TextEditingController maxWeightController = TextEditingController();
+  final TextEditingController workoutNameController = TextEditingController();
 
   @override
   void initState() {
@@ -39,6 +43,7 @@ class _FullBodyWorkoutState extends ConsumerState<FullBodyWorkout> {
     setsController.dispose();
     repsController.dispose();
     maxWeightController.dispose();
+    workoutNameController.dispose();
     super.dispose();
   }
 
@@ -91,6 +96,7 @@ class _FullBodyWorkoutState extends ConsumerState<FullBodyWorkout> {
       }
 
     if (currentIndex >= ref.read(totalExercisesProvider) - 1) {
+      print('Exercise List :${ref.read(exerciseNamesProvider)}');
       WorkoutCompletionDialog.show(
         context,
         summaryItems: [
@@ -99,6 +105,13 @@ class _FullBodyWorkoutState extends ConsumerState<FullBodyWorkout> {
             label: 'Exercises',
           ),
         ],
+        onSave: ()async{
+          setsController.clear();
+          repsController.clear();
+          maxWeightController.clear();
+          await saveFullBody(ref.read(workoutProgressProvider).exercises, context,name: workoutNameController.text.isNotEmpty ? workoutNameController.text : null);    
+          if(mounted) context.goNamed('home');
+        },
         onRestart: () {
           Navigator.of(context).pop();
           setsController.clear();
@@ -143,15 +156,12 @@ class _FullBodyWorkoutState extends ConsumerState<FullBodyWorkout> {
     final currentIndex = ref.watch(currentExerciseIndexProvider);
     final totalExercises = ref.watch(totalExercisesProvider);
     final isWorkoutCompleted = ref.watch(isWorkoutCompletedProvider);
-
     
     if (currentExercise == null) {
       return Scaffold(
         appBar: AppBar(
-          title: const Text(
-            'Full Body Workout',
-            style: TextStyle(color: Colors.white),
-          ),
+          title: Text('Full Body Workout',
+              style: TextStyle(color: Colors.white)),
           centerTitle: true,
           backgroundColor: Theme.of(context).primaryColor,
           automaticallyImplyLeading: false,
@@ -174,10 +184,7 @@ class _FullBodyWorkoutState extends ConsumerState<FullBodyWorkout> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Full Body Workout',
-          style: TextStyle(color: Colors.white),
-        ),
+        title: AppbarTextField(controller: workoutNameController,),
         centerTitle: true,
         backgroundColor: Theme.of(context).primaryColor,
         automaticallyImplyLeading: false,
@@ -372,7 +379,7 @@ class _FullBodyWorkoutState extends ConsumerState<FullBodyWorkout> {
                             ConstrainedBox(
                               constraints: const BoxConstraints(maxWidth: double.infinity),
                               child: ModernTextField(
-                                label: 'Reps',
+                                label: 'Reps(comma separated)',
                                 icon: Icons.repeat_rounded,
                                 keyboardType: TextInputType.number,
                                 controller: repsController,

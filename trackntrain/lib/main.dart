@@ -9,6 +9,7 @@ import 'package:trackntrain/pages/home_page.dart';
 import 'package:trackntrain/pages/profile_page.dart';
 import 'package:trackntrain/pages/create_hiit_page.dart';
 import 'package:trackntrain/pages/walk_or_run.dart';
+import 'package:trackntrain/pages/workout_logs_page.dart';
 import 'package:trackntrain/tabs/full_body_tab.dart';
 import 'package:trackntrain/tabs/hiit_tab.dart';
 import 'package:trackntrain/tabs/walking_tab.dart';
@@ -57,6 +58,11 @@ final _router = GoRouter(
           name: 'full-body',
           builder: (context, state) => const FullBodyTab(),
           routes: <RouteBase>[
+            GoRoute(
+              path: 'view-full-body-logs',
+              name: 'view-full-body-logs',
+              builder: (context, state) => const WorkoutLogsPage()
+            ),
             GoRoute(
               path:'create-full-body',
               name: 'create-full-body',
@@ -130,7 +136,6 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
-
   );
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,

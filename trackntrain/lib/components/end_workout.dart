@@ -16,6 +16,8 @@ class WorkoutCompletionDialog extends StatelessWidget {
   final VoidCallback? onRestart;
   final VoidCallback? onDone;
   final bool showRestartButton;
+  final bool showSaveButton;
+  final VoidCallback?onSave;
 
   const WorkoutCompletionDialog({
     super.key,
@@ -25,6 +27,8 @@ class WorkoutCompletionDialog extends StatelessWidget {
     this.onRestart,
     this.onDone,
     this.showRestartButton = true,
+    this.showSaveButton=true,
+    this.onSave
   });
 
   @override
@@ -145,6 +149,17 @@ class WorkoutCompletionDialog extends StatelessWidget {
                         ),
                         const SizedBox(width: 16),
                       ],
+                      if (showSaveButton) ...[
+                        Expanded(
+                          child: _buildActionButton(
+                            onTap: onSave,
+                            icon: Icons.save_rounded,
+                            label: 'Save',
+                            isPrimary: false,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                      ],
                       Expanded(
                         child: _buildActionButton(
                           onTap: onDone ?? () => context.goNamed('home'),
@@ -153,6 +168,7 @@ class WorkoutCompletionDialog extends StatelessWidget {
                           isPrimary: true,
                         ),
                       ),
+                      
                     ],
                   ),
                 ],
@@ -174,7 +190,6 @@ class WorkoutCompletionDialog extends StatelessWidget {
       return _buildSummaryItem(summaryItems.first);
     }
 
-    // If two items, place them side by side
     if (summaryItems.length == 2) {
       return Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -182,7 +197,6 @@ class WorkoutCompletionDialog extends StatelessWidget {
       );
     }
 
-    // For more than 2 items, use a wrap or grid layout
     return Wrap(
       spacing: 20,
       runSpacing: 16,
@@ -299,6 +313,8 @@ class WorkoutCompletionDialog extends StatelessWidget {
     VoidCallback? onRestart,
     VoidCallback? onDone,
     bool showRestartButton = true,
+    bool showSaveButton = true,
+    VoidCallback? onSave,
   }) {
     showDialog(
       context: context,
@@ -310,6 +326,8 @@ class WorkoutCompletionDialog extends StatelessWidget {
           onRestart: onRestart,
           onDone: onDone,
           showRestartButton: showRestartButton,
+          showSaveButton: showSaveButton,
+          onSave: onSave,
         );
       },
     );

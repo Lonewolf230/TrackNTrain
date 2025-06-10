@@ -668,9 +668,9 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  // Show height picker dialog
+  //generated sliding pickers
+
   void _showHeightPicker(BuildContext context) {
-    // Determine if we should use Cupertino style (iOS) or Material style (Android)
     final bool isIOS = Theme.of(context).platform == TargetPlatform.iOS;
     
     if (isIOS) {

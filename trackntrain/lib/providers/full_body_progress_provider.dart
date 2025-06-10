@@ -1,6 +1,10 @@
 
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:trackntrain/utils/auth_service.dart';
 
 class ExerciseProgress {
   final String exerciseName;
@@ -71,6 +75,7 @@ class WorkoutProgressState{
   final int currentExerciseIndex;
   final bool isWorkoutCompleted;
 
+
   WorkoutProgressState({
     required this.exercises,
     this.currentExerciseIndex = 0,
@@ -98,6 +103,7 @@ class WorkoutProgressState{
 
   int get totalExercises=>exercises.length;
   bool get hasNextExercise=> currentExerciseIndex < exercises.length-1;
+  List<String> get exerciseNames=>exercises.map((e)=>e.exerciseName).toList();
 
   @override
   String toString() {
@@ -203,6 +209,10 @@ final totalExercisesProvider = Provider<int>((ref) {
 
 final isWorkoutCompletedProvider = Provider<bool>((ref) {
   return ref.watch(workoutProgressProvider).isWorkoutCompleted;
+});
+
+final exerciseNamesProvider = Provider<List<String>>((ref) {
+  return ref.watch(workoutProgressProvider).exerciseNames;
 });
 
 // final workoutProgressPercentageProvider = Provider<double>((ref) {
