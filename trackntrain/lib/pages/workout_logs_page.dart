@@ -2,24 +2,27 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:trackntrain/components/prev_workout_card.dart';
 import 'package:trackntrain/utils/auth_service.dart';
 
 class WorkoutLogsPage extends StatefulWidget{
-  const WorkoutLogsPage({super.key});
-
+  const WorkoutLogsPage({super.key,required this.type});
+  final String type;
   @override
   State<WorkoutLogsPage> createState() => _WorkoutLogsPageState();
 }
 
 class _WorkoutLogsPageState extends State<WorkoutLogsPage> {
-  ScrollController _scrollController=ScrollController();
+  final ScrollController _scrollController=ScrollController();
   List<Map<String,dynamic>> workoutLogs=[];
   bool hasMoreData = true;
   bool isLoading = false;
   bool isInitialLoading = true;
   DocumentSnapshot? lastDoc;
+  IconData icon = Icons.fitness_center;
+  String workoutType='workout'; 
 
   static const int pageSize = 10; 
 
@@ -27,6 +30,7 @@ class _WorkoutLogsPageState extends State<WorkoutLogsPage> {
   void initState() {
     // TODO: implement initState
     super.initState();
+    print('WorkoutLogsPage initialized with type: ${widget.type}');
     _loadInitialData();
     _scrollController.addListener(_onScroll);
   }
@@ -53,7 +57,7 @@ class _WorkoutLogsPageState extends State<WorkoutLogsPage> {
 
     try {
       Query query=FirebaseFirestore.instance
-          .collection('userFullBodyWorkouts')
+          .collection('${widget.type}')
           .where('userId',isEqualTo: AuthService.currentUser?.uid)
           .orderBy('createdAt',descending: true)
           .limit(pageSize);
@@ -91,9 +95,9 @@ class _WorkoutLogsPageState extends State<WorkoutLogsPage> {
     });
     try {
       Query query = FirebaseFirestore.instance
-          .collection('workouts')
+          .collection('${widget.type}')
           .where('userId', isEqualTo: AuthService.currentUser?.uid)
-          .orderBy('createdAt', descending: true)
+          .orderBy('updatedAt', descending: true)
           .startAfterDocument(lastDoc!)
           .limit(pageSize);
 
@@ -137,25 +141,65 @@ class _WorkoutLogsPageState extends State<WorkoutLogsPage> {
   Widget _buildSkeletonCard(){
     return Skeletonizer(
       enabled: isInitialLoading,
-      child: PrevWorkoutCard(icon: Icons.fitness_center),
+      child: PrevWorkoutCard(icon: Icons.fitness_center,
+        workoutLog: {
+          'id': '',
+          'createdAt': Timestamp.now(),
+          'workoutName': '',
+          'duration': 0,
+          'caloriesBurned': 0,
+          'exercises': [],
+        },
+        workoutType: workoutType,
+      ),
     );
   }
 
   Widget _buildWorkoutCard(Map<String, dynamic> log) {
     return PrevWorkoutCard(
       icon: Icons.fitness_center,
+      workoutLog:log,
+      workoutType: workoutType,
     );
   }
 
   @override
   Widget build(BuildContext context) {
+
+    if(widget.type=='userHiitWorkouts'){
+      icon=FontAwesomeIcons.heartCircleBolt;
+      workoutType='HIIT';
+    }
+    else if(widget.type=='userWalkRecords'){
+      icon=FontAwesomeIcons.personWalking;
+      workoutType='Walk/Jog';
+    }
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Workout Logs'),
+        title: Text('$workoutType Logs'),
         centerTitle: true,
       ),
-      body: RefreshIndicator(onRefresh: _refreshData,
-              child: _buildBody(),)
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Colors.white,
+              Colors.grey[50]!,
+            ],
+          ),
+          border: Border.all(
+            color: const Color.fromARGB(255, 247, 2, 2).withOpacity(0.1),
+            width: 1,
+          ),
+        ),
+        padding: const EdgeInsets.all(16),
+        child: RefreshIndicator(onRefresh: _refreshData,
+                child: _buildBody(),
+        ),
+      )
     );
   }
 
@@ -165,19 +209,19 @@ class _WorkoutLogsPageState extends State<WorkoutLogsPage> {
       return ListView.builder(itemBuilder: (context,index)=>_buildSkeletonCard(),itemCount: 10,);
     }
     if (workoutLogs.isEmpty && !isLoading) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.fitness_center, size: 64, color: Colors.grey),
+            Icon(icon, size: 64, color: Colors.grey),
             SizedBox(height: 16),
             Text(
-              'No workout logs found',
+              'No $workoutType logs found',
               style: TextStyle(fontSize: 18, color: Colors.grey),
             ),
             SizedBox(height: 8),
             Text(
-              'Start tracking your workouts!',
+              'Start tracking your $workoutType!',
               style: TextStyle(color: Colors.grey),
             ),
           ],

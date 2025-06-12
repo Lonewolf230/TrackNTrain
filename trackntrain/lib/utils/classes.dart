@@ -31,22 +31,31 @@ class UserData{
 
 class FullBodyExercise{
   final String exerciseName;
-  final int set;
+  final int sets;
   final List<int> reps;
-  final List<double> weights;
+  final List<double> weightsList;
+  final String? howToPerform;
+  final String? specialConsiderations;  
+  final String avoidWhenUserHasFollowingIssues;
 
   FullBodyExercise({
     required this.exerciseName,
-    required this.set,
+    required this.sets,
     required this.reps,
-    required this.weights,
+    required this.weightsList,
+    this.howToPerform,
+    this.specialConsiderations, 
+    required this.avoidWhenUserHasFollowingIssues,
   });
   Map<String, dynamic> toMap() {
     return {
       'exerciseName': exerciseName,
-      'set': set,
+      'sets': sets,
       'reps': reps,
-      'weights': weights,
+      'weightsList': weightsList,
+      'howToPerform': howToPerform,
+      'specialConsiderations': specialConsiderations,
+      'avoidWhenUserHasFollowingIssues': avoidWhenUserHasFollowingIssues,
     };
   }
 }
@@ -73,4 +82,46 @@ class FullBodyWorkout{
     }
     return data;
   }
+}
+
+
+
+class HIITWorkout{
+  final List<String> exercises;
+  final int rounds;
+  final int restDuration;
+  final int workDuration;
+  final String? name;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
+  final String userId;
+
+  HIITWorkout({
+    required this.exercises,
+    required this.rounds,
+    required this.restDuration,
+    required this.workDuration,
+    this.name,
+    this.createdAt,
+    this.updatedAt,
+    required this.userId,
+  });
+
+  Map<String,dynamic> toFireStoreMap({isUpdate=false}){
+    Map<String,dynamic> data={
+      'exercises': exercises,
+      'rounds': rounds,
+      'restDuration': restDuration,
+      'workDuration': workDuration,
+      'name': name,
+      'updatedAt': FieldValue.serverTimestamp(),
+      'userId': userId,
+    };
+    if(!isUpdate){
+      data['createdAt']=createdAt!=null?Timestamp.fromDate(createdAt!)
+        :FieldValue.serverTimestamp();
+    }
+    return data;
+  }
+
 }

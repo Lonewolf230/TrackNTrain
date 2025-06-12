@@ -4,13 +4,24 @@ import 'package:go_router/go_router.dart';
 import 'package:trackntrain/components/appbar_text_field.dart';
 import 'package:trackntrain/components/end_workout.dart';
 import 'package:trackntrain/components/modern_text_field.dart';
+import 'package:trackntrain/components/previous_workout_display.dart';
 import 'package:trackntrain/components/stop_without_finishing.dart';
 import 'package:trackntrain/providers/full_body_progress_provider.dart';
 import 'package:trackntrain/providers/workout_providers.dart';
 import 'package:trackntrain/utils/db_util_funcs.dart';
 
 class FullBodyWorkout extends ConsumerStatefulWidget {
-  const FullBodyWorkout({super.key});
+  final String mode;
+  final List<Map<String, dynamic>>? previousWorkoutData;
+  final String? workoutName;
+  final String? workoutId;
+  const FullBodyWorkout({
+    super.key,
+    this.mode = 'new',
+    this.previousWorkoutData,
+    this.workoutName,
+    this.workoutId,
+  });
 
   @override
   ConsumerState<FullBodyWorkout> createState() => _FullBodyWorkoutState();
@@ -22,24 +33,31 @@ class _FullBodyWorkoutState extends ConsumerState<FullBodyWorkout> {
   final TextEditingController maxWeightController = TextEditingController();
   final TextEditingController workoutNameController = TextEditingController();
 
+  bool get isReuseMode => widget.mode == 'reuse';
+
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final selectedExercises = ref.read(selectedExercisesListProvider);
-      if (selectedExercises.isNotEmpty) {
+      if (isReuseMode && widget.previousWorkoutData != null) {
         ref
             .read(workoutProgressProvider.notifier)
-            .initializeWorkout(selectedExercises);
+            .initializeReusedWorkout(widget.previousWorkoutData!);
+        _updateTextFieldsForCurrentExercise();
+      } else {
+        final selectedExercises = ref.read(selectedExercisesListProvider);
+        if (selectedExercises.isNotEmpty) {
+          ref
+              .read(workoutProgressProvider.notifier)
+              .initializeNewWorkout(selectedExercises);
+        }
       }
     });
   }
 
   @override
   void dispose() {
-    // TODO: implement dispose
     setsController.dispose();
     repsController.dispose();
     maxWeightController.dispose();
@@ -47,16 +65,33 @@ class _FullBodyWorkoutState extends ConsumerState<FullBodyWorkout> {
     super.dispose();
   }
 
+  void _updateTextFieldsForCurrentExercise() {
+    final currentExercise = ref.read(currentExerciseProvider);
+    if (currentExercise != null && isReuseMode) {
+      setsController.text = currentExercise.sets.toString();
+      repsController.text = currentExercise.reps.join(',');
+      maxWeightController.text = currentExercise.weightsList.join(',');
+    } else if (!isReuseMode) {
+      setsController.clear();
+      repsController.clear();
+      maxWeightController.clear();
+    }
+  }
+
   void _updateProgress() {
+    if (isReuseMode) return;
+
     final sets = int.tryParse(setsController.text) ?? 0;
-    final reps = repsController.text
-                          .split(',')
-                          .map((e) => int.tryParse(e.trim()) ?? 0)
-                          .toList();
-    final weightList = maxWeightController.text
-                         .split(',')
-                         .map((e)=>double.tryParse(e.trim())?? 0.0)
-                         .toList();
+    final reps =
+        repsController.text
+            .split(',')
+            .map((e) => int.tryParse(e.trim()) ?? 0)
+            .toList();
+    final weightList =
+        maxWeightController.text
+            .split(',')
+            .map((e) => double.tryParse(e.trim()) ?? 0.0)
+            .toList();
 
     ref
         .read(workoutProgressProvider.notifier)
@@ -65,15 +100,19 @@ class _FullBodyWorkoutState extends ConsumerState<FullBodyWorkout> {
 
   void _completeExercise(int currentIndex) {
     final sets = int.tryParse(setsController.text) ?? 0;
-    final reps = repsController.text
-                          .split(',')
-                          .map((e) => int.tryParse(e.trim()) ?? 0)
-                          .toList();
-    final weightsList=maxWeightController.text
-                         .split(',')
-                         .map((e)=>double.tryParse(e.trim())?? 0.0)
-                         .toList();
-      if(reps.length != sets) {
+    final reps =
+        repsController.text
+            .split(',')
+            .map((e) => int.tryParse(e.trim()) ?? 0)
+            .toList();
+    final weightsList =
+        maxWeightController.text
+            .split(',')
+            .map((e) => double.tryParse(e.trim()) ?? 0.0)
+            .toList();
+
+    if (!isReuseMode) {
+      if (reps.length != sets) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Number of reps must match number of sets'),
@@ -84,7 +123,7 @@ class _FullBodyWorkoutState extends ConsumerState<FullBodyWorkout> {
         return;
       }
 
-      if(weightsList.length != sets) {
+      if (weightsList.length != sets) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Number of weights must match number of sets'),
@@ -94,6 +133,18 @@ class _FullBodyWorkoutState extends ConsumerState<FullBodyWorkout> {
         );
         return;
       }
+
+      if (sets <= 0 || reps.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please enter valid sets and reps'),
+            duration: Duration(seconds: 2),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+    }
 
     if (currentIndex >= ref.read(totalExercisesProvider) - 1) {
       print('Exercise List :${ref.read(exerciseNamesProvider)}');
@@ -105,21 +156,41 @@ class _FullBodyWorkoutState extends ConsumerState<FullBodyWorkout> {
             label: 'Exercises',
           ),
         ],
-        onSave: ()async{
-          setsController.clear();
-          repsController.clear();
-          maxWeightController.clear();
-          await saveFullBody(ref.read(workoutProgressProvider).exercises, context,name: workoutNameController.text.isNotEmpty ? workoutNameController.text : null);    
-          if(mounted) context.goNamed('home');
+        onDone: () async {
+          if (isReuseMode) {
+            ref.read(workoutProvider.notifier).clearSelection();
+            await changeUpdatedAt(widget.workoutId!,'userFullBodyWorkouts');
+          }
+          if (!isReuseMode) {
+            setsController.clear();
+            repsController.clear();
+            maxWeightController.clear();
+            await saveFullBody(
+              ref.read(workoutProgressProvider).exercises,
+              context,
+              name:
+                  workoutNameController.text.isNotEmpty
+                      ? workoutNameController.text
+                      : null,
+            );
+          }
+          if (mounted) context.goNamed('home');
         },
         onRestart: () {
           Navigator.of(context).pop();
-          setsController.clear();
-          repsController.clear();
-          maxWeightController.clear();
-          ref
-              .read(workoutProgressProvider.notifier)
-              .initializeWorkout(ref.read(selectedExercisesListProvider));
+          if (!isReuseMode) {
+            setsController.clear();
+            repsController.clear();
+            maxWeightController.clear();
+            ref
+                .read(workoutProgressProvider.notifier)
+                .initializeNewWorkout(ref.read(selectedExercisesListProvider));
+          } else {
+            ref
+                .read(workoutProgressProvider.notifier)
+                .initializeReusedWorkout(widget.previousWorkoutData!);
+            _updateTextFieldsForCurrentExercise();
+          }
         },
       );
       print('Workout completed');
@@ -127,8 +198,7 @@ class _FullBodyWorkoutState extends ConsumerState<FullBodyWorkout> {
       return;
     }
 
-    if (sets > 0 && reps.isNotEmpty) {
-
+    if (!isReuseMode) {
       ref
           .read(workoutProgressProvider.notifier)
           .completeCurrentExercise(
@@ -140,13 +210,10 @@ class _FullBodyWorkoutState extends ConsumerState<FullBodyWorkout> {
       repsController.clear();
       maxWeightController.clear();
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter valid sets and reps'),
-          duration: Duration(seconds: 2),
-          backgroundColor: Colors.red,
-        ),
-      );
+      ref.read(workoutProgressProvider.notifier).nextExercise();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _updateTextFieldsForCurrentExercise();
+      });
     }
   }
 
@@ -156,12 +223,22 @@ class _FullBodyWorkoutState extends ConsumerState<FullBodyWorkout> {
     final currentIndex = ref.watch(currentExerciseIndexProvider);
     final totalExercises = ref.watch(totalExercisesProvider);
     final isWorkoutCompleted = ref.watch(isWorkoutCompletedProvider);
-    
+
+    ref.listen(currentExerciseProvider, (previous, next) {
+      if (isReuseMode && next != null && previous != next) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _updateTextFieldsForCurrentExercise();
+        });
+      }
+    });
+
     if (currentExercise == null) {
       return Scaffold(
         appBar: AppBar(
-          title: Text('Full Body Workout',
-              style: TextStyle(color: Colors.white)),
+          title: Text(
+            'Full Body Workout',
+            style: TextStyle(color: Colors.white),
+          ),
           centerTitle: true,
           backgroundColor: Theme.of(context).primaryColor,
           automaticallyImplyLeading: false,
@@ -184,7 +261,10 @@ class _FullBodyWorkoutState extends ConsumerState<FullBodyWorkout> {
 
     return Scaffold(
       appBar: AppBar(
-        title: AppbarTextField(controller: workoutNameController,),
+        title:
+            isReuseMode
+                ? Text('Reusing Workout', style: TextStyle(color: Colors.white))
+                : AppbarTextField(controller: workoutNameController),
         centerTitle: true,
         backgroundColor: Theme.of(context).primaryColor,
         automaticallyImplyLeading: false,
@@ -196,7 +276,10 @@ class _FullBodyWorkoutState extends ConsumerState<FullBodyWorkout> {
           child: Column(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 12,
+                  horizontal: 16,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
@@ -220,8 +303,18 @@ class _FullBodyWorkoutState extends ConsumerState<FullBodyWorkout> {
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                           colors: [
-                            const Color.fromARGB(255, 247, 2, 2).withOpacity(0.2),
-                            const Color.fromARGB(255, 247, 2, 2).withOpacity(0.1),
+                            const Color.fromARGB(
+                              255,
+                              247,
+                              2,
+                              2,
+                            ).withOpacity(0.2),
+                            const Color.fromARGB(
+                              255,
+                              247,
+                              2,
+                              2,
+                            ).withOpacity(0.1),
                           ],
                         ),
                       ),
@@ -263,11 +356,17 @@ class _FullBodyWorkoutState extends ConsumerState<FullBodyWorkout> {
                           ),
                           const Text(
                             ' / ',
-                            style: TextStyle(fontSize: 18, color: Colors.black54),
+                            style: TextStyle(
+                              fontSize: 18,
+                              color: Colors.black54,
+                            ),
                           ),
                           Text(
                             '$totalExercises',
-                            style: TextStyle(fontSize: 18, color: Colors.black54),
+                            style: TextStyle(
+                              fontSize: 18,
+                              color: Colors.black54,
+                            ),
                           ),
                         ],
                       ),
@@ -278,7 +377,6 @@ class _FullBodyWorkoutState extends ConsumerState<FullBodyWorkout> {
               const SizedBox(height: 16),
               Expanded(
                 child: SingleChildScrollView(
-                  
                   child: Container(
                     padding: const EdgeInsets.symmetric(
                       vertical: 12,
@@ -342,74 +440,92 @@ class _FullBodyWorkoutState extends ConsumerState<FullBodyWorkout> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          currentExercise.avoidWhenUserHasFollowingIssues.isNotEmpty
+                          currentExercise
+                                  .avoidWhenUserHasFollowingIssues
+                                  .isNotEmpty
                               ? currentExercise.avoidWhenUserHasFollowingIssues
                               : 'No specific conditions to avoid',
                           style: TextStyle(fontSize: 16, color: Colors.grey),
                         ),
                         const SizedBox(height: 30),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Padding(
-                              padding: EdgeInsets.only(bottom: 16),
-                              child: Text(
-                                'WORKOUT LOG',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  letterSpacing: 1.2,
-                                  color: Color.fromARGB(255, 247, 2, 2),
+
+                        isReuseMode
+                            ? PreviousWorkoutDisplay(
+                              sets: currentExercise.sets,
+                              reps: currentExercise.reps,
+                              weights: currentExercise.weightsList,
+                            )
+                            : Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Padding(
+                                  padding: EdgeInsets.only(bottom: 16),
+                                  child: Text(
+                                    'WORKOUT LOG',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      letterSpacing: 1.2,
+                                      color: Color.fromARGB(255, 247, 2, 2),
+                                    ),
+                                  ),
                                 ),
-                              ),
+
+                                ConstrainedBox(
+                                  constraints: const BoxConstraints(
+                                    maxWidth: double.infinity,
+                                  ),
+                                  child: ModernTextField(
+                                    label: 'Sets',
+                                    icon: Icons.format_list_numbered_rounded,
+                                    keyboardType: TextInputType.number,
+                                    controller: setsController,
+                                    onChanged: (_) => _updateProgress(),
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+
+                                ConstrainedBox(
+                                  constraints: const BoxConstraints(
+                                    maxWidth: double.infinity,
+                                  ),
+                                  child: ModernTextField(
+                                    label: 'Reps(comma separated)',
+                                    icon: Icons.repeat_rounded,
+                                    keyboardType: TextInputType.number,
+                                    controller: repsController,
+                                    onChanged: (_) => _updateProgress(),
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+
+                                ConstrainedBox(
+                                  constraints: const BoxConstraints(
+                                    maxWidth: double.infinity,
+                                  ),
+                                  child: ModernTextField(
+                                    label: 'Weights per set (comma separated)',
+                                    icon: Icons.fitness_center_rounded,
+                                    keyboardType: TextInputType.number,
+                                    suffixText: 'kg',
+                                    controller: maxWeightController,
+                                    onChanged: (_) => _updateProgress(),
+                                  ),
+                                ),
+                              ],
                             ),
-                  
-                            ConstrainedBox(
-                              constraints: const BoxConstraints(maxWidth: double.infinity),
-                              child: ModernTextField(
-                                label: 'Sets',
-                                icon: Icons.format_list_numbered_rounded,
-                                keyboardType: TextInputType.number,
-                                controller: setsController,
-                                onChanged: (_) => _updateProgress(),
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                  
-                            ConstrainedBox(
-                              constraints: const BoxConstraints(maxWidth: double.infinity),
-                              child: ModernTextField(
-                                label: 'Reps(comma separated)',
-                                icon: Icons.repeat_rounded,
-                                keyboardType: TextInputType.number,
-                                controller: repsController,
-                                onChanged: (_) => _updateProgress(),
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                  
-                            ConstrainedBox(
-                              constraints: const BoxConstraints(maxWidth: double.infinity),
-                              child: ModernTextField(
-                                label: 'Weights per set (comma separated)',
-                                icon: Icons.fitness_center_rounded,
-                                keyboardType: TextInputType.number,
-                                suffixText: 'kg',
-                                controller: maxWeightController,
-                                onChanged: (_) => _updateProgress(),
-                              ),
-                            ),
-                          ],
-                        ),
                       ],
                     ),
                   ),
                 ),
               ),
-        
+
               const SizedBox(height: 16),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 20,
+                ),
                 child: Row(
                   children: [
                     Expanded(
@@ -446,7 +562,7 @@ class _FullBodyWorkoutState extends ConsumerState<FullBodyWorkout> {
                         ),
                       ),
                     ),
-        
+
                     const SizedBox(width: 12),
                     Expanded(
                       child: ElevatedButton(

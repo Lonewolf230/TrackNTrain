@@ -162,6 +162,16 @@ class FullBodyTab extends StatelessWidget {
                         color: Colors.grey[600],
                         fontFamily: 'Poppins',
                       ),
+                    
+                    ),
+                    Text(
+                      'Logs will be auto deleted after 30 days.',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.red,
+                        fontFamily: 'Poppins',
+                      ),
                     ),
                     const SizedBox(height: 20),
                     Align(
@@ -183,7 +193,7 @@ class FullBodyTab extends StatelessWidget {
                           ),
                         ),
                         onPressed: () {
-                          context.goNamed('view-full-body-logs');
+                          context.goNamed('view-workout-logs',extra: 'userFullBodyWorkouts');
                         },
                         label: Text(
                           'View Logs',
@@ -198,7 +208,6 @@ class FullBodyTab extends StatelessWidget {
 
               const SizedBox(height: 32),
 
-              // Action Buttons Section
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),

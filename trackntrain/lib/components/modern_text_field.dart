@@ -6,6 +6,7 @@ class ModernTextField extends StatelessWidget {
   final TextInputType keyboardType;
   final String? suffixText;
   final TextEditingController? controller;
+  // final bool readOnly;
   final void Function(String)? onChanged;
 
   const ModernTextField({
@@ -15,14 +16,17 @@ class ModernTextField extends StatelessWidget {
     required this.keyboardType,
     this.suffixText,
     required this.controller,
-    required this.onChanged,
+    this.onChanged,
+    // required this.readOnly,
   });
 
   @override
   Widget build(BuildContext context) {
+
     return TextField(
+      // readOnly: readOnly,
       controller: controller,
-      onChanged: onChanged,
+      onChanged:onChanged,
       keyboardType: keyboardType,
       style: const TextStyle(fontSize: 16),
       decoration: InputDecoration(

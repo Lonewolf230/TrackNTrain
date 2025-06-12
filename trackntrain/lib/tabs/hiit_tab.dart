@@ -128,7 +128,7 @@ class HiitTab extends StatelessWidget {
                         ),
                         const SizedBox(width: 12),
                         Text(
-                          'Previous Workouts',
+                          'Workout Logs',
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
@@ -139,17 +139,52 @@ class HiitTab extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 20),
-                    ListView(
-                      addAutomaticKeepAlives: true,
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      children: const [
-                        PrevWorkoutCard(icon: FontAwesomeIcons.heartCircleBolt,),
-                        SizedBox(height: 12),
-                        PrevWorkoutCard(icon: FontAwesomeIcons.heartCircleBolt,),
-                        SizedBox(height: 12),
-                        PrevWorkoutCard(icon: FontAwesomeIcons.heartCircleBolt,),
-                      ],
+                    Text(
+                      'View your previous workouts here. You can track your progress and see how you\'ve improved over time. You can also directly start a new workout based on your previous logs.',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.grey[600],
+                        fontFamily: 'Poppins',
+                      ),
+                    
+                    ),
+                    Text(
+                      'Logs will be auto deleted after 30 days.',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.red,
+                        fontFamily: 'Poppins',
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Align(
+                      alignment: Alignment.bottomRight,
+                      child: TextButton.icon(
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.red.withOpacity(0.1),
+                          backgroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 16,
+                            horizontal: 24,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            side: BorderSide(
+                              color: Colors.red,
+                              width: 2,
+                            ),
+                          ),
+                        ),
+                        onPressed: () {
+                          context.goNamed('view-workout-logs',extra: 'userHiitWorkouts');
+                        },
+                        label: Text(
+                          'View Logs',
+                          style: TextStyle(color: Colors.red),
+                        ),
+                        icon: Icon(Icons.arrow_circle_right_rounded,color: Colors.red,),
+                      ),
                     ),
                   ],
                 ),

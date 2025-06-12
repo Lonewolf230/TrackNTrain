@@ -104,6 +104,13 @@ class WorkoutNotifier extends StateNotifier<WorkoutState> {
     );
   }
 
+  void insertWorkoutData(List<Map<String,dynamic>> workout){
+    final selectedExercisesList=workout;
+    state=state.copyWith(
+      selectedExercisesList: selectedExercisesList
+    );
+  }
+
   void toggleExercise(Map<String, dynamic> exercise, bool isSelected) {
     final exerciseName = exercise['exerciseName'];
     final updatedSelectedExercises = Map<String, bool>.from(state.selectedExercises);
