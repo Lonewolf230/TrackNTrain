@@ -7,6 +7,7 @@ import 'package:trackntrain/components/stop_without_finishing.dart';
 import 'package:trackntrain/utils/auth_service.dart';
 import 'package:trackntrain/utils/classes.dart';
 import 'package:trackntrain/utils/db_util_funcs.dart';
+import 'package:trackntrain/utils/misc.dart';
 
 class HiitWorkout extends StatefulWidget {
   const HiitWorkout({
@@ -93,6 +94,7 @@ class _HiitWorkoutState extends State<HiitWorkout>
         if (_remainingTime > 0) {
           _remainingTime--;
           _animateProgress();
+          if(_remainingTime<=3) AudioManager.playBeep();
         } else {
           timer.cancel();
           _startWorkPhase();
@@ -119,6 +121,7 @@ class _HiitWorkoutState extends State<HiitWorkout>
         if (_remainingTime > 0) {
           _remainingTime--;
           _animateProgress();
+          if(_remainingTime<=3) AudioManager.playBeep();
         } else {
           timer.cancel();
 
@@ -157,6 +160,7 @@ class _HiitWorkoutState extends State<HiitWorkout>
         if (_remainingTime > 0) {
           _remainingTime--;
           _animateProgress();
+          if(_remainingTime<=3) AudioManager.playBeep();
         } else {
           timer.cancel();
           _startGetReadyPhase();

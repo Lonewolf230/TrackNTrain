@@ -149,7 +149,7 @@ class HiitTab extends StatelessWidget {
                     
                     ),
                     Text(
-                      'Logs will be auto deleted after 30 days.',
+                      'Logs will be auto deleted after 90 days.',
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,

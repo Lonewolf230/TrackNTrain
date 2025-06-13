@@ -125,3 +125,48 @@ class HIITWorkout{
   }
 
 }
+
+
+class UserMetaLogs{
+  final String userId;
+  final bool? hasWorkedOut;
+  final int? weight;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
+  UserMetaLogs({
+    required this.userId,
+    this.hasWorkedOut=false,
+    this.weight,
+    this.createdAt,
+    this.updatedAt,
+  });
+
+}
+
+class WalkData{
+  final String userId;
+  final double distance;
+  final int elapsedTime;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
+  final double averageSpeed; 
+  WalkData({
+    required this.userId,
+    required this.distance,
+    required this.averageSpeed,
+    required this.elapsedTime,
+    this.createdAt,
+    this.updatedAt,
+  });
+
+  Map<String,dynamic> toFireStoreMap(){
+    return {
+      'userId': userId,
+      'distance': distance,
+      'averageSpeed': averageSpeed,
+      'elapsedTime': elapsedTime,
+      'createdAt': createdAt != null ? Timestamp.fromDate(createdAt!) : FieldValue.serverTimestamp(),
+      'updatedAt': updatedAt != null ? Timestamp.fromDate(updatedAt!) : FieldValue.serverTimestamp(),
+    };
+  }
+}

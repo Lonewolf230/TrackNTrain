@@ -11,6 +11,7 @@ void showWorkoutDialog(BuildContext context, Map<String, dynamic> workoutLog) {
     'sessionId',
     'deviceId',
     'name',
+    'routePoints'
   ];
 
   Map<String, dynamic> filteredData = Map.from(workoutLog);
@@ -487,7 +488,24 @@ Widget _buildSimpleExercisesSection(List exercises) {
   );
 }
 
+String secondsToHoursMinutesSeconds(int seconds, {bool showSeconds = true}) {
+  int hours = seconds ~/ 3600;
+  int minutes = (seconds % 3600) ~/ 60;
+  int secs = seconds % 60;
 
+  String result = '';
+  if (hours > 0) {
+    result += '$hours hour${hours > 1 ? 's' : ''} ';
+  }
+  if (minutes > 0) {
+    result += '$minutes minute${minutes > 1 ? 's' : ''} ';
+  }
+  if (showSeconds && secs > 0) {
+    result += '$secs second${secs > 1 ? 's' : ''}';
+  }
+
+  return result.trim();
+}
 
 Widget _buildOtherDataSection(Map<String, dynamic> data) {
   if (data.isEmpty) return const SizedBox.shrink();
@@ -496,7 +514,22 @@ Widget _buildOtherDataSection(Map<String, dynamic> data) {
     if (key.toLowerCase().toString()=='restduration' || key.toLowerCase().toString()=='workduration') {
       data[key] = _formatValue('${data[key]} seconds');
     }
+
+    if(key.toLowerCase().toString()=='averagespeed'){
+      data[key] = _formatValue('${data[key]} km/h');
+    }
+
+    if(key.toLowerCase().toString()=='distance' || key.toLowerCase().toString()=='totaldistance'){
+      data[key] = _formatValue('${data[key]} km');
+    }
+
+    if(key.toLowerCase().toString()=='elapsedtime' || key.toLowerCase().toString()=='totalduration'){
+      data[key] = _formatValue(secondsToHoursMinutesSeconds(data[key], showSeconds: false));
+    }
+
   }
+
+
 
   return Column(
     crossAxisAlignment: CrossAxisAlignment.start,

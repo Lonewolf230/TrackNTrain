@@ -9,14 +9,14 @@ class MealLoggerSheet extends StatefulWidget {
 
 class _MealLoggerSheetState extends State<MealLoggerSheet> {
   final TextEditingController _mealNameController = TextEditingController();
-  final TextEditingController _caloriesController = TextEditingController();
+  final TextEditingController _descController = TextEditingController();
   String _selectedMealType = 'Breakfast';
   final List<String> _mealTypes = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
   
   @override
   void dispose() {
     _mealNameController.dispose();
-    _caloriesController.dispose();
+    _descController.dispose();
     super.dispose();
   }
 
@@ -119,10 +119,10 @@ class _MealLoggerSheetState extends State<MealLoggerSheet> {
             
             // Calories
             TextField(
-              controller: _caloriesController,
-              keyboardType: TextInputType.number,
+              controller: _descController,
+              keyboardType: TextInputType.multiline,
               decoration: InputDecoration(
-                    labelText: 'Calories (approx)',
+                    labelText: 'Description',
                     labelStyle: TextStyle(
                       color: Colors.grey[600],
                       fontSize: 14,
@@ -155,14 +155,14 @@ class _MealLoggerSheetState extends State<MealLoggerSheet> {
                 onPressed: () {
                   // Save meal logic
                   if (_mealNameController.text.isNotEmpty && 
-                      _caloriesController.text.isNotEmpty) {
+                      _descController.text.isNotEmpty) {
                     
                     // Save meal
                     final String mealName = _mealNameController.text;
-                    final int? calories = int.tryParse(_caloriesController.text);
+                    final String desc = _descController.text;
                     
-                    if (calories != null) {
-                      print('Meal saved: $_selectedMealType - $mealName ($calories calories)');
+                    if (desc != null) {
+                      print('Meal saved: $_selectedMealType - $mealName ($desc)');
                       // TODO: Add logic to save meal to database
                       
                       // Show confirmation
@@ -184,3 +184,5 @@ class _MealLoggerSheetState extends State<MealLoggerSheet> {
     );
   }
 }
+
+

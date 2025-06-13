@@ -13,10 +13,15 @@ class PrevWorkoutCard extends ConsumerWidget {
     required this.icon,
     required this.workoutLog,
     required this.workoutType,
+    this.onDelete,
+    this.onUndo
   });
   final IconData icon;
   final Map<String, dynamic> workoutLog;
   final String workoutType;
+  final VoidCallback? onDelete;
+  final VoidCallback? onUndo;
+
   String formatTimestamp(Timestamp timestamp) {
     DateTime dateTime = timestamp.toDate();
     return DateFormat('dd/MM/yyyy').format(dateTime);
@@ -43,6 +48,54 @@ class PrevWorkoutCard extends ConsumerWidget {
     print('Finished nav');
   }
 
+  void _handleDelete(BuildContext context){
+    final workoutData=Map<String,dynamic>.from(workoutLog);
+    final workoutId=workoutLog['id'];
+
+    onDelete?.call();
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: Theme.of(context).primaryColor,
+        content: Text('${workoutLog['name'] ?? 'Workout'} deleted',style: const TextStyle(fontWeight: FontWeight.bold,fontSize: 16),),
+        duration: const Duration(seconds: 4),
+        action: SnackBarAction(
+          label: 'Undo', 
+          backgroundColor: Colors.white,
+          textColor: Theme.of(context).primaryColor,
+          onPressed: (){
+            onUndo?.call();
+          }),
+      )
+    ).closed.then((reason){
+      if(reason!=SnackBarClosedReason.action){
+        _permanentlyDelete(workoutId, context);
+      }
+    });
+  }
+
+  void _permanentlyDelete(String workoutId,BuildContext context){
+    try{
+      String collection='';
+      if(workoutType=='userFullBodyWorkouts'){
+        collection='userFullBodyWorkouts';
+      }
+      else if(workoutType=='userHiitWorkouts'){
+        collection='userHiitWorkouts';
+      }
+      else if(workoutType=='userWalkRecords'){
+        collection='userWalkRecords';
+      }
+      if(collection.isNotEmpty){
+        deleteDoc(workoutId, collection, context);
+      }
+    }
+    catch(e){
+      print('Error deleting workout: $e');
+
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Dismissible(
@@ -63,18 +116,7 @@ class PrevWorkoutCard extends ConsumerWidget {
           size: 30,
         ),
       ),
-      onDismissed: (direction){
-        try {
-          if(workoutType=='userFullBodyWorkouts'){
-            deleteDoc(workoutLog['id'], 'userFullBodyWorkouts', context);
-          }
-          else if(workoutType=='userHiitWorkouts'){
-            deleteDoc(workoutLog['id'], 'userHiitWorkouts', context);
-          }
-        } catch (e) {
-          
-        }
-      },
+      onDismissed: (direction)=>_handleDelete(context),
       child: InkWell(
         onTap: () {
           print('Workout Log tapped');

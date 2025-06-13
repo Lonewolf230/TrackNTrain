@@ -141,7 +141,7 @@ class WalkingTab extends StatelessWidget{
                     ),
                     const SizedBox(height: 20),
                     Text(
-                      'View your previous walk and jog logs here. You can track your progress and see how you\'ve improved over time. You can also directly start a new walk/jog based on your previous logs.',
+                      'View your previous walk and jog logs here. You can track your progress and see how you\'ve improved over time.',
                       style: TextStyle(
                         fontSize: 16,
                         color: Colors.grey[600],
@@ -150,7 +150,7 @@ class WalkingTab extends StatelessWidget{
                     
                     ),
                     Text(
-                      'Logs will be auto deleted after 30 days.',
+                      'Logs will be auto deleted after 90 days.',
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,

@@ -291,6 +291,7 @@ class WorkoutCompletionDialog extends StatelessWidget {
     VoidCallback? onRestart,
     VoidCallback? onDone,
     bool showRestartButton = true,
+    VoidCallback? onClose,
   }) {
     showDialog(
       context: context,
@@ -304,6 +305,10 @@ class WorkoutCompletionDialog extends StatelessWidget {
           showRestartButton: showRestartButton,
         );
       },
-    );
+    ).then((result){
+      if(result == null && onClose != null) {
+        onClose();
+      }
+    });
   }
 }

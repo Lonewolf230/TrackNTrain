@@ -17,6 +17,7 @@ class WorkoutLogsPage extends StatefulWidget{
 class _WorkoutLogsPageState extends State<WorkoutLogsPage> {
   final ScrollController _scrollController=ScrollController();
   List<Map<String,dynamic>> workoutLogs=[];
+  List<Map<String,dynamic>> deletedWorkouts=[];
   bool hasMoreData = true;
   bool isLoading = false;
   bool isInitialLoading = true;
@@ -138,6 +139,30 @@ class _WorkoutLogsPageState extends State<WorkoutLogsPage> {
     await _loadInitialData();
   }
 
+  void _deleteWorkout(String workoutId){
+    setState((){
+      final index=workoutLogs.indexWhere((workout)=>workout['id']==workoutId);
+      if(index!=-1){
+        final deletedWorkout=workoutLogs.removeAt(index);
+        deletedWorkouts.add(deletedWorkout);
+      }
+    });
+  }
+
+  void _undoDelete(String workoutId){
+    setState((){
+      final index=deletedWorkouts.indexWhere((workout)=>workout['id']==workoutId);
+      if(index!=-1){
+        final restoredWorkout=deletedWorkouts.removeAt(index);
+        workoutLogs.insert(0,restoredWorkout);
+
+        workoutLogs.sort((a, b) {
+          return (b['createdAt'] as Timestamp).compareTo(a['createdAt'] as Timestamp);
+        });
+      }
+    });
+  }
+
   Widget _buildSkeletonCard(){
     return Skeletonizer(
       enabled: isInitialLoading,
@@ -159,7 +184,9 @@ class _WorkoutLogsPageState extends State<WorkoutLogsPage> {
     return PrevWorkoutCard(
       icon: Icons.fitness_center,
       workoutLog:log,
-      workoutType: workoutType,
+      workoutType: widget.type,
+      onDelete:()=>_deleteWorkout(log['id']),
+      onUndo:()=>_undoDelete(log['id'])
     );
   }
 

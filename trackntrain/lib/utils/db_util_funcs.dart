@@ -114,3 +114,22 @@ Future<void> deleteDoc(String docId,String collectionName,BuildContext context)a
   }
 }
 
+Future<void> createWalk(BuildContext context,WalkData walkData)async {
+  try {
+    DocumentReference doc=FirebaseFirestore.instance
+        .collection('userWalkRecords')
+        .doc();
+    await doc.set(
+      walkData.toFireStoreMap(),
+      SetOptions(merge: true),
+    );
+    print('Walk data saved successfully with ID: ${doc.id}');
+  } catch (e) {
+    print('Error saving walk data: $e');
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error saving walk data: $e')),
+      );
+    }
+  }
+}
