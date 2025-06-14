@@ -34,28 +34,43 @@ export const metaLogCreation = onSchedule("0 0 * * *", async (event)=>{
     for (const user of users) {
       try {
         const uid:string=user.uid;
-        const today=new Date().toISOString().split("T")[0];
-        const docRef=admin.firestore()
+        const today:string=new Date().toISOString().split("T")[0];
+        const docRef : admin.firestore.DocumentReference  =admin.firestore()
           .collection("userMetaLogs")
           .doc(`${uid}_${today}`);
+        const docSnap : admin.firestore.DocumentSnapshot =await docRef.get();
+        if (docSnap.exists) {
+          logger.info(`Meta log for user ${uid} already exists for today`, {structuredData: true});
+          continue; 
+        }
 
+        const personalDoc : admin.firestore.DocumentReference =admin.firestore().collection("users").doc(uid);
+        const personalDocSnap : admin.firestore.DocumentSnapshot =await personalDoc.get();
+        let weight : number;
+        if(!personalDocSnap.exists) {
+          weight=0;
+        }
+        else{
+          weight=personalDocSnap.get("weight");
+        }
 
         batch.set(docRef, {
           userId: uid,
           date: today,
           createdAt: admin.firestore.Timestamp.now(),
           hasWorkedOut: false,
-          weightLog: null,
+          mood:null,
+          sleep:0,
+          weight,
         });
 
-        await batch.commit();
-        logger.info(`Meta log created for user: ${uid}`,
-          {structuredData: true});
       } catch (error) {
         logger.error(`Error creating meta log for user: 
             ${user.uid}`, {error});
       }
     }
+    await batch.commit();
+    logger.info("All meta logs created successfully", {structuredData: true});
   } catch (error) {
     logger.error("Error listing users:", {error});
   }
@@ -73,15 +88,15 @@ export const metaLogSpotCreation=onRequest(async (request, response) => {
   const date = new Date().toISOString().split("T")[0];
 
   try {
-    const docRef = admin.firestore().collection("userMetaLogs")
+    const docRef : admin.firestore.DocumentReference = admin.firestore().collection("userMetaLogs")
       .doc(`${userId}_${date}`);
     await docRef.set({
       userId,
       date,
       createdAt: admin.firestore.Timestamp.now(),
       hasWorkedOut: false,
-      mealLogs: [],
-      weightLog: null,
+      weight: 0,
+      mood: null,
     });
     response.status(201).send("Meta log created");
   } catch (error) {
@@ -90,7 +105,7 @@ export const metaLogSpotCreation=onRequest(async (request, response) => {
   }
 });
 
-export const cleanUp=onSchedule("0 0 1 * *",async(event)=>{
+export const cleanUp=onSchedule("0 0 * * *",async(event)=>{
     logger.info("Scheduled cleanup function triggered", {event});
     try{
         await cleanUpFullBodyLogs();
@@ -110,7 +125,7 @@ const cleanUpFullBodyLogs=async()=>{
         const ninetyDaysAgo = new Date(today);
         ninetyDaysAgo.setDate(today.getDate() - 90);
         
-        const snapshot = await admin.firestore()
+        const snapshot : admin.firestore.QuerySnapshot= await admin.firestore()
             .collection("userFullBodyWorkouts")
             .where("createdAt", "<=", ninetyDaysAgo)
             .get();
@@ -139,7 +154,7 @@ const cleanUpHiitLogs=async()=>{
         const ninetyDaysAgo = new Date(today);
         ninetyDaysAgo.setDate(today.getDate() - 90);
         
-        const snapshot = await admin.firestore()
+        const snapshot : admin.firestore.QuerySnapshot = await admin.firestore()
             .collection("userHiitWorkouts")
             .where("createdAt", "<=", ninetyDaysAgo)
             .get();
@@ -164,11 +179,11 @@ const cleanUpHiitLogs=async()=>{
 
 const cleanUpWalkLogs=async()=>{
     try {
-        const today = new Date();
-        const ninetyDaysAgo = new Date(today);
+        const today : Date = new Date();
+        const ninetyDaysAgo : Date = new Date(today);
         ninetyDaysAgo.setDate(today.getDate() - 90);
-        
-        const snapshot = await admin.firestore()
+
+        const snapshot : admin.firestore.QuerySnapshot = await admin.firestore()
             .collection("userWalkRecords")
             .where("createdAt", "<=", ninetyDaysAgo)
             .get();
@@ -193,11 +208,11 @@ const cleanUpWalkLogs=async()=>{
 
 const cleanUpMealLogs=async()=>{
     try {
-        const today = new Date();
-        const ninetyDaysAgo = new Date(today);
-        ninetyDaysAgo.setDate(today.getDate() - 31);
-        
-        const snapshot = await admin.firestore()
+        const today : Date = new Date();
+        const ninetyDaysAgo : Date = new Date(today);
+        ninetyDaysAgo.setDate(today.getDate() - 90);
+
+        const snapshot : admin.firestore.QuerySnapshot = await admin.firestore()
             .collection("userMealLogs")
             .where("createdAt", "<=", ninetyDaysAgo)
             .get();

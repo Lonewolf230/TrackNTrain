@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:trackntrain/providers/full_body_progress_provider.dart';
 import 'package:trackntrain/utils/auth_service.dart';
 import 'package:trackntrain/utils/classes.dart';
+import 'package:trackntrain/utils/misc.dart';
 
 Future<void> saveFullBody(
   List<ExerciseProgress> workoutData,
@@ -57,29 +58,33 @@ Future<void> saveFullBody(
   }
 }
 
-Future<void> changeUpdatedAt(String workoutId,String collectionName) async {
+Future<void> changeUpdatedAt(String workoutId, String collectionName) async {
   try {
     final docRef = FirebaseFirestore.instance
         .collection(collectionName)
         .doc(workoutId);
-    await docRef.update({
-      'updatedAt': FieldValue.serverTimestamp(),
-    });
-    print('Updated at timestamp changed successfully for workout ID: $workoutId');
+    await docRef.update({'updatedAt': FieldValue.serverTimestamp()});
+    print(
+      'Updated at timestamp changed successfully for workout ID: $workoutId',
+    );
   } catch (e) {
     print('Error changing updated at timestamp: $e');
   }
-
 }
 
-Future<void> saveHiit(HIITWorkout workout,BuildContext context,{String? existingWorkoutId})async{
-  try{
+Future<void> saveHiit(
+  HIITWorkout workout,
+  BuildContext context, {
+  String? existingWorkoutId,
+}) async {
+  try {
     DocumentReference hiitDoc;
-    if(existingWorkoutId!=null){
-      hiitDoc=FirebaseFirestore.instance.collection('userHiitWorkouts').doc(existingWorkoutId);
-    }
-    else{
-      hiitDoc=FirebaseFirestore.instance.collection('userHiitWorkouts').doc();
+    if (existingWorkoutId != null) {
+      hiitDoc = FirebaseFirestore.instance
+          .collection('userHiitWorkouts')
+          .doc(existingWorkoutId);
+    } else {
+      hiitDoc = FirebaseFirestore.instance.collection('userHiitWorkouts').doc();
     }
     DocumentSnapshot docSnapshot = await hiitDoc.get();
     await hiitDoc.set(
@@ -87,49 +92,151 @@ Future<void> saveHiit(HIITWorkout workout,BuildContext context,{String? existing
       SetOptions(merge: true),
     );
     print('HIIT workout saved successfully with ID: ${hiitDoc.id}');
-  }
-  catch(e){
+  } catch (e) {
     print('Error saving HIIT workout: $e');
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error saving HIIT workout: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error saving HIIT workout: $e')));
     }
   }
 }
 
-Future<void> deleteDoc(String docId,String collectionName,BuildContext context)async{
-  try{
-    
-    await FirebaseFirestore.instance.collection(collectionName).doc(docId).delete();
+Future<void> deleteDoc(
+  String docId,
+  String collectionName,
+  BuildContext context,
+) async {
+  try {
+    await FirebaseFirestore.instance
+        .collection(collectionName)
+        .doc(docId)
+        .delete();
     print('Document deleted successfully from $collectionName with ID: $docId');
-  }
-  catch(e){
+  } catch (e) {
     print('Error deleting document: $e');
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error deleting document: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error deleting document: $e')));
     }
   }
 }
 
-Future<void> createWalk(BuildContext context,WalkData walkData)async {
+Future<void> createWalk(BuildContext context, WalkData walkData) async {
   try {
-    DocumentReference doc=FirebaseFirestore.instance
-        .collection('userWalkRecords')
-        .doc();
-    await doc.set(
-      walkData.toFireStoreMap(),
-      SetOptions(merge: true),
-    );
+    DocumentReference doc =
+        FirebaseFirestore.instance.collection('userWalkRecords').doc();
+    await doc.set(walkData.toFireStoreMap(), SetOptions(merge: true));
     print('Walk data saved successfully with ID: ${doc.id}');
   } catch (e) {
     print('Error saving walk data: $e');
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error saving walk data: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error saving walk data: $e')));
     }
+  }
+}
+
+Future<void> createOrSaveMeal(Meal meal, BuildContext context) async {
+  try {
+    final userId = AuthService.currentUser?.uid;
+    final today = DateTime.now().toIso8601String().split('T')[0];
+
+    DocumentReference mealDoc = FirebaseFirestore.instance
+        .collection('userMeals')
+        .doc('$userId-$today');
+    
+    if (meal.mealType != 'Snack') {
+      await mealDoc.set({
+        meal.mealType.toLowerCase(): meal.toFireStoreMap(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+    } else {
+      await mealDoc.update({
+        'snacks': FieldValue.arrayUnion([meal.toFireStoreMap()]),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    }
+    
+    if (!context.mounted) return;
+  
+  } catch (e) {
+    print('Error saving meal data: $e');
+    rethrow;
+  }
+}
+
+
+Future<void> updateWeightMeta(double weight)async{
+  try {
+    final userId=AuthService.currentUser?.uid;
+    if(userId == null) {
+      throw Exception('User not authenticated');
+    }
+    final String today= DateTime.now().toIso8601String().split('T')[0];
+    DocumentReference docRef=FirebaseFirestore.instance
+      .collection('userMetaLogs')
+      .doc('${userId}_$today');
+    DocumentSnapshot docSnapshot=await docRef.get();
+    if(docSnapshot.exists) {
+      await docRef.update({
+        'weight': weight,
+      });
+    } 
+  } catch (e) {
+    throw Exception('Error updating weight meta: $e');
+  }
+
+}
+
+Future<void> updateWorkoutStatus()async{
+  try {
+    final userId=AuthService.currentUser?.uid;
+    if(userId == null) {
+      throw Exception('User not authenticated');
+    }
+    if(await hasWorkedOut()){
+      print('User has already worked out today');
+      return;
+    }
+
+    final String today=DateTime.now().toIso8601String().split('T')[0];
+    DocumentReference docRef=FirebaseFirestore.instance
+      .collection('userMetaLogs')
+      .doc('${userId}_$today');
+    DocumentSnapshot docSnapshot=await docRef.get();
+    if(docSnapshot.exists) {
+      await docRef.update({
+        'hasWorkedOut': true,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    }
+    await setHasWorkedOut(true);
+  } catch (e) {
+    throw Exception('Error updating workout status: $e');
+  }
+}
+
+Future<void> updateMoodMeta(String mood)async{
+  try {
+    final userId=AuthService.currentUser?.uid;
+    if(userId == null) {
+      throw Exception('User not authenticated');
+    }
+    final String today= DateTime.now().toIso8601String().split('T')[0];
+    DocumentReference docRef=FirebaseFirestore.instance
+      .collection('userMetaLogs')
+      .doc('${userId}_$today');
+    DocumentSnapshot docSnapshot=await docRef.get();
+    if(docSnapshot.exists) {
+      await docRef.update({
+        'mood': mood,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    }
+  } catch (e) {
+    throw Exception('Error updating mood meta: $e');
   }
 }

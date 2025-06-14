@@ -204,6 +204,7 @@ class _HiitWorkoutState extends State<HiitWorkout>
           print('Updating existing HIIT workout with ID: ${widget.workoutId!}');
           changeUpdatedAt(widget.workoutId!,'userHiitWorkouts');
         }
+        updateWorkoutStatus();
         context.goNamed('home');
       },
       onRestart: () {

@@ -1,6 +1,9 @@
 
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
+import 'package:trackntrain/utils/auth_service.dart';
+import 'package:uuid/uuid.dart';
 
 class UserData{
   final String userId;
@@ -141,6 +144,15 @@ class UserMetaLogs{
     this.updatedAt,
   });
 
+  Map<String, dynamic> toFireStoreMap() {
+    return {
+      'userId': userId,
+      'hasWorkedOut': hasWorkedOut,
+      'weight': weight,
+      'createdAt': createdAt != null ? Timestamp.fromDate(createdAt!) : FieldValue.serverTimestamp(),
+      'updatedAt': updatedAt != null ? Timestamp.fromDate(updatedAt!) : FieldValue.serverTimestamp(),
+    };
+  }
 }
 
 class WalkData{
@@ -168,5 +180,55 @@ class WalkData{
       'createdAt': createdAt != null ? Timestamp.fromDate(createdAt!) : FieldValue.serverTimestamp(),
       'updatedAt': updatedAt != null ? Timestamp.fromDate(updatedAt!) : FieldValue.serverTimestamp(),
     };
+  }
+}
+
+class Meal{
+  final String mealType;
+  final String mealName;
+  final String? description;
+
+  Meal({
+    required this.mealType,
+    required this.mealName,
+    this.description,
+  });
+
+  Map<String, dynamic> toFireStoreMap() {
+    return {
+      'mealType': mealType,
+      'mealName': mealName,
+      'description': description,
+    };
+  }
+}
+
+class MealLogger {
+  final String userId;
+  final List<Meal> meals;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
+
+  MealLogger({
+    required this.userId,
+    required this.meals,
+    this.createdAt,
+    this.updatedAt,
+  });
+
+  Map<String, dynamic> toFirestoreMap({bool isUpdate = false}) {
+    Map<String, dynamic> data = {
+      'userId': userId,
+      'meals': meals.map((meal) => {
+        'mealType': meal.mealType,
+        'mealName': meal.mealName,
+        'description': meal.description,
+      }).toList(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    };
+    if (!isUpdate) {
+      data['createdAt'] = createdAt != null ? Timestamp.fromDate(createdAt!) : FieldValue.serverTimestamp();
+    }
+    return data;
   }
 }

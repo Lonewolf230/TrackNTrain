@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:trackntrain/utils/classes.dart';
+import 'package:trackntrain/utils/db_util_funcs.dart';
 
 class MealLoggerSheet extends StatefulWidget {
   const MealLoggerSheet({super.key});
@@ -12,12 +14,77 @@ class _MealLoggerSheetState extends State<MealLoggerSheet> {
   final TextEditingController _descController = TextEditingController();
   String _selectedMealType = 'Breakfast';
   final List<String> _mealTypes = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
-  
+  final _formKey = GlobalKey<FormState>();
+
+
   @override
   void dispose() {
     _mealNameController.dispose();
     _descController.dispose();
     super.dispose();
+  }
+
+  void _saveMealLog(){
+    final String mealName = _mealNameController.text.trim();
+    final String description = _descController.text.trim();
+
+    if(_formKey.currentState == null || !_formKey.currentState!.validate()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Theme.of(context).primaryColor,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          content: const Text('Please fill all fields correctly',style: TextStyle(
+            color: Colors.white,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),)),
+      );
+      return;
+    }
+    Meal meal=Meal(
+      mealType: _selectedMealType,
+      mealName: mealName,
+      description: description);
+    
+      try {
+        createOrSaveMeal(meal, context);
+        _mealNameController.clear();
+        _descController.clear();
+        setState(() {
+          _selectedMealType = 'Breakfast'; 
+        });
+        if(mounted) Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Theme.of(context).primaryColor,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            duration: const Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+            content: const Text('Meal logged successfully',style: TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),)),
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Theme.of(context).primaryColor,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            content: Text('Error saving meal: $e',style: TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),)),
+        );
+      }
+
   }
 
   @override
@@ -30,159 +97,145 @@ class _MealLoggerSheetState extends State<MealLoggerSheet> {
         top: 16,
       ),
       child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Log Your Meal',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.pop(context),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            
-            DropdownButtonFormField<String>(
-                  decoration: InputDecoration(
-                    labelText: 'Meal Type',
-                    labelStyle: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 14,
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                        color: Theme.of(context).primaryColor,
-                        width: 2,
-                      ),
+        child: Form(
+
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Log Your Meal',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+          
+              DropdownButtonFormField<String>(
+                decoration: InputDecoration(
+                  labelText: 'Meal Type',
+                  labelStyle: TextStyle(color: Colors.grey[600], fontSize: 14),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: Theme.of(context).primaryColor,
+                      width: 2,
                     ),
                   ),
-              value: _selectedMealType,
-              items: _mealTypes.map((String type) {
-                return DropdownMenuItem<String>(
-                  value: type,
-                  child: Text(type),
-                );
-              }).toList(),
-              onChanged: (String? newValue) {
-                if (newValue != null) {
-                  setState(() {
-                    _selectedMealType = newValue;
-                  });
-                }
-              },
-            ),
-            
-            const SizedBox(height: 16),
-            
-            // Meal Name
-            TextField(
-              controller: _mealNameController,
-              decoration: InputDecoration(
-                    labelText: 'Food Item',
-                    labelStyle: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 14,
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                        color: Theme.of(context).primaryColor,
-                        width: 2,
-                      ),
-                    ),
-                  ),
-            ),
-            
-            const SizedBox(height: 16),
-            
-            // Calories
-            TextField(
-              controller: _descController,
-              keyboardType: TextInputType.multiline,
-              decoration: InputDecoration(
-                    labelText: 'Description',
-                    labelStyle: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 14,
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                        color: Theme.of(context).primaryColor,
-                        width: 2,
-                      ),
-                    ),
-                  ),
-            ),
-            
-            const SizedBox(height: 24),
-            
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
-                onPressed: () {
-                  // Save meal logic
-                  if (_mealNameController.text.isNotEmpty && 
-                      _descController.text.isNotEmpty) {
-                    
-                    // Save meal
-                    final String mealName = _mealNameController.text;
-                    final String desc = _descController.text;
-                    
-                    if (desc != null) {
-                      print('Meal saved: $_selectedMealType - $mealName ($desc)');
-                      // TODO: Add logic to save meal to database
-                      
-                      // Show confirmation
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('$_selectedMealType logged: $mealName')),
+                value: _selectedMealType,
+                items:
+                    _mealTypes.map((String type) {
+                      return DropdownMenuItem<String>(
+                        value: type,
+                        child: Text(type),
                       );
-                      
-                      Navigator.pop(context);
-                    }
+                    }).toList(),
+                onChanged: (String? newValue) {
+                  if (newValue != null) {
+                    setState(() {
+                      _selectedMealType = newValue;
+                    });
                   }
                 },
-                child: Text('Save Meal', style: TextStyle(fontSize: 16,color: Theme.of(context).primaryColor)),
               ),
-            ),
-            const SizedBox(height: 24),
-          ],
+          
+              const SizedBox(height: 16),
+          
+              // Meal Name
+              TextFormField(
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter a food item';
+                  }
+                  return null;
+                },
+                controller: _mealNameController,
+                decoration: InputDecoration(
+                  labelText: 'Food Item',
+                  labelStyle: TextStyle(color: Colors.grey[600], fontSize: 14),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: Theme.of(context).primaryColor,
+                      width: 2,
+                    ),
+                  ),
+                ),
+              ),
+          
+              const SizedBox(height: 16),
+          
+              TextFormField(
+                controller: _descController,
+                keyboardType: TextInputType.multiline,
+                decoration: InputDecoration(
+                  labelText: 'Description',
+                  labelStyle: TextStyle(color: Colors.grey[600], fontSize: 14),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: Theme.of(context).primaryColor,
+                      width: 2,
+                    ),
+                  ),
+                ),
+              ),
+          
+              const SizedBox(height: 24),
+          
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
+                  onPressed: () {
+                    _saveMealLog();
+                  },
+                  child: Text(
+                    'Save Meal',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Theme.of(context).primaryColor,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+            ],
+          ),
         ),
       ),
     );
   }
 }
-
-

@@ -15,6 +15,7 @@ import 'package:trackntrain/tabs/hiit_tab.dart';
 import 'package:trackntrain/tabs/walking_tab.dart';
 import 'package:trackntrain/utils/auth_notifier.dart';
 import 'package:trackntrain/utils/auth_service.dart';
+import 'package:trackntrain/utils/misc.dart';
 import 'package:trackntrain/utils/slide_left_transition_builder.dart';
 import 'pages/auth_page.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -179,6 +180,7 @@ final _router = GoRouter(
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await checkAndResetDailyPrefs();
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
