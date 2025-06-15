@@ -11,9 +11,7 @@ import {onRequest} from "firebase-functions/v2/https";
 import * as logger from "firebase-functions/logger";
 import {onSchedule} from "firebase-functions/v2/scheduler";
 import * as admin from "firebase-admin";
-
-// Start writing functions
-// https://firebase.google.com/docs/functions/typescript
+import { getMessaging } from "firebase-admin/messaging";
 
 admin.initializeApp();
 
@@ -22,25 +20,36 @@ export const helloWorld = onRequest((request, response) => {
   response.send("Hello from Firebase!");
 });
 
-export const metaLogCreation = onSchedule("0 0 * * *", async (event)=>{
+export const metaLogCreation = onSchedule({
+  schedule:"0 0 * * *",
+  timeZone: "Asia/Kolkata",
+  timeoutSeconds:300,
+  memory:'128MiB'
+}, async (event)=>{
   logger.info("Scheduled function triggered", {event});
   try {
     const allUsersList=await admin.auth().listUsers();
     const users=allUsersList.users;
     logger.info(`Total users: ${users.length}`, {structuredData: true});
-
-    const batch=admin.firestore().batch();
-
+    if (users.length === 0) {
+      logger.info("No users found to create meta logs", {structuredData: true});
+      return;
+    }
+    let batch = admin.firestore().batch();
+    let counter = 0;
+    const today = new Date().toISOString().split("T")[0]; 
+    const ninetyDayInFutureTimeStamp=admin.firestore.Timestamp.fromDate(
+      new Date(new Date().setDate(new Date().getDate() + 90))
+    );
     for (const user of users) {
       try {
         const uid:string=user.uid;
-        const today:string=new Date().toISOString().split("T")[0];
         const docRef : admin.firestore.DocumentReference  =admin.firestore()
           .collection("userMetaLogs")
           .doc(`${uid}_${today}`);
         const docSnap : admin.firestore.DocumentSnapshot =await docRef.get();
         if (docSnap.exists) {
-          logger.info(`Meta log for user ${uid} already exists for today`, {structuredData: true});
+          logger.debug(`Meta log exists for ${uid}`);
           continue; 
         }
 
@@ -53,7 +62,6 @@ export const metaLogCreation = onSchedule("0 0 * * *", async (event)=>{
         else{
           weight=personalDocSnap.get("weight");
         }
-
         batch.set(docRef, {
           userId: uid,
           date: today,
@@ -62,14 +70,25 @@ export const metaLogCreation = onSchedule("0 0 * * *", async (event)=>{
           mood:null,
           sleep:0,
           weight,
+          expireAt: ninetyDayInFutureTimeStamp
         });
+        counter++;
+        if(counter>=500) {
+          await batch.commit();
+          logger.info("Batch of 500 meta logs created");
+          counter = 0;
+          batch = admin.firestore().batch(); 
+        }
 
       } catch (error) {
         logger.error(`Error creating meta log for user: 
             ${user.uid}`, {error});
       }
     }
-    await batch.commit();
+    if(counter > 0) {
+      await batch.commit();
+      logger.info(`Final batch of ${counter} meta logs created`);
+    }
     logger.info("All meta logs created successfully", {structuredData: true});
   } catch (error) {
     logger.error("Error listing users:", {error});
@@ -86,6 +105,7 @@ export const metaLogSpotCreation=onRequest(async (request, response) => {
   }
 
   const date = new Date().toISOString().split("T")[0];
+  const todayTimeStamp= admin.firestore.Timestamp.fromDate(new Date());
 
   try {
     const docRef : admin.firestore.DocumentReference = admin.firestore().collection("userMetaLogs")
@@ -97,6 +117,7 @@ export const metaLogSpotCreation=onRequest(async (request, response) => {
       hasWorkedOut: false,
       weight: 0,
       mood: null,
+      expireAt:todayTimeStamp
     });
     response.status(201).send("Meta log created");
   } catch (error) {
@@ -105,134 +126,85 @@ export const metaLogSpotCreation=onRequest(async (request, response) => {
   }
 });
 
-export const cleanUp=onSchedule("0 0 * * *",async(event)=>{
-    logger.info("Scheduled cleanup function triggered", {event});
-    try{
-        await cleanUpFullBodyLogs();
-        await cleanUpHiitLogs();
-        await cleanUpWalkLogs();
-        await cleanUpMealLogs();
-        logger.info("Cleanup completed successfully");
+
+export const sendDailyReminder=onSchedule({
+  schedule:"0 18 * * *",
+  timeZone: "Asia/Kolkata",
+  timeoutSeconds:120
+},async(event)=>{
+
+  // if(["Saturday", "Sunday"].includes(new Date().toLocaleDateString("en-US", { weekday: 'long' }))) {
+  //   logger.info("Skipping reminder on weekends");
+  //   return;
+  // }
+  
+
+  const userMetaLogsSnapShot:admin.firestore.QuerySnapshot=await admin.firestore()
+                                                      .collection("userMetaLogs")
+                                                      .where("date", "==", new Date().toISOString().split("T")[0])
+                                                      .where("hasWorkedOut", "==", false)
+                                                      .get();
+  const inactiveUsers=userMetaLogsSnapShot.docs.map((doc:admin.firestore.QueryDocumentSnapshot) => doc.data().userId);
+
+  if(inactiveUsers.length===0){
+    logger.info("No inactive users found for reminders");
+    return;
+  }
+
+  const allUsers: admin.firestore.QuerySnapshot=await admin.firestore().collection("users").get();
+  const inactiveUsersSet = new Set(inactiveUsers);                      
+  
+  const tokens:string[]=[];
+  allUsers.forEach((doc:admin.firestore.QueryDocumentSnapshot) => {
+    const userData = doc.data();
+    if (inactiveUsersSet.has(doc.id)) {
+      if(userData.fcmToken) tokens.push(userData.fcmToken);
+      else logger.debug(`No FCM token for user: ${doc.id}`);
     }
-    catch(error){
-        logger.error("Error during cleanup", {error});
-    }
+  });
+
+
+  if(tokens.length===0){
+    logger.info("No users to send reminders to");
+    return;
+  }
+
+  const message={
+    notification:{
+        title: "💪 Time to get moving!",
+        body: "Don't forget to get some exercise before the day ends!",      
+    },
+    tokens
+  }
+
+  const response=await getMessaging().sendEachForMulticast(message);
+  logger.info(`Success : ${response.successCount}, Fail: ${response.failureCount}`)
 })
 
-const cleanUpFullBodyLogs=async()=>{
-    try {
-        const today = new Date();
-        const ninetyDaysAgo = new Date(today);
-        ninetyDaysAgo.setDate(today.getDate() - 90);
-        
-        const snapshot : admin.firestore.QuerySnapshot= await admin.firestore()
-            .collection("userFullBodyWorkouts")
-            .where("createdAt", "<=", ninetyDaysAgo)
-            .get();
-        
-        if (snapshot.empty) {
-            logger.info("No full body logs to delete");
-            return;
-        }
-        
-        const batch = admin.firestore().batch();
-        
-        snapshot.forEach(doc => {
-            batch.delete(doc.ref);
-        });
-        
-        await batch.commit();
-        logger.info("Old full body logs deleted successfully");
-    } catch (error) {
-        logger.error("Error deleting old full body logs", {error});
-    }
-}
 
-const cleanUpHiitLogs=async()=>{
-    try {
-        const today = new Date();
-        const ninetyDaysAgo = new Date(today);
-        ninetyDaysAgo.setDate(today.getDate() - 90);
-        
-        const snapshot : admin.firestore.QuerySnapshot = await admin.firestore()
-            .collection("userHiitWorkouts")
-            .where("createdAt", "<=", ninetyDaysAgo)
-            .get();
-        
-        if (snapshot.empty) {
-            logger.info("No HIIT logs to delete");
-            return;
-        }
-        
-        const batch = admin.firestore().batch();
-        
-        snapshot.forEach(doc => {
-            batch.delete(doc.ref);
-        });
-        
-        await batch.commit();
-        logger.info("Old HIIT logs deleted successfully");
-    } catch (error) {
-        logger.error("Error deleting old HIIT logs", {error});
-    }
-}
+export const handleDeletetion=onRequest(async(request,response)=>{
+  const {userId}=request.body;
+  if (!userId) {
+    response.status(400).send("Missing userId");
+    return;
+  }
+  try {
 
-const cleanUpWalkLogs=async()=>{
-    try {
-        const today : Date = new Date();
-        const ninetyDaysAgo : Date = new Date(today);
-        ninetyDaysAgo.setDate(today.getDate() - 90);
 
-        const snapshot : admin.firestore.QuerySnapshot = await admin.firestore()
-            .collection("userWalkRecords")
-            .where("createdAt", "<=", ninetyDaysAgo)
-            .get();
-        
-        if (snapshot.empty) {
-            logger.info("No walk logs to delete");
-            return;
-        }
-        
-        const batch = admin.firestore().batch();
-        
-        snapshot.forEach(doc => {
-            batch.delete(doc.ref);
-        });
-        
-        await batch.commit();
-        logger.info("Old walk logs deleted successfully");
-    } catch (error) {
-        logger.error("Error deleting old walk logs", {error});
-    }
-}
 
-const cleanUpMealLogs=async()=>{
-    try {
-        const today : Date = new Date();
-        const ninetyDaysAgo : Date = new Date(today);
-        ninetyDaysAgo.setDate(today.getDate() - 90);
+  } catch (error) {
+    
+  }
+})
 
-        const snapshot : admin.firestore.QuerySnapshot = await admin.firestore()
-            .collection("userMealLogs")
-            .where("createdAt", "<=", ninetyDaysAgo)
-            .get();
-        
-        if (snapshot.empty) {
-            logger.info("No meal logs to delete");
-            return;
-        }
-        
-        const batch = admin.firestore().batch();
-        
-        snapshot.forEach(doc => {
-            batch.delete(doc.ref);
-        });
-        
-        await batch.commit();
-        logger.info("Old meal logs deleted successfully");
-    } catch (error) {
-        logger.error("Error deleting old meal logs", {error});
-    }
-}
+// const handleMetaLogDeletion=async(userId:string)=>{}
+
+// const handleFullBodyLogDeletion=async(userId:string)=>{}
+
+// const handleHiitLogDeletion=async(userId:string)=>{}
+
+// const handleWalkLogDeletion=async(userId:string)=>{}
+
+// const handleMealLogDeletion=async(userId:string)=>{}
 
 

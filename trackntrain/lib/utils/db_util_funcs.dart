@@ -147,16 +147,33 @@ Future<void> createOrSaveMeal(Meal meal, BuildContext context) async {
     DocumentReference mealDoc = FirebaseFirestore.instance
         .collection('userMeals')
         .doc('$userId-$today');
+
+    DocumentSnapshot docSnapshot = await mealDoc.get();
+
+    final expireAt=Timestamp.fromDate(
+      DateTime.now().add(const Duration(days: 1)),
+    );
+
+    final Map<String,dynamic> dataToSet={
+      'updatedAt': FieldValue.serverTimestamp(),
+    };
+
+    if(!docSnapshot.exists){
+      dataToSet['expireAt']=expireAt;
+    }
     
     if (meal.mealType != 'Snack') {
-      await mealDoc.set({
-        meal.mealType.toLowerCase(): meal.toFireStoreMap(),
-        'updatedAt': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
+
+      dataToSet[meal.mealType.toLowerCase()]=meal.toFireStoreMap();
+
+      await mealDoc.set(
+        dataToSet
+      , SetOptions(merge: true));
     } else {
+      final mealMap= meal.toFireStoreMap();
       await mealDoc.update({
-        'snacks': FieldValue.arrayUnion([meal.toFireStoreMap()]),
-        'updatedAt': FieldValue.serverTimestamp(),
+        'snacks': FieldValue.arrayUnion([mealMap]),
+        ...dataToSet
       });
     }
     

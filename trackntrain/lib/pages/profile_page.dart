@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:trackntrain/utils/auth_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:trackntrain/utils/classes.dart';
+import 'package:trackntrain/utils/misc.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -85,6 +86,7 @@ class _ProfilePageState extends State<ProfilePage> {
   void _logout(BuildContext context)async{
     try {
       await AuthService.signOut();
+
     } catch (e) {
       if (!context.mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -106,6 +108,7 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   void _deleteAccount() async{
+    await clearAllPrefs();
     await AuthService.deleteAccount();
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(

@@ -24,7 +24,7 @@ class _MealLoggerSheetState extends State<MealLoggerSheet> {
     super.dispose();
   }
 
-  void _saveMealLog(){
+  void _saveMealLog()async{
     final String mealName = _mealNameController.text.trim();
     final String description = _descController.text.trim();
 
@@ -49,7 +49,7 @@ class _MealLoggerSheetState extends State<MealLoggerSheet> {
       description: description);
     
       try {
-        createOrSaveMeal(meal, context);
+        await createOrSaveMeal(meal, context);
         _mealNameController.clear();
         _descController.clear();
         setState(() {
@@ -77,7 +77,7 @@ class _MealLoggerSheetState extends State<MealLoggerSheet> {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
-            content: Text('Error saving meal: $e',style: TextStyle(
+            content: Text('Error saving meal',style: TextStyle(
               color: Colors.white,
               fontSize: 16,
               fontWeight: FontWeight.bold,

@@ -13,9 +13,17 @@ Future<dynamic> signInWithGoogle() async{
       accessToken: googleAuth?.accessToken,
       idToken: googleAuth?.idToken,
     );
-
-    return await AuthService.auth.signInWithCredential(credential);
-  }on Exception catch (e) {
-    return 'Google Sign-In failed: $e';
+    final userCredential=await AuthService.auth.signInWithCredential(credential);
+    return userCredential.user?.uid;
+  }on FirebaseAuthException catch (e) {
+    if (e.code == 'account-exists-with-different-credential') {
+      throw Exception('An account already exists with the same email address but different sign-in credentials. Please sign in using a different method.');
+    } else if (e.code == 'invalid-credential') {
+      throw Exception('The credential received is invalid.');
+    } else {
+      throw Exception('Error signing in with Google: ${e.message}');
+    }
+  } catch (e) {
+    throw Exception('Error signing in with Google: $e');
   }
 }

@@ -1,6 +1,10 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:trackntrain/utils/auth_service.dart';
+import 'package:trackntrain/utils/classes.dart';
 import 'package:trackntrain/utils/google_auth_utils.dart';
+import 'package:trackntrain/utils/misc.dart';
 import '../components/social_button.dart';
 import '../components/auth_button.dart';
 import '../components/auth_text_field.dart';
@@ -33,20 +37,48 @@ class _SignUpTabState extends State<SignUpTab> {
   }
 
   void _signUp() async {
-    if (_formKey.currentState!.validate()) {
-      setState(() {
-        isLoading = true;
-      });
-      final message = await signUpWithEmailAndPassword(
-        _emailController.text.trim(),
-        _passwordController.text.trim(),
-        _nameController.text.trim(),
-      );
+    try {
+      if (_formKey.currentState!.validate()) {
+        setState(() {
+          isLoading = true;
+        });
+        final message = await signUpWithEmailAndPassword(
+          _emailController.text.trim(),
+          _passwordController.text.trim(),
+          _nameController.text.trim(),
+          context,
+        );
+
+        UserData userData = UserData(
+          userId: AuthService.auth.currentUser?.uid ?? '',
+        );
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(message)
+            .set(userData.toMap(), SetOptions(merge: true));
+        final String today = DateTime.now().toIso8601String().split('T')[0];
+
+        await FirebaseFirestore.instance
+            .collection('userMetaLogs')
+            .doc('${message}_$today')
+            .set({
+              'userId': message,
+              'date': today,
+              'createdAt': FieldValue.serverTimestamp(),
+              'sleep': 0,
+              'hasWorkedOut': false,
+              'weight': null,
+              'mood': null,
+            });
+      }
+    } on Exception catch (e) {
+      print('Sign up message: ${e.toString()}');
+
       if (mounted) {
         setState(() {
           isLoading = false;
         });
-        if (message != null || message?.isNotEmpty == true) {
+        if (e.toString() != null || e.toString()?.isNotEmpty == true) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               duration: const Duration(seconds: 2),
@@ -55,7 +87,7 @@ class _SignUpTabState extends State<SignUpTab> {
               ),
               backgroundColor: Colors.red,
               content: Text(
-                message ?? 'Sign up failed',
+                cleanErrorMessage(e.toString()),
                 textAlign: TextAlign.center,
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
@@ -66,30 +98,61 @@ class _SignUpTabState extends State<SignUpTab> {
     }
   }
 
-  void _signUpWithGoogle() async{
+  void _signUpWithGoogle() async {
     setState(() {
       isLoading = true;
     });
-    final message = await signInWithGoogle();
-    if (mounted) {
-      setState(() {
-        isLoading = false;
-      });
-      if (message != null || message.isNotEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            duration: const Duration(seconds: 2),
-            shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.all(Radius.circular(8)),
-            ),
-            backgroundColor: Colors.red,
-            content: Text(
-              message,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
+    try {
+      final message = await signInWithGoogle();
+      print('Sign up with Google message: $message');
+
+      if (message != null) {
+        UserData userData = UserData(userId: message);
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(message)
+            .set(userData.toMap(), SetOptions(merge: true));
+
+        final String today = DateTime.now().toIso8601String().split('T')[0];
+        final ninetyDaysTimeStamp =Timestamp.fromDate(
+          DateTime.now().add(const Duration(days: 90)),
         );
+
+        await FirebaseFirestore.instance
+            .collection('userMetaLogs')
+            .doc('${message}_$today')
+            .set({
+              'userId': message,
+              'date': today,
+              'createdAt': FieldValue.serverTimestamp(),
+              'sleep': 0,
+              'hasWorkedOut': false,
+              'weight': null,
+              'mood': null,
+              'expireAt': ninetyDaysTimeStamp,
+            });
+      }
+    } on Exception catch (e) {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+        if (e.toString() != null || e.toString().isNotEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              duration: const Duration(seconds: 2),
+              shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.all(Radius.circular(8)),
+              ),
+              backgroundColor: Colors.red,
+              content: Text(
+                cleanErrorMessage(e.toString()),
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+          );
+        }
       }
     }
   }

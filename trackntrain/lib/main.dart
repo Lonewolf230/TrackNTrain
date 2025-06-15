@@ -44,6 +44,7 @@ final _router = GoRouter(
     return null;
   },
   refreshListenable: _authNotifier,
+  
   routes: [
     GoRoute(
       path: '/auth',

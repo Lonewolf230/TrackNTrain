@@ -74,6 +74,17 @@ Future<void> checkAndResetDailyPrefs() async {
   }
 }
 
+Future<void> setName(String name) async {
+  final prefs = await getPrefs();
+  await prefs.setString('name', name);
+}
+
+Future<String> getName() async{
+  final prefs = await getPrefs();
+  String? name = prefs.getString('name');
+  return name ?? "User";
+}
+
 Future<void> removePref(String key)async{
   final prefs = await getPrefs();
   if (prefs.containsKey(key)) {
@@ -82,4 +93,14 @@ Future<void> removePref(String key)async{
   } else {
     print("Preference '$key' does not exist.");
   }
+}
+
+String cleanErrorMessage(String error) {
+  return error.replaceFirst('Exception:', '').trim();
+}
+
+Future<void> clearAllPrefs() async {
+  final prefs = await getPrefs();
+  await prefs.clear();
+  print("All preferences cleared");
 }

@@ -10,10 +10,11 @@ class UserData{
   int? age;
   int? weight;
   int? height;
+  String? fcmToken;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
-  UserData({required this.userId,this.age,this.weight,this.height,this.createdAt,this.updatedAt});
+  UserData({required this.userId,this.age,this.weight,this.height,this.createdAt,this.updatedAt,this.fcmToken=''});
 
   Map<String,dynamic> toMap({bool isUpdate=false}){
     Map<String,dynamic> data={
@@ -21,6 +22,7 @@ class UserData{
       'age': age,
       'weight': weight,
       'height': height,
+      'fcmToken': fcmToken ?? '',
       'updatedAt':FieldValue.serverTimestamp(),
     };
 
@@ -70,8 +72,9 @@ class FullBodyWorkout{
   final DateTime? createdAt;
   final DateTime? updatedAt;
   final String? name;
+  final Timestamp? expireAt;
 
-  FullBodyWorkout({required this.exercises,required this.userId,this.createdAt, this.updatedAt,this.name});
+  FullBodyWorkout({required this.exercises,required this.userId,this.createdAt, this.updatedAt,this.name,this.expireAt});
   Map<String, dynamic> toFirestoreMap({bool isUpdate = false}) {
     Map<String,dynamic> data= {
       'userId':userId,
@@ -82,6 +85,7 @@ class FullBodyWorkout{
     if (!isUpdate) {
       data['createdAt'] = createdAt!=null? Timestamp.fromDate(createdAt!)
         : FieldValue.serverTimestamp();
+      data['expireAt'] = expireAt ?? Timestamp.fromDate(DateTime.now().add(const Duration(days: 90)));
     }
     return data;
   }
@@ -98,6 +102,7 @@ class HIITWorkout{
   final DateTime? createdAt;
   final DateTime? updatedAt;
   final String userId;
+  final Timestamp? expireAt;
 
   HIITWorkout({
     required this.exercises,
@@ -108,6 +113,7 @@ class HIITWorkout{
     this.createdAt,
     this.updatedAt,
     required this.userId,
+    this.expireAt,
   });
 
   Map<String,dynamic> toFireStoreMap({isUpdate=false}){
@@ -123,6 +129,7 @@ class HIITWorkout{
     if(!isUpdate){
       data['createdAt']=createdAt!=null?Timestamp.fromDate(createdAt!)
         :FieldValue.serverTimestamp();
+      data['expireAt'] = expireAt ?? Timestamp.fromDate(DateTime.now().add(const Duration(days: 90)));
     }
     return data;
   }
@@ -136,12 +143,14 @@ class UserMetaLogs{
   final int? weight;
   final DateTime? createdAt;
   final DateTime? updatedAt;
+  final Timestamp? expireAt;
   UserMetaLogs({
     required this.userId,
     this.hasWorkedOut=false,
     this.weight,
     this.createdAt,
     this.updatedAt,
+    this.expireAt
   });
 
   Map<String, dynamic> toFireStoreMap() {
@@ -151,6 +160,7 @@ class UserMetaLogs{
       'weight': weight,
       'createdAt': createdAt != null ? Timestamp.fromDate(createdAt!) : FieldValue.serverTimestamp(),
       'updatedAt': updatedAt != null ? Timestamp.fromDate(updatedAt!) : FieldValue.serverTimestamp(),
+      'expireAt': expireAt ?? Timestamp.fromDate(DateTime.now().add(const Duration(days: 90))),
     };
   }
 }
@@ -162,6 +172,7 @@ class WalkData{
   final DateTime? createdAt;
   final DateTime? updatedAt;
   final double averageSpeed; 
+  final Timestamp? expireAt;
   WalkData({
     required this.userId,
     required this.distance,
@@ -169,6 +180,7 @@ class WalkData{
     required this.elapsedTime,
     this.createdAt,
     this.updatedAt,
+    this.expireAt,
   });
 
   Map<String,dynamic> toFireStoreMap(){
@@ -179,6 +191,7 @@ class WalkData{
       'elapsedTime': elapsedTime,
       'createdAt': createdAt != null ? Timestamp.fromDate(createdAt!) : FieldValue.serverTimestamp(),
       'updatedAt': updatedAt != null ? Timestamp.fromDate(updatedAt!) : FieldValue.serverTimestamp(),
+      'expireAt': expireAt ?? Timestamp.fromDate(DateTime.now().add(const Duration(days: 90))),
     };
   }
 }

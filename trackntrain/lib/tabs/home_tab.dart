@@ -5,6 +5,7 @@ import 'package:trackntrain/components/mood_dropdown.dart';
 import 'package:trackntrain/components/stat.dart';
 import 'package:trackntrain/utils/auth_service.dart';
 import 'package:trackntrain/utils/db_util_funcs.dart';
+import 'package:trackntrain/utils/misc.dart';
 
 class HomeTab extends StatefulWidget {
   const HomeTab({super.key});
@@ -16,11 +17,25 @@ class HomeTab extends StatefulWidget {
 class _HomeTabState extends State<HomeTab> {
   String? _mood;
   final TextEditingController _weightController = TextEditingController();
+  String? name;
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    _loadName();
+  }
 
   @override
   void dispose() {
     _weightController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadName() async{
+    final userName=AuthService.currentUser?.displayName ?? await getName();
+    setState(() {
+      name = userName;
+    });
   }
 
   @override
@@ -77,14 +92,15 @@ class _HomeTabState extends State<HomeTab> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    AuthService.currentUser?.displayName ?? 'User',
-                    style: TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      fontFamily: 'Poppins',
+                      name ?? 'Loading ...',
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        fontFamily: 'Poppins',
+                      ),
                     ),
-                  ),
+                  
                   const SizedBox(height: 16),
                   Row(
                     children: [
