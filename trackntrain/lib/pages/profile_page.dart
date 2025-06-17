@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:trackntrain/components/custom_snack_bar.dart';
 import 'package:trackntrain/utils/auth_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:trackntrain/utils/classes.dart';
@@ -13,21 +14,23 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  double? _height; 
-  double? _weight ; 
-  double? _age; 
+  double? _height;
+  double? _weight;
+  double? _age;
 
-  void _getUserInfo( )async{
+  void _getUserInfo() async {
     final user = AuthService.currentUser;
     if (user != null) {
-      DocumentReference userDoc=FirebaseFirestore.instance.collection('users').doc(user.uid);
+      DocumentReference userDoc = FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid);
       DocumentSnapshot userSnapshot = await userDoc.get();
-      if(userSnapshot.exists){
-        final data=userSnapshot.data() as Map<String, dynamic>;
+      if (userSnapshot.exists) {
+        final data = userSnapshot.data() as Map<String, dynamic>;
         setState(() {
-          _height = data['height']?.toDouble() ;
-          _weight = data['weight']?.toDouble() ;
-          _age = data['age']?.toDouble() ;
+          _height = data['height']?.toDouble();
+          _weight = data['weight']?.toDouble();
+          _age = data['age']?.toDouble();
         });
         print('User Info: Height: $_height, Weight: $_weight, Age: $_age');
       }
@@ -37,21 +40,31 @@ class _ProfilePageState extends State<ProfilePage> {
     print('No user is currently signed in.');
   }
 
-  void _updateUserInfo()async {
+  void _updateUserInfo() async {
     final user = AuthService.currentUser;
     if (user != null) {
       try {
-        DocumentReference userDoc=FirebaseFirestore.instance.collection('users').doc(user.uid);
+        DocumentReference userDoc = FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid);
         DocumentSnapshot userSnapshot = await userDoc.get();
-        UserData userData=UserData(
+        UserData userData = UserData(
           userId: user.uid,
           age: _age?.toInt(),
           weight: _weight?.toInt(),
           height: _height?.toInt(),
-          createdAt: userSnapshot.exists ? ((userSnapshot.data() as Map<String, dynamic>)['createdAt'] as Timestamp?)?.toDate() : DateTime.now(),
+          createdAt:
+              userSnapshot.exists
+                  ? ((userSnapshot.data() as Map<String, dynamic>)['createdAt']
+                          as Timestamp?)
+                      ?.toDate()
+                  : DateTime.now(),
         );
-        
-        await userDoc.set(userData.toMap(isUpdate: userSnapshot.exists),SetOptions(merge: true));
+
+        await userDoc.set(
+          userData.toMap(isUpdate: userSnapshot.exists),
+          SetOptions(merge: true),
+        );
         print('User info updated successfully: $userData');
       } catch (e) {
         if (!context.mounted) return;
@@ -70,63 +83,212 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
         );
       }
-
     } else {
       print('No user is currently signed in.');
     }
   }
 
   @override
-  void initState(){
+  void initState() {
     // TODO: implement initState
     super.initState();
     _getUserInfo();
   }
 
-  void _logout(BuildContext context)async{
+  void _logout(BuildContext context) async {
     try {
       await AuthService.signOut();
-
     } catch (e) {
       if (!context.mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            duration: const Duration(seconds: 2),
-            shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.all(Radius.circular(8)),
-            ),
-            backgroundColor: Colors.red,
-            content: Text(
-              e.toString(),
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontWeight: FontWeight.bold),
+      showCustomSnackBar(
+        context: context,
+        message: e.toString(),
+        type: 'error',
+      );
+    }
+  }
+
+  void _deleteAccount(BuildContext context) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          content: Container(
+            padding: const EdgeInsets.all(20),
+            child: const Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(color: Colors.red),
+                SizedBox(height: 16),
+                Text(
+                  'Deleting account...',
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
           ),
         );
+      },
+    );
+
+    try {
+      await clearCurrentUserPrefs();
+      await AuthService.deleteAccount();
+      print('Account delete initialised');
+
+      if (context.mounted) Navigator.of(context).pop();
+
+      if (context.mounted) {
+        showCustomSnackBar(
+          context: context,
+          message: 'Account deleted successfully',
+          type: 'success',
+        );
       }
-    
+    } catch (e) {
+      if (context.mounted) Navigator.of(context).pop();
+
+      if (context.mounted) {
+        showCustomSnackBar(
+          context: context,
+          message: 'Error deleting account: $e',
+          type: 'error',
+        );
+      }
+    }
   }
 
-  void _deleteAccount() async{
-    await clearAllPrefs();
-    await AuthService.deleteAccount();
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        duration: Duration(seconds: 2),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(8)),
-        ),
-        backgroundColor: Colors.red,
-        content: Text(
-          'Account deleted successfully',
-          textAlign: TextAlign.center,
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-      ),
+  void showConfirmationDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.delete_forever_outlined,
+                  color: Colors.red,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Text(
+                'Delete Account',
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontWeight: FontWeight.bold,
+                  fontSize: 20,
+                ),
+              ),
+            ],
+          ),
+          content: Container(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: const Text(
+              'Are you sure you want to delete your account? This action cannot be undone.',
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 16,
+                color: Colors.black87,
+                height: 1.4,
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: Text(
+                'Cancel',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey[600],
+                  fontFamily: 'Poppins',
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Colors.red, Color.fromARGB(255, 180, 10, 10)],
+                ),
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.red.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    _deleteAccount(context);
+                  },
+                  borderRadius: BorderRadius.circular(12),
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.delete_rounded,
+                          color: Colors.white,
+                          size: 18,
+                        ),
+                        SizedBox(width: 8),
+                        Text(
+                          'Delete Account',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontFamily: 'Poppins',
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+          actionsPadding: const EdgeInsets.fromLTRB(24, 8, 24, 20),
+        );
+      },
     );
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -143,11 +305,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 color: Colors.white.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(6),
               ),
-              child: const Icon(
-                Icons.person,
-                color: Colors.white,
-                size: 18,
-              ),
+              child: const Icon(Icons.person, color: Colors.white, size: 18),
             ),
             const SizedBox(width: 10),
             const Text(
@@ -179,10 +337,7 @@ class _ProfilePageState extends State<ProfilePage> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Colors.grey[50]!,
-              Colors.white,
-            ],
+            colors: [Colors.grey[50]!, Colors.white],
           ),
         ),
         child: SingleChildScrollView(
@@ -191,7 +346,7 @@ class _ProfilePageState extends State<ProfilePage> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               const SizedBox(height: 10),
-              
+
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(24),
@@ -199,10 +354,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [
-                      Colors.white,
-                      Colors.grey[50]!,
-                    ],
+                    colors: [Colors.white, Colors.grey[50]!],
                   ),
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
@@ -227,11 +379,19 @@ class _ProfilePageState extends State<ProfilePage> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    
+
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
-                        color: const Color.fromARGB(255, 247, 2, 2).withOpacity(0.1),
+                        color: const Color.fromARGB(
+                          255,
+                          247,
+                          2,
+                          2,
+                        ).withOpacity(0.1),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
@@ -248,7 +408,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
               ),
               const SizedBox(height: 24),
-              
+
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),
@@ -272,7 +432,12 @@ class _ProfilePageState extends State<ProfilePage> {
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: const Color.fromARGB(255, 247, 2, 2).withOpacity(0.1),
+                            color: const Color.fromARGB(
+                              255,
+                              247,
+                              2,
+                              2,
+                            ).withOpacity(0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: const Icon(
@@ -294,24 +459,33 @@ class _ProfilePageState extends State<ProfilePage> {
                       ],
                     ),
                     const SizedBox(height: 20),
-                    
+
                     _buildSelectorCard(
                       title: 'Height',
-                      value: _height!=null?'${_height?.toInt()} cm':'Please set your height',
+                      value:
+                          _height != null
+                              ? '${_height?.toInt()} cm'
+                              : 'Please set your height',
                       icon: Icons.height,
                       onTap: () => _showHeightPicker(context),
                     ),
-                    
+
                     _buildSelectorCard(
                       title: 'Weight',
-                      value: _weight!=null?'${_weight?.toInt()} kg':'Please set your weight',
+                      value:
+                          _weight != null
+                              ? '${_weight?.toInt()} kg'
+                              : 'Please set your weight',
                       icon: Icons.monitor_weight_outlined,
                       onTap: () => _showWeightPicker(context),
                     ),
-                    
+
                     _buildSelectorCard(
                       title: 'Age',
-                      value: _age!=null?'${_age?.toInt()} years':'Please set your age',
+                      value:
+                          _age != null
+                              ? '${_age?.toInt()} years'
+                              : 'Please set your age',
                       icon: Icons.cake_outlined,
                       onTap: () => _showAgePicker(context),
                     ),
@@ -319,7 +493,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
               ),
               const SizedBox(height: 24),
-              
+
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),
@@ -344,14 +518,16 @@ class _ProfilePageState extends State<ProfilePage> {
                         gradient: LinearGradient(
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
-                          colors: [
-                            Colors.grey[50]!,
-                            Colors.white,
-                          ],
+                          colors: [Colors.grey[50]!, Colors.white],
                         ),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: const Color.fromARGB(255, 247, 2, 2).withOpacity(0.2),
+                          color: const Color.fromARGB(
+                            255,
+                            247,
+                            2,
+                            2,
+                          ).withOpacity(0.2),
                           width: 1,
                         ),
                       ),
@@ -370,7 +546,12 @@ class _ProfilePageState extends State<ProfilePage> {
                                 Container(
                                   padding: const EdgeInsets.all(8),
                                   decoration: BoxDecoration(
-                                    color: const Color.fromARGB(255, 247, 2, 2).withOpacity(0.1),
+                                    color: const Color.fromARGB(
+                                      255,
+                                      247,
+                                      2,
+                                      2,
+                                    ).withOpacity(0.1),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: const Icon(
@@ -395,17 +576,14 @@ class _ProfilePageState extends State<ProfilePage> {
                         ),
                       ),
                     ),
-                    
+
                     Container(
                       width: double.infinity,
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
-                          colors: [
-                            Colors.red[50]!,
-                            Colors.white,
-                          ],
+                          colors: [Colors.red[50]!, Colors.white],
                         ),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
@@ -417,7 +595,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         color: Colors.transparent,
                         child: InkWell(
                           onTap: () {
-                            _showConfirmationDialog(context);
+                            showConfirmationDialog(context);
                           },
                           borderRadius: BorderRadius.circular(12),
                           child: Padding(
@@ -463,122 +641,122 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  void _showConfirmationDialog(BuildContext context) {
-  showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.red.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(
-                Icons.delete_forever_outlined,
-                color: Colors.red,
-                size: 20,
-              ),
-            ),
-            const SizedBox(width: 12),
-            const Text(
-              'Delete Account',
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontWeight: FontWeight.bold,
-                fontSize: 20,
-              ),
-            ),
-          ],
-        ),
-        content: Container(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: const Text(
-            'Are you sure you want to delete your account? This action cannot be undone.',
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: 16,
-              color: Colors.black87,
-              height: 1.4,
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            child: Text(
-              'Cancel',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey[600],
-                fontFamily: 'Poppins',
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Container(
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [
-                  Colors.red,
-                  Color.fromARGB(255, 180, 10, 10),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.red.withOpacity(0.3),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: () {
-                  Navigator.of(context).pop();
-                  _deleteAccount();
-                },
-                borderRadius: BorderRadius.circular(12),
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.delete_rounded, color: Colors.white, size: 18),
-                      SizedBox(width: 8),
-                      Text(
-                        'Delete Account',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontFamily: 'Poppins',
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-        actionsPadding: const EdgeInsets.fromLTRB(24, 8, 24, 20),
-      );
-    },
-  );
-}
+  //   void _showConfirmationDialog(BuildContext context) {
+  //   showDialog(
+  //     context: context,
+  //     builder: (BuildContext context) {
+  //       return AlertDialog(
+  //         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+  //         title: Row(
+  //           children: [
+  //             Container(
+  //               padding: const EdgeInsets.all(8),
+  //               decoration: BoxDecoration(
+  //                 color: Colors.red.withOpacity(0.1),
+  //                 borderRadius: BorderRadius.circular(8),
+  //               ),
+  //               child: const Icon(
+  //                 Icons.delete_forever_outlined,
+  //                 color: Colors.red,
+  //                 size: 20,
+  //               ),
+  //             ),
+  //             const SizedBox(width: 12),
+  //             const Text(
+  //               'Delete Account',
+  //               style: TextStyle(
+  //                 fontFamily: 'Poppins',
+  //                 fontWeight: FontWeight.bold,
+  //                 fontSize: 20,
+  //               ),
+  //             ),
+  //           ],
+  //         ),
+  //         content: Container(
+  //           padding: const EdgeInsets.symmetric(vertical: 8),
+  //           child: const Text(
+  //             'Are you sure you want to delete your account? This action cannot be undone.',
+  //             style: TextStyle(
+  //               fontFamily: 'Poppins',
+  //               fontSize: 16,
+  //               color: Colors.black87,
+  //               height: 1.4,
+  //             ),
+  //           ),
+  //         ),
+  //         actions: [
+  //           TextButton(
+  //             onPressed: () => Navigator.of(context).pop(),
+  //             style: TextButton.styleFrom(
+  //               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+  //               shape: RoundedRectangleBorder(
+  //                 borderRadius: BorderRadius.circular(12),
+  //               ),
+  //             ),
+  //             child: Text(
+  //               'Cancel',
+  //               style: TextStyle(
+  //                 fontSize: 16,
+  //                 color: Colors.grey[600],
+  //                 fontFamily: 'Poppins',
+  //                 fontWeight: FontWeight.w500,
+  //               ),
+  //             ),
+  //           ),
+  //           const SizedBox(width: 8),
+  //           Container(
+  //             decoration: BoxDecoration(
+  //               gradient: const LinearGradient(
+  //                 colors: [
+  //                   Colors.red,
+  //                   Color.fromARGB(255, 180, 10, 10),
+  //                 ],
+  //               ),
+  //               borderRadius: BorderRadius.circular(12),
+  //               boxShadow: [
+  //                 BoxShadow(
+  //                   color: Colors.red.withOpacity(0.3),
+  //                   blurRadius: 8,
+  //                   offset: const Offset(0, 2),
+  //                 ),
+  //               ],
+  //             ),
+  //             child: Material(
+  //               color: Colors.transparent,
+  //               child: InkWell(
+  //                 onTap: () {
+  //                   Navigator.of(context).pop();
+  //                   _deleteAccount(context);
+  //                 },
+  //                 borderRadius: BorderRadius.circular(12),
+  //                 child: const Padding(
+  //                   padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+  //                   child: Row(
+  //                     mainAxisSize: MainAxisSize.min,
+  //                     children: [
+  //                       Icon(Icons.delete_rounded, color: Colors.white, size: 18),
+  //                       SizedBox(width: 8),
+  //                       Text(
+  //                         'Delete Account',
+  //                         style: TextStyle(
+  //                           fontSize: 16,
+  //                           fontFamily: 'Poppins',
+  //                           fontWeight: FontWeight.w600,
+  //                           color: Colors.white,
+  //                         ),
+  //                       ),
+  //                     ],
+  //                   ),
+  //                 ),
+  //               ),
+  //             ),
+  //           ),
+  //         ],
+  //         actionsPadding: const EdgeInsets.fromLTRB(24, 8, 24, 20),
+  //       );
+  //     },
+  //   );
+  // }
 
   Widget _buildSelectorCard({
     required String title,
@@ -592,16 +770,10 @@ class _ProfilePageState extends State<ProfilePage> {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            Colors.grey[50]!,
-            Colors.white,
-          ],
+          colors: [Colors.grey[50]!, Colors.white],
         ),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Colors.grey[200]!,
-          width: 1,
-        ),
+        border: Border.all(color: Colors.grey[200]!, width: 1),
       ),
       child: Material(
         color: Colors.transparent,
@@ -615,7 +787,12 @@ class _ProfilePageState extends State<ProfilePage> {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: const Color.fromARGB(255, 247, 2, 2).withOpacity(0.1),
+                    color: const Color.fromARGB(
+                      255,
+                      247,
+                      2,
+                      2,
+                    ).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(
@@ -654,7 +831,12 @@ class _ProfilePageState extends State<ProfilePage> {
                 Container(
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
-                    color: const Color.fromARGB(255, 247, 2, 2).withOpacity(0.1),
+                    color: const Color.fromARGB(
+                      255,
+                      247,
+                      2,
+                      2,
+                    ).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: const Icon(
@@ -675,14 +857,14 @@ class _ProfilePageState extends State<ProfilePage> {
 
   void _showHeightPicker(BuildContext context) {
     final bool isIOS = Theme.of(context).platform == TargetPlatform.iOS;
-    
+
     if (isIOS) {
       _showCupertinoHeightPicker(context);
     } else {
       _showMaterialHeightPicker(context);
     }
   }
-  
+
   void _showCupertinoHeightPicker(BuildContext context) {
     showCupertinoModalPopup(
       context: context,
@@ -736,7 +918,7 @@ class _ProfilePageState extends State<ProfilePage> {
       },
     );
   }
-  
+
   void _showMaterialHeightPicker(BuildContext context) {
     final double initialHeight = _height ?? 120.0;
     showModalBottomSheet(
@@ -757,14 +939,16 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                     actions: [
                       TextButton(
-                        onPressed: (){
+                        onPressed: () {
                           _updateUserInfo();
                           setState(() {});
                           Navigator.of(context).pop();
                         },
                         child: Text(
                           'Done',
-                          style: TextStyle(color: Theme.of(context).primaryColor),
+                          style: TextStyle(
+                            color: Theme.of(context).primaryColor,
+                          ),
                         ),
                       ),
                     ],
@@ -793,7 +977,10 @@ class _ProfilePageState extends State<ProfilePage> {
                               '${120 + index} cm',
                               style: TextStyle(
                                 fontSize: 22,
-                                fontWeight: (_height == 120 + index) ? FontWeight.bold : FontWeight.normal,
+                                fontWeight:
+                                    (_height == 120 + index)
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
                               ),
                             ),
                           );
@@ -804,7 +991,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 ],
               ),
             );
-          }
+          },
         );
       },
     );
@@ -813,19 +1000,19 @@ class _ProfilePageState extends State<ProfilePage> {
   // Show weight picker dialog
   void _showWeightPicker(BuildContext context) {
     final bool isIOS = Theme.of(context).platform == TargetPlatform.iOS;
-    
+
     if (isIOS) {
       _showCupertinoWeightPicker(context);
     } else {
       _showMaterialWeightPicker(context);
     }
   }
-  
+
   void _showCupertinoWeightPicker(BuildContext context) {
     showCupertinoModalPopup(
       context: context,
       builder: (BuildContext context) {
-        final double initialWeight = _weight ?? 30.0; 
+        final double initialWeight = _weight ?? 30.0;
         return Container(
           height: 300,
           color: Colors.white,
@@ -875,9 +1062,9 @@ class _ProfilePageState extends State<ProfilePage> {
       },
     );
   }
-  
+
   void _showMaterialWeightPicker(BuildContext context) {
-    final double initialWeight = _weight ?? 30.0; 
+    final double initialWeight = _weight ?? 30.0;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -896,14 +1083,16 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                     actions: [
                       TextButton(
-                        onPressed: () { 
+                        onPressed: () {
                           _updateUserInfo();
                           setState(() {});
                           Navigator.of(context).pop();
                         },
                         child: Text(
                           'Done',
-                          style: TextStyle(color: Theme.of(context).primaryColor),
+                          style: TextStyle(
+                            color: Theme.of(context).primaryColor,
+                          ),
                         ),
                       ),
                     ],
@@ -932,7 +1121,10 @@ class _ProfilePageState extends State<ProfilePage> {
                               '${30 + index} kg',
                               style: TextStyle(
                                 fontSize: 22,
-                                fontWeight: (_weight == 30 + index) ? FontWeight.bold : FontWeight.normal,
+                                fontWeight:
+                                    (_weight == 30 + index)
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
                               ),
                             ),
                           );
@@ -943,7 +1135,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 ],
               ),
             );
-          }
+          },
         );
       },
     );
@@ -952,14 +1144,14 @@ class _ProfilePageState extends State<ProfilePage> {
   // Show age picker dialog
   void _showAgePicker(BuildContext context) {
     final bool isIOS = Theme.of(context).platform == TargetPlatform.iOS;
-    
+
     if (isIOS) {
       _showCupertinoAgePicker(context);
     } else {
       _showMaterialAgePicker(context);
     }
   }
-  
+
   void _showCupertinoAgePicker(BuildContext context) {
     showCupertinoModalPopup(
       context: context,
@@ -1014,7 +1206,7 @@ class _ProfilePageState extends State<ProfilePage> {
       },
     );
   }
-  
+
   void _showMaterialAgePicker(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -1035,14 +1227,16 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                     actions: [
                       TextButton(
-                        onPressed: () { 
+                        onPressed: () {
                           _updateUserInfo();
                           setState(() {});
                           Navigator.of(context).pop();
                         },
                         child: Text(
                           'Done',
-                          style: TextStyle(color: Theme.of(context).primaryColor),
+                          style: TextStyle(
+                            color: Theme.of(context).primaryColor,
+                          ),
                         ),
                       ),
                     ],
@@ -1071,7 +1265,10 @@ class _ProfilePageState extends State<ProfilePage> {
                               '${12 + index} years',
                               style: TextStyle(
                                 fontSize: 22,
-                                fontWeight: (_age == 12 + index) ? FontWeight.bold : FontWeight.normal,
+                                fontWeight:
+                                    (_age == 12 + index)
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
                               ),
                             ),
                           );
@@ -1082,7 +1279,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 ],
               ),
             );
-          }
+          },
         );
       },
     );

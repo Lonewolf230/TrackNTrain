@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:trackntrain/pages/analysis_meal_logs.dart';
 import 'package:trackntrain/pages/create_full_body.dart';
+import 'package:trackntrain/pages/logs.dart';
 import 'package:trackntrain/pages/full_body_workout.dart';
 import 'package:trackntrain/pages/hiit_workout.dart';
 import 'package:trackntrain/pages/home_page.dart';
@@ -29,10 +31,10 @@ final _router = GoRouter(
   redirect: (context, state) {
     final isAuthenticated = AuthService.isAuthenticated;
     final isAuthRoute = state.matchedLocation.startsWith('/auth');
-    // print(
-    //   'Redirect check - Auth: $isAuthenticated, Auth Route: ${state.matchedLocation}',
-    // );
-    // print('Current User: ${AuthService.currentUser}');
+    print(
+      'Redirect check - Auth: $isAuthenticated, Auth Route: ${state.matchedLocation}',
+    );
+
     if (!isAuthenticated && !isAuthRoute) {
       // print('Redirecting to auth page');
       return '/auth';
@@ -56,6 +58,25 @@ final _router = GoRouter(
       name: 'home',
       builder: (context, state) => const HomePage(),
       routes: <RouteBase>[
+        GoRoute(
+          path: 'analysis_meal_logs',
+          name: 'analysis_meal_logs',
+          builder: (context,state)=>const AnalysisMealLogs(),
+          routes: <RouteBase>[
+            GoRoute(
+              path: 'energy-level-logs',
+              name: 'energy-level-logs',
+              builder:(context,state){
+                final type = state.uri.queryParameters['type'];
+                if (type == null) {
+                  print('Error: No type provided for energy level logs');
+                  return EnergyLevelLogs(type: 'mood');
+                }
+                return EnergyLevelLogs(type: type);
+              }
+            )
+          ]
+        ),
         GoRoute(
           path: 'profile',
           name: 'profile',

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:trackntrain/components/custom_snack_bar.dart';
 import 'package:trackntrain/utils/classes.dart';
 import 'package:trackntrain/utils/db_util_funcs.dart';
+import 'package:trackntrain/utils/misc.dart';
 
 class MealLoggerSheet extends StatefulWidget {
   const MealLoggerSheet({super.key});
@@ -16,7 +18,6 @@ class _MealLoggerSheetState extends State<MealLoggerSheet> {
   final List<String> _mealTypes = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
   final _formKey = GlobalKey<FormState>();
 
-
   @override
   void dispose() {
     _mealNameController.dispose();
@@ -24,67 +25,40 @@ class _MealLoggerSheetState extends State<MealLoggerSheet> {
     super.dispose();
   }
 
-  void _saveMealLog()async{
+  void _saveMealLog() async {
     final String mealName = _mealNameController.text.trim();
     final String description = _descController.text.trim();
 
-    if(_formKey.currentState == null || !_formKey.currentState!.validate()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: Theme.of(context).primaryColor,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          content: const Text('Please fill all fields correctly',style: TextStyle(
-            color: Colors.white,
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),)),
-      );
+    if (_formKey.currentState == null || !_formKey.currentState!.validate()) {
       return;
     }
-    Meal meal=Meal(
+    Meal meal = Meal(
       mealType: _selectedMealType,
       mealName: mealName,
-      description: description);
-    
-      try {
-        await createOrSaveMeal(meal, context);
-        _mealNameController.clear();
-        _descController.clear();
-        setState(() {
-          _selectedMealType = 'Breakfast'; 
-        });
-        if(mounted) Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: Theme.of(context).primaryColor,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-            duration: const Duration(seconds: 2),
-            behavior: SnackBarBehavior.floating,
-            content: const Text('Meal logged successfully',style: TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),)),
-        );
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: Theme.of(context).primaryColor,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            content: Text('Error saving meal',style: TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),)),
-        );
-      }
+      description: description,
+    );
 
+    try {
+      await createOrSaveMeal(meal, context);
+      _mealNameController.clear();
+      _descController.clear();
+      setState(() {
+        _selectedMealType = 'Breakfast';
+      });
+      if (mounted) Navigator.pop(context);
+      showCustomSnackBar(
+        context: context,
+        message: 'Meal logged successfully',
+        type: 'success',
+      );
+    } catch (e) {
+      print('Error saving meal data: $e');
+      showCustomSnackBar(
+        context: context,
+        message: 'Error logging meal: $e',
+        type: 'error',
+      );
+    }
   }
 
   @override
@@ -98,7 +72,6 @@ class _MealLoggerSheetState extends State<MealLoggerSheet> {
       ),
       child: SingleChildScrollView(
         child: Form(
-
           key: _formKey,
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -118,7 +91,7 @@ class _MealLoggerSheetState extends State<MealLoggerSheet> {
                 ],
               ),
               const SizedBox(height: 16),
-          
+
               DropdownButtonFormField<String>(
                 decoration: InputDecoration(
                   labelText: 'Meal Type',
@@ -154,9 +127,9 @@ class _MealLoggerSheetState extends State<MealLoggerSheet> {
                   }
                 },
               ),
-          
+
               const SizedBox(height: 16),
-          
+
               // Meal Name
               TextFormField(
                 validator: (value) {
@@ -185,9 +158,9 @@ class _MealLoggerSheetState extends State<MealLoggerSheet> {
                   ),
                 ),
               ),
-          
+
               const SizedBox(height: 16),
-          
+
               TextFormField(
                 controller: _descController,
                 keyboardType: TextInputType.multiline,
@@ -210,9 +183,9 @@ class _MealLoggerSheetState extends State<MealLoggerSheet> {
                   ),
                 ),
               ),
-          
+
               const SizedBox(height: 24),
-          
+
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(

@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+import 'package:trackntrain/components/custom_snack_bar.dart';
 import 'package:trackntrain/utils/auth_service.dart';
 import 'package:trackntrain/utils/classes.dart';
 import 'package:trackntrain/utils/google_auth_utils.dart';
@@ -79,19 +79,10 @@ class _SignUpTabState extends State<SignUpTab> {
           isLoading = false;
         });
         if (e.toString() != null || e.toString()?.isNotEmpty == true) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              duration: const Duration(seconds: 2),
-              shape: const RoundedRectangleBorder(
-                borderRadius: BorderRadius.all(Radius.circular(8)),
-              ),
-              backgroundColor: Colors.red,
-              content: Text(
-                cleanErrorMessage(e.toString()),
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ),
+          showCustomSnackBar(
+            context: context,
+            message: cleanErrorMessage(e.toString()),
+            type: 'error',
           );
         }
       }
@@ -114,7 +105,7 @@ class _SignUpTabState extends State<SignUpTab> {
             .set(userData.toMap(), SetOptions(merge: true));
 
         final String today = DateTime.now().toIso8601String().split('T')[0];
-        final ninetyDaysTimeStamp =Timestamp.fromDate(
+        final ninetyDaysTimeStamp = Timestamp.fromDate(
           DateTime.now().add(const Duration(days: 90)),
         );
 
@@ -138,19 +129,10 @@ class _SignUpTabState extends State<SignUpTab> {
           isLoading = false;
         });
         if (e.toString() != null || e.toString().isNotEmpty) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              duration: const Duration(seconds: 2),
-              shape: const RoundedRectangleBorder(
-                borderRadius: BorderRadius.all(Radius.circular(8)),
-              ),
-              backgroundColor: Colors.red,
-              content: Text(
-                cleanErrorMessage(e.toString()),
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ),
+          showCustomSnackBar(
+            context: context,
+            message: cleanErrorMessage(e.toString()),
+            type: 'error',
           );
         }
       }

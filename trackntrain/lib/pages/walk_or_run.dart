@@ -9,6 +9,7 @@ import 'package:trackntrain/components/end_workout.dart';
 import 'package:trackntrain/utils/auth_service.dart';
 import 'package:trackntrain/utils/classes.dart';
 import 'package:trackntrain/utils/db_util_funcs.dart';
+import 'package:trackntrain/utils/misc.dart';
 
 class WalkProgress extends StatefulWidget {
   const WalkProgress({super.key});
@@ -36,7 +37,7 @@ class _WalkProgressState extends State<WalkProgress> {
   double _locationSpeed = 0.0;
   DateTime? _lastLocationUpdate;
 
-  bool _isWalkFinished=false;
+  bool _isWalkFinished = false;
 
   @override
   void initState() {
@@ -235,6 +236,11 @@ class _WalkProgressState extends State<WalkProgress> {
         print('Location stream error: $error');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
+            backgroundColor: Theme.of(context).primaryColor,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
             content: Text('Location tracking error: $error'),
             action: SnackBarAction(
               label: 'Retry',
@@ -280,9 +286,9 @@ class _WalkProgressState extends State<WalkProgress> {
     if (_isPaused) {
       setState(() {
         _isPaused = false;
-        _isRunning=true;
+        _isRunning = true;
       });
-    } else if(_isWalkFinished) {
+    } else if (_isWalkFinished) {
       setState(() {
         _elapsedSeconds = 0;
         _routePoints.clear();
@@ -295,18 +301,17 @@ class _WalkProgressState extends State<WalkProgress> {
         _previousLocationTime = null;
       });
       _getCurrentLocation();
-    }
-    else{
+    } else {
       setState(() {
-      _isWalkFinished = false;
-      _elapsedSeconds = 0;
-      _routePoints.clear();
-      _isRunning = true;
-      _currentSpeed = 0.0;
-      _averageSpeed = 0.0;
-      _recentSpeeds.clear();
-      _previousLocation=_currentLocation;
-      _previousLocationTime=null;
+        _isWalkFinished = false;
+        _elapsedSeconds = 0;
+        _routePoints.clear();
+        _isRunning = true;
+        _currentSpeed = 0.0;
+        _averageSpeed = 0.0;
+        _recentSpeeds.clear();
+        _previousLocation = _currentLocation;
+        _previousLocationTime = null;
       });
       _getCurrentLocation();
     }
@@ -331,8 +336,7 @@ class _WalkProgressState extends State<WalkProgress> {
   }
 
   void _stopTimer() {
-
-    bool wasRunning = _isRunning && !_isPaused; 
+    bool wasRunning = _isRunning && !_isPaused;
     _timer?.cancel();
     _positionStreamSubscription?.cancel();
     _speedDecayTimer?.cancel();
@@ -361,11 +365,11 @@ class _WalkProgressState extends State<WalkProgress> {
         ),
       ],
       showRestartButton: false,
-      onDone: (){
-        WalkData walkData=WalkData(
+      onDone: () {
+        WalkData walkData = WalkData(
           userId: AuthService.currentUser!.uid,
           distance: _calculateTotalDistance(),
-          elapsedTime:_elapsedSeconds,
+          elapsedTime: _elapsedSeconds,
           averageSpeed: _averageSpeed,
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
@@ -380,21 +384,21 @@ class _WalkProgressState extends State<WalkProgress> {
         });
         context.goNamed('home');
       },
-      onClose:(){
-        if(wasRunning){
+      onClose: () {
+        if (wasRunning) {
           setState(() {
             _isPaused = false;
             _isRunning = true;
           });
-          _timer=Timer.periodic(const Duration(seconds: 1), (timer){
-          setState(() {
-            _elapsedSeconds++;
+          _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+            setState(() {
+              _elapsedSeconds++;
+            });
+            _updateAverageSpeed();
           });
-          _updateAverageSpeed();
-        });
-        _startLocationStream();
-        }        
-      }
+          _startLocationStream();
+        }
+      },
     );
   }
 
@@ -404,6 +408,11 @@ class _WalkProgressState extends State<WalkProgress> {
       if (!serviceEnabled) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
+            backgroundColor: Theme.of(context).primaryColor,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
             content: const Text(
               'Location services are disabled. Please enable them in settings.',
             ),
@@ -425,13 +434,11 @@ class _WalkProgressState extends State<WalkProgress> {
         print('Permission after request: $permission');
 
         if (permission == LocationPermission.denied) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'Location permissions are denied. Cannot track location.',
-              ),
-              duration: Duration(seconds: 5),
-            ),
+          showCustomSnackBar(
+            context: context,
+            message:
+                'Location permission denied. Please enable it in settings.',
+            type: 'error',
           );
           return;
         }
@@ -463,8 +470,10 @@ class _WalkProgressState extends State<WalkProgress> {
       _startLocationStream();
     } catch (e) {
       print('Error in permission request: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error requesting location permission: $e')),
+      showCustomSnackBar(
+        context: context,
+        message: 'Error requesting location permission: $e',
+        type: 'error',
       );
     }
   }
@@ -941,13 +950,16 @@ class _WalkProgressState extends State<WalkProgress> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  if (!_isRunning || _isPaused )
+                  if (!_isRunning || _isPaused)
                     Expanded(
                       child: _buildControlButton(
                         onPressed:
                             _locationPermissionGranted ? _startTimer : null,
                         icon: Icons.play_arrow_rounded,
-                        label: (_elapsedSeconds>0 || _isPaused)? 'Resume' : 'Start',
+                        label:
+                            (_elapsedSeconds > 0 || _isPaused)
+                                ? 'Resume'
+                                : 'Start',
                         color: Colors.green,
                         isEnabled: _locationPermissionGranted,
                       ),
@@ -962,16 +974,15 @@ class _WalkProgressState extends State<WalkProgress> {
                         color: Colors.orange,
                       ),
                     ),
-                  
+
                   const SizedBox(width: 8),
-                  
+
                   Expanded(
                     child: _buildControlButton(
                       onPressed: _stopTimer,
                       icon: Icons.stop_circle_outlined,
                       label: 'Stop',
                       color: Colors.red,
-                      
                     ),
                   ),
                 ],
@@ -991,7 +1002,6 @@ class _WalkProgressState extends State<WalkProgress> {
     bool isEnabled = true,
   }) {
     return Container(
-      
       decoration: BoxDecoration(
         gradient:
             isEnabled

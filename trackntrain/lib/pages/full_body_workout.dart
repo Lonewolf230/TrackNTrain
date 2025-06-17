@@ -9,6 +9,7 @@ import 'package:trackntrain/components/stop_without_finishing.dart';
 import 'package:trackntrain/providers/full_body_progress_provider.dart';
 import 'package:trackntrain/providers/workout_providers.dart';
 import 'package:trackntrain/utils/db_util_funcs.dart';
+import 'package:trackntrain/utils/misc.dart';
 
 class FullBodyWorkout extends ConsumerStatefulWidget {
   final String mode;
@@ -113,34 +114,28 @@ class _FullBodyWorkoutState extends ConsumerState<FullBodyWorkout> {
 
     if (!isReuseMode) {
       if (reps.length != sets) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Number of reps must match number of sets'),
-            duration: Duration(seconds: 2),
-            backgroundColor: Colors.red,
-          ),
+        showCustomSnackBar(
+          context: context,
+          message: 'Number of reps must match number of sets',
+          type: 'error',
         );
         return;
       }
 
       if (weightsList.length != sets) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Number of weights must match number of sets'),
-            duration: Duration(seconds: 2),
-            backgroundColor: Colors.red,
-          ),
+        showCustomSnackBar(
+          context: context,
+          message: 'Number of weights must match number of sets',
+          type: 'error',
         );
         return;
       }
 
       if (sets <= 0 || reps.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please enter valid sets and reps'),
-            duration: Duration(seconds: 2),
-            backgroundColor: Colors.red,
-          ),
+        showCustomSnackBar(
+          context: context,
+          message: 'Please enter valid sets and reps',
+          type: 'error',
         );
         return;
       }
@@ -159,7 +154,7 @@ class _FullBodyWorkoutState extends ConsumerState<FullBodyWorkout> {
         onDone: () async {
           if (isReuseMode) {
             ref.read(workoutProvider.notifier).clearSelection();
-            await changeUpdatedAt(widget.workoutId!,'userFullBodyWorkouts');
+            await changeUpdatedAt(widget.workoutId!, 'userFullBodyWorkouts');
           }
           if (!isReuseMode) {
             setsController.clear();

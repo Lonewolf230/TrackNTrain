@@ -37,7 +37,14 @@ export const metaLogCreation = onSchedule({
     }
     let batch = admin.firestore().batch();
     let counter = 0;
-    const today = new Date().toISOString().split("T")[0]; 
+    // const today = new Date().toISOString().split("T")[0]; in UTC but need in asia/kolkata timezone
+    const today = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Kolkata',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).format(new Date());
+
     const ninetyDayInFutureTimeStamp=admin.firestore.Timestamp.fromDate(
       new Date(new Date().setDate(new Date().getDate() + 90))
     );
@@ -66,6 +73,7 @@ export const metaLogCreation = onSchedule({
           userId: uid,
           date: today,
           createdAt: admin.firestore.Timestamp.now(),
+          updatedAt: admin.firestore.Timestamp.now(),
           hasWorkedOut: false,
           mood:null,
           sleep:0,
@@ -117,6 +125,7 @@ export const metaLogSpotCreation=onRequest(async (request, response) => {
       hasWorkedOut: false,
       weight: 0,
       mood: null,
+      sleep:0,
       expireAt:todayTimeStamp
     });
     response.status(201).send("Meta log created");
@@ -128,7 +137,7 @@ export const metaLogSpotCreation=onRequest(async (request, response) => {
 
 
 export const sendDailyReminder=onSchedule({
-  schedule:"0 18 * * *",
+  schedule:"58 21 * * *",
   timeZone: "Asia/Kolkata",
   timeoutSeconds:120
 },async(event)=>{

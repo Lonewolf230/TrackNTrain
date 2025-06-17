@@ -1,28 +1,28 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:skeletonizer/skeletonizer.dart';
-import 'package:trackntrain/components/prev_workout_card.dart';
+import 'package:trackntrain/components/custom_snack_bar.dart';
+import 'package:trackntrain/components/meal_card.dart';
 import 'package:trackntrain/utils/auth_service.dart';
-import 'package:trackntrain/utils/misc.dart';
 
-class WorkoutLogsPage extends StatefulWidget{
-  const WorkoutLogsPage({super.key,required this.type});
-  final String type;
+class MealLogs extends StatefulWidget {
+  const MealLogs({super.key});
+
   @override
-  State<WorkoutLogsPage> createState() => _WorkoutLogsPageState();
+  State<MealLogs> createState() => _MealLogsState();
 }
 
-class _WorkoutLogsPageState extends State<WorkoutLogsPage> {
+class _MealLogsState extends State<MealLogs> {
+
+
+
   final ScrollController _scrollController=ScrollController();
-  List<Map<String,dynamic>> workoutLogs=[];
-  List<Map<String,dynamic>> deletedWorkouts=[];
+  List<Map<String,dynamic>> mealLogs=[];
+  List<Map<String,dynamic>> deletedLogs=[];
   bool hasMoreData = true;
   bool isLoading = false;
   bool isInitialLoading = true;
   DocumentSnapshot? lastDoc;
-  IconData icon = Icons.fitness_center;
-  String workoutType='workout'; 
 
   static const int pageSize = 10; 
 
@@ -30,7 +30,6 @@ class _WorkoutLogsPageState extends State<WorkoutLogsPage> {
   void initState() {
     // TODO: implement initState
     super.initState();
-    print('WorkoutLogsPage initialized with type: ${widget.type}');
     _loadInitialData();
     _scrollController.addListener(_onScroll);
   }
@@ -42,7 +41,7 @@ class _WorkoutLogsPageState extends State<WorkoutLogsPage> {
   }
 
   void _onScroll(){
-    if(_scrollController.position.pixels>=_scrollController.position.maxScrollExtent*0.8){
+    if(_scrollController.position.pixels>=_scrollController.position.maxScrollExtent*0.7){
       _loadMoreData();
     }
   }
@@ -56,7 +55,7 @@ class _WorkoutLogsPageState extends State<WorkoutLogsPage> {
 
     try {
       Query query=FirebaseFirestore.instance
-          .collection('${widget.type}')
+          .collection('userMeals')
           .where('userId',isEqualTo: AuthService.currentUser?.uid)
           .orderBy('createdAt',descending: true)
           .limit(pageSize);
@@ -65,21 +64,19 @@ class _WorkoutLogsPageState extends State<WorkoutLogsPage> {
 
       if(snapshot.docs.isNotEmpty){
         lastDoc=snapshot.docs.last;
-        workoutLogs=snapshot.docs
+        mealLogs=snapshot.docs
             .map((doc)=>{
               'id':doc.id,
               ...doc.data() as Map<String,dynamic>
             }).toList();
         hasMoreData = snapshot.docs.length == pageSize;
+
+        print('initial data : ${mealLogs}');
       }
       else{ hasMoreData = false;}
     } catch (e) {
       if(!context.mounted) return;
-      showCustomSnackBar(
-        context: context,
-        message:  'Error loading initial data: $e',
-        type: 'error'
-      );
+        CustomSnackBar(message: 'Error loading initial data: $e', type: 'error').buildSnackBar(context);
     }
     finally{
       setState(() {
@@ -96,9 +93,9 @@ class _WorkoutLogsPageState extends State<WorkoutLogsPage> {
     });
     try {
       Query query = FirebaseFirestore.instance
-          .collection('${widget.type}')
+          .collection('userMeals')
           .where('userId', isEqualTo: AuthService.currentUser?.uid)
-          .orderBy('updatedAt', descending: true)
+          .orderBy('createdAt', descending: true)
           .startAfterDocument(lastDoc!)
           .limit(pageSize);
 
@@ -113,17 +110,15 @@ class _WorkoutLogsPageState extends State<WorkoutLogsPage> {
                 })
             .toList();
         
-        workoutLogs.addAll(newData);
+        mealLogs.addAll(newData);
         hasMoreData = snapshot.docs.length == pageSize;
       } else {
         hasMoreData = false;
       }
     } catch (e) {
       print('Error loading more data: $e');
-      showCustomSnackBar(
-        context: context, 
-        message: 'Error loading more data: $e',
-        type: 'error'
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error loading more data: $e')),
       );
     } finally {
       setState(() {
@@ -134,31 +129,31 @@ class _WorkoutLogsPageState extends State<WorkoutLogsPage> {
 
   Future<void> _refreshData() async {
     setState(() {
-      workoutLogs.clear();
+      mealLogs.clear();
       lastDoc = null;
       hasMoreData = true;
     });
     await _loadInitialData();
   }
 
-  void _deleteWorkout(String workoutId){
+  void _deleteWorkout(String mealLogId){
     setState((){
-      final index=workoutLogs.indexWhere((workout)=>workout['id']==workoutId);
+      final index=mealLogs.indexWhere((meal)=>meal['id']==mealLogId);
       if(index!=-1){
-        final deletedWorkout=workoutLogs.removeAt(index);
-        deletedWorkouts.add(deletedWorkout);
+        final deletedWorkout=mealLogs.removeAt(index);
+        deletedLogs.add(deletedWorkout);
       }
     });
   }
 
-  void _undoDelete(String workoutId){
+  void _undoDelete(String mealLogId){
     setState((){
-      final index=deletedWorkouts.indexWhere((workout)=>workout['id']==workoutId);
+      final index=deletedLogs.indexWhere((meal)=>meal['id']==mealLogId);
       if(index!=-1){
-        final restoredWorkout=deletedWorkouts.removeAt(index);
-        workoutLogs.insert(0,restoredWorkout);
+        final restoredLog=deletedLogs.removeAt(index);
+        mealLogs.insert(0,restoredLog);
 
-        workoutLogs.sort((a, b) {
+        mealLogs.sort((a, b) {
           return (b['createdAt'] as Timestamp).compareTo(a['createdAt'] as Timestamp);
         });
       }
@@ -168,45 +163,50 @@ class _WorkoutLogsPageState extends State<WorkoutLogsPage> {
   Widget _buildSkeletonCard(){
     return Skeletonizer(
       enabled: isInitialLoading,
-      child: PrevWorkoutCard(icon: Icons.fitness_center,
-        workoutLog: {
-          'id': '',
-          'createdAt': Timestamp.now(),
-          'workoutName': '',
-          'duration': 0,
-          'caloriesBurned': 0,
-          'exercises': [],
+      child: MealCard(
+        id: '',
+        onDelete: (){},
+        onUndo: (){},
+        date: DateTime.now(),
+        breakfast: {
+          'dish': '',
+          'calories': 0,
+          'protein': '',
+          'time': '',
         },
-        workoutType: workoutType,
+        lunch: {
+
+        },
+        dinner: {},
+        snacks: [],
       ),
     );
   }
 
   Widget _buildWorkoutCard(Map<String, dynamic> log) {
-    return PrevWorkoutCard(
-      icon: Icons.fitness_center,
-      workoutLog:log,
-      workoutType: widget.type,
-      onDelete:()=>_deleteWorkout(log['id']),
-      onUndo:()=>_undoDelete(log['id'])
+    return SizedBox(
+      width: double.infinity,
+      child: MealCard(
+        key: ValueKey(log['id']),
+        id: log['id'],
+        onDelete:()=> _deleteWorkout(log['id']),
+        onUndo:()=> _undoDelete(log['id']),
+        breakfast: log['breakfast'] ?? {},
+        lunch: log['lunch'] ?? {},
+        dinner: log['dinner'] ?? {},
+        snacks: (log['snacks'] as List<dynamic>?)?.cast<Map<String, dynamic>>().toList() ?? [],
+        date: log['createdAt'] is Timestamp
+            ? (log['createdAt'] as Timestamp).toDate()
+            : DateTime.now(),
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-
-    if(widget.type=='userHiitWorkouts'){
-      icon=FontAwesomeIcons.heartCircleBolt;
-      workoutType='HIIT';
-    }
-    else if(widget.type=='userWalkRecords'){
-      icon=FontAwesomeIcons.personWalking;
-      workoutType='Walk/Jog';
-    }
-
     return Scaffold(
       appBar: AppBar(
-        title: Text('$workoutType Logs'),
+        title: Text('Meal Logs'),
         centerTitle: true,
       ),
       body: Container(
@@ -225,11 +225,36 @@ class _WorkoutLogsPageState extends State<WorkoutLogsPage> {
           ),
         ),
         padding: const EdgeInsets.all(16),
-        child: RefreshIndicator(onRefresh: _refreshData,
+        child: Column(
+          children: [
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: _refreshData,
                 child: _buildBody(),
+              ),
+            ),
+            Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 35),
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                minimumSize: const Size(double.infinity, 50),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                backgroundColor: Theme.of(context).primaryColor,
+                foregroundColor: Colors.white
+              ),
+              onPressed: () {
+
+              },
+              child: const Text('Get meal suggestions '),
+            ),
+          ),
+          ],
+        )
+        
         ),
-      )
-    );
+      );
   }
 
 
@@ -237,20 +262,20 @@ class _WorkoutLogsPageState extends State<WorkoutLogsPage> {
     if(isInitialLoading){
       return ListView.builder(itemBuilder: (context,index)=>_buildSkeletonCard(),itemCount: 10,);
     }
-    if (workoutLogs.isEmpty && !isLoading) {
+    if (mealLogs.isEmpty && !isLoading) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 64, color: Colors.grey),
+            Icon(Icons.food_bank, size: 64, color: Colors.grey),
             SizedBox(height: 16),
             Text(
-              'No $workoutType logs found',
+              'No logs found',
               style: TextStyle(fontSize: 18, color: Colors.grey),
             ),
             SizedBox(height: 8),
             Text(
-              'Start tracking your $workoutType!',
+              'Start tracking your meals!',
               style: TextStyle(color: Colors.grey),
             ),
           ],
@@ -258,8 +283,9 @@ class _WorkoutLogsPageState extends State<WorkoutLogsPage> {
       );
     }
     return ListView.builder(controller: _scrollController,itemBuilder:(builder,index){
-      if(index<workoutLogs.length){
-        return _buildWorkoutCard(workoutLogs[index]);
+      if(index<mealLogs.length){
+        print('meal log: ${mealLogs[index]}');
+        return _buildWorkoutCard(mealLogs[index]);
       }
       else if(hasMoreData && isLoading){
         return _buildSkeletonCard();
@@ -267,7 +293,7 @@ class _WorkoutLogsPageState extends State<WorkoutLogsPage> {
       else{
         return const SizedBox.shrink();
       }
-    } ,itemCount: workoutLogs.length+(hasMoreData?1:0),);
+    } ,itemCount: mealLogs.length+(hasMoreData?1:0),);
 
   }
 }

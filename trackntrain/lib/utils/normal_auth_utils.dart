@@ -10,8 +10,10 @@ Future<String?> signUpWithEmailAndPassword(String email,String password,String n
       password: password
     );
     await credential.user?.updateDisplayName(name);
-
-    await setName(name);
+    await credential.user?.reload();
+    await Future.delayed(const Duration(seconds: 1));
+    // await credential.user?.reload();
+    print('User signed up with email: ${credential.user?.uid}');
     return credential.user?.uid;
   }on FirebaseAuthException catch (e) {
     if(e.code == 'weak-password') {

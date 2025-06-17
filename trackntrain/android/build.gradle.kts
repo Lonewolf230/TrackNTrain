@@ -4,7 +4,9 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath("com.google.gms:google-services:4.4.1")
+        classpath("com.android.tools.build:gradle:8.7.0")
+        classpath("com.google.gms:google-services:4.4.2")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.0")
     }
 }
 allprojects {       
@@ -29,3 +31,38 @@ subprojects {
 tasks.register<Delete>("clean") {
     delete(rootProject.layout.buildDirectory)
 }
+
+
+// buildscript {
+//     repositories {
+//         google()
+//         mavenCentral()
+//     }
+//     dependencies {
+//         classpath("com.android.tools.build:gradle:8.7.0")
+//         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:2.0.21")
+//         classpath("com.google.gms:google-services:4.4.2")
+//     }
+// }
+
+// allprojects {
+//     repositories {
+//         google()
+//         mavenCentral()
+//     }
+// }
+
+// val rootBuildDir = File("../build")
+// rootProject.buildDir = rootBuildDir
+
+// subprojects {
+//     project.buildDir = File(rootBuildDir, project.name)
+// }
+
+// subprojects {
+//     project.evaluationDependsOn(":app")
+// }
+
+// tasks.register<Delete>("clean") {
+//     delete(rootProject.buildDir)
+// }

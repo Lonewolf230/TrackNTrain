@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:trackntrain/components/custom_snack_bar.dart';
 import 'package:trackntrain/utils/auth_service.dart';
 import 'package:trackntrain/utils/google_auth_utils.dart';
 import 'package:trackntrain/utils/misc.dart';
@@ -46,19 +47,10 @@ class _LoginTabState extends State<LoginTab> {
             isLoading = false;
           });
           if (e.toString() != null || e.toString().isNotEmpty == true) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                duration: const Duration(seconds: 2),
-                shape: const RoundedRectangleBorder(
-                  borderRadius: BorderRadius.all(Radius.circular(8)),
-                ),
-                backgroundColor: Colors.red,
-                content: Text(
-                  cleanErrorMessage(e.toString()),
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-              ),
+            showCustomSnackBar(
+              context: context,
+              message: cleanErrorMessage(e.toString()),
+              type: 'error',
             );
           }
         }
@@ -78,19 +70,10 @@ class _LoginTabState extends State<LoginTab> {
           isLoading = false;
         });
         if (e.toString() != null || e.toString().isNotEmpty == true) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              duration: const Duration(seconds: 2),
-              shape: const RoundedRectangleBorder(
-                borderRadius: BorderRadius.all(Radius.circular(8)),
-              ),
-              backgroundColor: Colors.red,
-              content: Text(
-                cleanErrorMessage(e.toString()),
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ),
+          showCustomSnackBar(
+            context: context,
+            message: cleanErrorMessage(e.toString()),
+            type: 'error',
           );
         }
       }

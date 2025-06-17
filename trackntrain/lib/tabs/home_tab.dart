@@ -1,41 +1,33 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:trackntrain/components/meal_logger.dart';
 import 'package:trackntrain/components/mood_dropdown.dart';
+import 'package:trackntrain/components/nutrition_insights_card.dart';
 import 'package:trackntrain/components/stat.dart';
-import 'package:trackntrain/utils/auth_service.dart';
 import 'package:trackntrain/utils/db_util_funcs.dart';
 import 'package:trackntrain/utils/misc.dart';
 
-class HomeTab extends StatefulWidget {
+class HomeTab extends ConsumerStatefulWidget {
   const HomeTab({super.key});
 
   @override
-  State<HomeTab> createState() => _HomeTabState();
+  ConsumerState<HomeTab> createState() => _HomeTabState();
 }
 
-class _HomeTabState extends State<HomeTab> {
+class _HomeTabState extends ConsumerState<HomeTab> {
   String? _mood;
   final TextEditingController _weightController = TextEditingController();
-  String? name;
+  // String? name;
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
-    _loadName();
   }
 
   @override
   void dispose() {
     _weightController.dispose();
     super.dispose();
-  }
-
-  Future<void> _loadName() async{
-    final userName=AuthService.currentUser?.displayName ?? await getName();
-    setState(() {
-      name = userName;
-    });
   }
 
   @override
@@ -45,10 +37,7 @@ class _HomeTabState extends State<HomeTab> {
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [
-            Colors.grey[50]!,
-            Colors.white,
-          ],
+          colors: [Colors.grey[50]!, Colors.white],
         ),
       ),
       child: SingleChildScrollView(
@@ -56,7 +45,6 @@ class _HomeTabState extends State<HomeTab> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Welcome Card
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
@@ -71,7 +59,12 @@ class _HomeTabState extends State<HomeTab> {
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color.fromARGB(255, 247, 2, 2).withOpacity(0.3),
+                    color: const Color.fromARGB(
+                      255,
+                      247,
+                      2,
+                      2,
+                    ).withOpacity(0.3),
                     spreadRadius: 0,
                     blurRadius: 20,
                     offset: const Offset(0, 8),
@@ -81,26 +74,26 @@ class _HomeTabState extends State<HomeTab> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  // const Text(
+                  //   'Welcome Back',
+                  //   style: TextStyle(
+                  //     fontSize: 16,
+                  //     fontWeight: FontWeight.w500,
+                  //     color: Colors.white70,
+                  //     fontFamily: 'Poppins',
+                  //   ),
+                  // ),
+                  const SizedBox(height: 4),
+                  Text(
                     'Welcome Back',
                     style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.white70,
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
                       fontFamily: 'Poppins',
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                      name ?? 'Loading ...',
-                      style: TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        fontFamily: 'Poppins',
-                      ),
-                    ),
-                  
+
                   const SizedBox(height: 16),
                   Row(
                     children: [
@@ -124,11 +117,11 @@ class _HomeTabState extends State<HomeTab> {
               ),
             ),
             const SizedBox(height: 24),
-  
+
             MoodDropdown(),
 
             const SizedBox(height: 32),
-            
+
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -156,7 +149,11 @@ class _HomeTabState extends State<HomeTab> {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  Stat(icon: FontAwesomeIcons.bolt, count: 69, subtitle: 'Streak Days'),
+                  Stat(
+                    icon: FontAwesomeIcons.bolt,
+                    count: 69,
+                    subtitle: 'Streak Days',
+                  ),
                   Stat(
                     icon: FontAwesomeIcons.personWalking,
                     count: 10000,
@@ -166,7 +163,7 @@ class _HomeTabState extends State<HomeTab> {
               ),
             ),
             const SizedBox(height: 24),
-            
+
             Row(
               children: [
                 Expanded(
@@ -176,14 +173,16 @@ class _HomeTabState extends State<HomeTab> {
                       gradient: LinearGradient(
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
-                        colors: [
-                          Colors.white,
-                          Colors.grey[50]!,
-                        ],
+                        colors: [Colors.white, Colors.grey[50]!],
                       ),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: const Color.fromARGB(255, 247, 2, 2).withOpacity(0.2),
+                        color: const Color.fromARGB(
+                          255,
+                          247,
+                          2,
+                          2,
+                        ).withOpacity(0.2),
                         width: 1,
                       ),
                       boxShadow: [
@@ -209,7 +208,12 @@ class _HomeTabState extends State<HomeTab> {
                               Container(
                                 padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
-                                  color: const Color.fromARGB(255, 247, 2, 2).withOpacity(0.1),
+                                  color: const Color.fromARGB(
+                                    255,
+                                    247,
+                                    2,
+                                    2,
+                                  ).withOpacity(0.1),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Icon(
@@ -242,14 +246,16 @@ class _HomeTabState extends State<HomeTab> {
                       gradient: LinearGradient(
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
-                        colors: [
-                          Colors.white,
-                          Colors.grey[50]!,
-                        ],
+                        colors: [Colors.white, Colors.grey[50]!],
                       ),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: const Color.fromARGB(255, 247, 2, 2).withOpacity(0.2),
+                        color: const Color.fromARGB(
+                          255,
+                          247,
+                          2,
+                          2,
+                        ).withOpacity(0.2),
                         width: 1,
                       ),
                       boxShadow: [
@@ -275,7 +281,12 @@ class _HomeTabState extends State<HomeTab> {
                               Container(
                                 padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
-                                  color: const Color.fromARGB(255, 247, 2, 2).withOpacity(0.1),
+                                  color: const Color.fromARGB(
+                                    255,
+                                    247,
+                                    2,
+                                    2,
+                                  ).withOpacity(0.1),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Icon(
@@ -303,6 +314,10 @@ class _HomeTabState extends State<HomeTab> {
                 ),
               ],
             ),
+            const SizedBox(height: 12),
+            NutritionInsightsCard(),
+            const SizedBox(height: 24),
+
           ],
         ),
       ),
@@ -312,139 +327,140 @@ class _HomeTabState extends State<HomeTab> {
   void _showWeightInputDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: const Color.fromARGB(255, 247, 2, 2).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
+      builder:
+          (context) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            title: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color.fromARGB(
+                      255,
+                      247,
+                      2,
+                      2,
+                    ).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    FontAwesomeIcons.weightScale,
+                    color: const Color.fromARGB(255, 247, 2, 2),
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Text(
+                  'Log Weight',
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            content: TextField(
+              controller: _weightController,
+              decoration: InputDecoration(
+                labelText: 'Enter your weight (Kg)',
+                labelStyle: TextStyle(
+                  color: Colors.grey[600],
+                  fontSize: 14,
+                  fontFamily: 'Poppins',
+                ),
+                floatingLabelBehavior: FloatingLabelBehavior.auto,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 16,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color: const Color.fromARGB(255, 247, 2, 2),
+                    width: 2,
+                  ),
+                ),
+                filled: true,
+                fillColor: Colors.grey[50],
               ),
-              child: Icon(
-                FontAwesomeIcons.weightScale,
-                color: const Color.fromARGB(255, 247, 2, 2),
-                size: 20,
-              ),
+              keyboardType: TextInputType.number,
+              style: const TextStyle(fontSize: 16, fontFamily: 'Poppins'),
             ),
-            const SizedBox(width: 12),
-            const Text(
-              'Log Weight',
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-        content: TextField(
-          controller: _weightController,
-          decoration: InputDecoration(
-            labelText: 'Enter your weight (Kg)',
-            labelStyle: TextStyle(
-              color: Colors.grey[600],
-              fontSize: 14,
-              fontFamily: 'Poppins',
-            ),
-            floatingLabelBehavior: FloatingLabelBehavior.auto,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 16,
-            ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: const Color.fromARGB(255, 247, 2, 2),
-                width: 2,
-              ),
-            ),
-            filled: true,
-            fillColor: Colors.grey[50],
-          ),
-          keyboardType: TextInputType.number,
-          style: const TextStyle(
-            fontSize: 16,
-            fontFamily: 'Poppins',
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-            },
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            ),
-            child: Text(
-              'Cancel',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey[600],
-                fontFamily: 'Poppins',
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (_weightController.text.isNotEmpty) {
-                final double? weight = double.tryParse(
-                  _weightController.text,
-                );
-                if (weight != null) {
-                  print('Weight saved: $weight kg');
-                  
-                  updateWeightMeta(weight);
-
-                  _weightController.clear();
+            actions: [
+              TextButton(
+                onPressed: () {
                   Navigator.pop(context);
+                },
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 12,
+                  ),
+                ),
+                child: Text(
+                  'Cancel',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey[600],
+                    fontFamily: 'Poppins',
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  if (_weightController.text.isNotEmpty) {
+                    final double? weight = double.tryParse(
+                      _weightController.text,
+                    );
+                    if (weight != null) {
+                      print('Weight saved: $weight kg');
 
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        'Weight logged: $weight kg',
-                        style: const TextStyle(fontFamily: 'Poppins'),
-                      ),
-                      backgroundColor: const Color.fromARGB(255, 247, 2, 2),
-                      behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                  );
-                }
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color.fromARGB(255, 247, 2, 2),
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
+                      updateWeightMeta(weight);
+
+                      _weightController.clear();
+                      Navigator.pop(context);
+
+                      showCustomSnackBar(
+                        context: context,
+                        message: 'Weight logged: $weight kg',
+                        type: 'success',
+                      );
+                    }
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color.fromARGB(255, 247, 2, 2),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 12,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                child: const Text(
+                  'Save',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontFamily: 'Poppins',
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
-            ),
-            child: const Text(
-              'Save',
-              style: TextStyle(
-                fontSize: 16,
-                fontFamily: 'Poppins',
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+            ],
           ),
-        ],
-      ),
     );
   }
 

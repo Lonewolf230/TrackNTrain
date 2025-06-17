@@ -14,6 +14,7 @@ Future<dynamic> signInWithGoogle() async{
       idToken: googleAuth?.idToken,
     );
     final userCredential=await AuthService.auth.signInWithCredential(credential);
+    print('User signed in with Google: ${userCredential.user?.uid}');
     return userCredential.user?.uid;
   }on FirebaseAuthException catch (e) {
     if (e.code == 'account-exists-with-different-credential') {

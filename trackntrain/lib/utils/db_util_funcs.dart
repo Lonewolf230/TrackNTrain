@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:trackntrain/components/custom_snack_bar.dart';
 import 'package:trackntrain/providers/full_body_progress_provider.dart';
 import 'package:trackntrain/utils/auth_service.dart';
 import 'package:trackntrain/utils/classes.dart';
@@ -116,9 +117,7 @@ Future<void> deleteDoc(
   } catch (e) {
     print('Error deleting document: $e');
     if (context.mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error deleting document: $e')));
+      CustomSnackBar(message: 'Error deleting document: $e', type:'error').buildSnackBar(context);
     }
   }
 }
@@ -151,7 +150,7 @@ Future<void> createOrSaveMeal(Meal meal, BuildContext context) async {
     DocumentSnapshot docSnapshot = await mealDoc.get();
 
     final expireAt=Timestamp.fromDate(
-      DateTime.now().add(const Duration(days: 1)),
+      DateTime.now().add(const Duration(days: 90)),
     );
 
     final Map<String,dynamic> dataToSet={
@@ -160,6 +159,8 @@ Future<void> createOrSaveMeal(Meal meal, BuildContext context) async {
 
     if(!docSnapshot.exists){
       dataToSet['expireAt']=expireAt;
+      dataToSet['createdAt']=FieldValue.serverTimestamp();
+      dataToSet['userId']=AuthService.currentUser?.uid ?? '';
     }
     
     if (meal.mealType != 'Snack') {
@@ -173,6 +174,7 @@ Future<void> createOrSaveMeal(Meal meal, BuildContext context) async {
       final mealMap= meal.toFireStoreMap();
       await mealDoc.update({
         'snacks': FieldValue.arrayUnion([mealMap]),
+        'userId':AuthService.currentUser?.uid ?? '',
         ...dataToSet
       });
     }
@@ -193,10 +195,34 @@ Future<void> updateWeightMeta(double weight)async{
       throw Exception('User not authenticated');
     }
     final String today= DateTime.now().toIso8601String().split('T')[0];
-    DocumentReference docRef=FirebaseFirestore.instance
+    // final String today = DateTime.now().toIso8601String().split('T')[0];
+    // final String today = DateTime.now().subtract(const Duration(days: 1)).toIso8601String().split('T')[0];
+
+    DocumentReference docRef = FirebaseFirestore.instance
       .collection('userMetaLogs')
       .doc('${userId}_$today');
+
+    // Convert today (yyyy-MM-dd) to a DateTime and then to a Firestore Timestamp for createdAt
+    // final DateTime todayDate = DateTime.parse(today);
+    // final Timestamp todayTimestamp = Timestamp.fromDate(todayDate);
+    
     DocumentSnapshot docSnapshot=await docRef.get();
+    if(!docSnapshot.exists) {
+      await docRef.set({
+        'userId': userId,
+        'date': today,
+        'weight': weight,
+        'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+        'mood':null,
+        'sleep': 0,
+        'hasWorkedOut': false,
+      }, SetOptions(merge: true));
+      print('Weight meta created for $today');
+      return;
+    }
+
+    // DocumentSnapshot docSnapshot=await docRef.get();
     if(docSnapshot.exists) {
       await docRef.update({
         'weight': weight,
@@ -208,52 +234,112 @@ Future<void> updateWeightMeta(double weight)async{
 
 }
 
-Future<void> updateWorkoutStatus()async{
+// Future<void> updateWorkoutStatus()async{
+//   try {
+//     final userId=AuthService.currentUser?.uid;
+//     if(userId == null) {
+//       throw Exception('User not authenticated');
+//     }
+//     if(await hasWorkedOut()){
+//       print('User has already worked out today');
+//       return;
+//     }
+
+//     final String today=DateTime.now().toIso8601String().split('T')[0];
+//     DocumentReference docRef=FirebaseFirestore.instance
+//       .collection('userMetaLogs')
+//       .doc('${userId}_$today');
+//     DocumentSnapshot docSnapshot=await docRef.get();
+//     if(docSnapshot.exists) {
+//       await docRef.update({
+//         'hasWorkedOut': true,
+//         'updatedAt': FieldValue.serverTimestamp(),
+//       });
+//     }
+//     await setHasWorkedOut(true);
+//   } catch (e) {
+//     throw Exception('Error updating workout status: $e');
+//   }
+// }
+
+// Future<void> updateMoodMeta(String mood)async{
+//   try {
+//     final userId=AuthService.currentUser?.uid;
+//     if(userId == null) {
+//       throw Exception('User not authenticated');
+//     }
+//     final String today= DateTime.now().toIso8601String().split('T')[0];
+//     DocumentReference docRef=FirebaseFirestore.instance
+//       .collection('userMetaLogs')
+//       .doc('${userId}_$today');
+//     DocumentSnapshot docSnapshot=await docRef.get();
+//     if(docSnapshot.exists) {
+//       await docRef.update({
+//         'mood': mood,
+//         'updatedAt': FieldValue.serverTimestamp(),
+//       });
+//     }
+//   } catch (e) {
+//     throw Exception('Error updating mood meta: $e');
+//   }
+// }
+
+Future<void> updateWorkoutStatus() async {
   try {
-    final userId=AuthService.currentUser?.uid;
-    if(userId == null) {
+    final userId = AuthService.currentUser?.uid;
+    if (userId == null) {
       throw Exception('User not authenticated');
     }
-    if(await hasWorkedOut()){
+
+    if (await hasWorkedOutToday()) {
       print('User has already worked out today');
       return;
     }
 
-    final String today=DateTime.now().toIso8601String().split('T')[0];
-    DocumentReference docRef=FirebaseFirestore.instance
-      .collection('userMetaLogs')
-      .doc('${userId}_$today');
-    DocumentSnapshot docSnapshot=await docRef.get();
-    if(docSnapshot.exists) {
-      await docRef.update({
-        'hasWorkedOut': true,
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
-    }
-    await setHasWorkedOut(true);
+    final String today = DateTime.now().toIso8601String().split('T')[0];
+    DocumentReference docRef = FirebaseFirestore.instance
+        .collection('userMetaLogs')
+        .doc('${userId}_$today'); 
+
+    await docRef.set({
+      'hasWorkedOut': true,
+      'updatedAt': FieldValue.serverTimestamp(),
+      'userId': userId, 
+      'date': today, 
+    }, SetOptions(merge: true));
+
+    await setHasWorkedOutToday(true);
+    
+    print('Workout status updated successfully');
   } catch (e) {
+    print('Error updating workout status: $e');
     throw Exception('Error updating workout status: $e');
   }
 }
 
-Future<void> updateMoodMeta(String mood)async{
+Future<void> updateMoodMeta(String mood) async {
   try {
-    final userId=AuthService.currentUser?.uid;
-    if(userId == null) {
+    final userId = AuthService.currentUser?.uid;
+    if (userId == null) {
       throw Exception('User not authenticated');
     }
-    final String today= DateTime.now().toIso8601String().split('T')[0];
-    DocumentReference docRef=FirebaseFirestore.instance
-      .collection('userMetaLogs')
-      .doc('${userId}_$today');
-    DocumentSnapshot docSnapshot=await docRef.get();
-    if(docSnapshot.exists) {
-      await docRef.update({
-        'mood': mood,
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
-    }
+
+    final String today = DateTime.now().toIso8601String().split('T')[0];
+    DocumentReference docRef = FirebaseFirestore.instance
+        .collection('userMetaLogs')
+        .doc('${userId}_$today'); // Changed from '_' to '-' to match your pattern
+
+    // Use set with merge instead of checking existence first
+    await docRef.set({
+      'mood': mood,
+      'updatedAt': FieldValue.serverTimestamp(),
+      'userId': userId, // Add userId for consistency
+      'date': today, // Add date for easier querying
+    }, SetOptions(merge: true));
+
+    print('Mood meta updated successfully');
   } catch (e) {
+    print('Error updating mood meta: $e');
     throw Exception('Error updating mood meta: $e');
   }
 }
