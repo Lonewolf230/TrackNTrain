@@ -189,9 +189,11 @@ class _CreateHiitPageState extends State<CreateHiitPage> {
     context.goNamed(
       'hiit-started',
       queryParameters: {
+        'mode':'new',
         'rounds': roundsController.text,
         'rest': restDurationController.text,
         'work': exerciseDurationController.text,
+        'workoutId': '',
       },
       extra: exerciseNames,
     );

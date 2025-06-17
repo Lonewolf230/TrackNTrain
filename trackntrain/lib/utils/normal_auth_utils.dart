@@ -1,24 +1,33 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 import 'package:trackntrain/utils/auth_service.dart';
+import 'package:trackntrain/utils/misc.dart';
 
-Future<String?> signUpWithEmailAndPassword(String email,String password,String name) async{
+Future<String?> signUpWithEmailAndPassword(String email,String password,String name,BuildContext context) async{
   try {
     final credential=await AuthService.auth.createUserWithEmailAndPassword(
       email: email, 
       password: password
     );
     await credential.user?.updateDisplayName(name);
-    return null;
+    await credential.user?.reload();
+    await Future.delayed(const Duration(seconds: 1));
+    // await credential.user?.reload();
+    print('User signed up with email: ${credential.user?.uid}');
+    return credential.user?.uid;
   }on FirebaseAuthException catch (e) {
     if(e.code == 'weak-password') {
-      return'The password provided is too weak.';
+      throw Exception('The password provided is too weak.');
+    } else if (e.code == 'invalid-email') {
+      throw Exception('The email address is not valid.');
     } else if (e.code == 'email-already-in-use') {
-      return 'The account already exists for that email.';
+      throw Exception('The email address is already in use by another account.');
     } else {
-      return 'Error signing up: ${e.message}';
+      throw Exception('Error signing up: ${e.message}');
     }
   }
 }
+
 
 Future<String?> signInWithEmailAndPassword(String email,String password) async{
   try {
@@ -28,13 +37,13 @@ Future<String?> signInWithEmailAndPassword(String email,String password) async{
     return null;
   } on FirebaseAuthException catch (e) {
     if (e.code == 'user-not-found') {
-      return 'No user found for that email.';
+      throw Exception('No user found for that email.');
     } else if (e.code == 'wrong-password') {
-      return 'Wrong password provided for that user.';
+      throw Exception('Wrong password provided for that user.');
     } else {
-      return 'Error signing in: ${e.message}';
+      throw Exception('Error signing in: ${e.message}');
     }
   } catch (e) {
-    return 'Error signing in: $e';
+    throw Exception('Error signing in: $e');
   }
 }

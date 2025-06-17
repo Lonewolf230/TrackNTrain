@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:trackntrain/components/custom_snack_bar.dart';
 import 'package:trackntrain/utils/auth_service.dart';
 import 'package:trackntrain/utils/google_auth_utils.dart';
+import 'package:trackntrain/utils/misc.dart';
 import 'package:trackntrain/utils/normal_auth_utils.dart';
 import '../components/social_button.dart';
 import '../components/auth_button.dart';
@@ -28,70 +30,55 @@ class _LoginTabState extends State<LoginTab> {
     super.dispose();
   }
 
-  void _login() async{
+  void _login() async {
     if (_formKey.currentState!.validate()) {
       setState(() {
         isLoading = true;
       });
-        final message=await signInWithEmailAndPassword(
+      try {
+        final message = await signInWithEmailAndPassword(
           _emailController.text.trim(),
-          _passwordController.text.trim()
+          _passwordController.text.trim(),
         );
         print(AuthService.currentUser);
+      } on Exception catch (e) {
         if (mounted) {
           setState(() {
             isLoading = false;
           });
-          if(message != null || message?.isNotEmpty == true) {
- 
-
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              duration: const Duration(seconds: 2),
-              shape: const RoundedRectangleBorder(
-                borderRadius: BorderRadius.all(Radius.circular(8)),
-              ),
-              backgroundColor: Colors.red,
-              content: Text(
-                message??'Login failed',
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ),
-          );
-        }
+          if (e.toString() != null || e.toString().isNotEmpty == true) {
+            showCustomSnackBar(
+              context: context,
+              message: cleanErrorMessage(e.toString()),
+              type: 'error',
+            );
+          }
         }
       }
     }
+  }
 
-    void _loginViaGoogle() async{
-      setState(() {
-        isLoading = true;
-      });
-      final message=await signInWithGoogle();
-      if (mounted) { 
+  void _loginViaGoogle() async {
+    setState(() {
+      isLoading = true;
+    });
+    try {
+      await signInWithGoogle();
+    } on Exception catch (e) {
+      if (mounted) {
         setState(() {
           isLoading = false;
         });
-        if(message != null || message?.isNotEmpty == true) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              duration: const Duration(seconds: 2),
-              shape: const RoundedRectangleBorder(
-                borderRadius: BorderRadius.all(Radius.circular(8)),
-              ),
-              backgroundColor: Colors.red,
-              content: Text(
-                message??'Google login failed',
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ),
+        if (e.toString() != null || e.toString().isNotEmpty == true) {
+          showCustomSnackBar(
+            context: context,
+            message: cleanErrorMessage(e.toString()),
+            type: 'error',
           );
         }
       }
     }
-  
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -111,14 +98,16 @@ class _LoginTabState extends State<LoginTab> {
                 if (value == null || value.isEmpty) {
                   return 'Please enter your email';
                 }
-                if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                if (!RegExp(
+                  r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                ).hasMatch(value)) {
                   return 'Please enter a valid email';
                 }
                 return null;
               },
             ),
             const SizedBox(height: 16),
-            
+
             AuthTextField(
               controller: _passwordController,
               hintText: 'Password',
@@ -126,7 +115,9 @@ class _LoginTabState extends State<LoginTab> {
               obscureText: _obscurePassword,
               suffixIcon: IconButton(
                 icon: Icon(
-                  _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                  _obscurePassword
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined,
                   color: Colors.grey,
                 ),
                 onPressed: () {
@@ -142,19 +133,16 @@ class _LoginTabState extends State<LoginTab> {
                 return null;
               },
             ),
-            
+
             // Remember me and Forgot password
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 16.0),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    
-                  ),
+                  Row(),
                   TextButton(
-                    onPressed: () {
-                    },
+                    onPressed: () {},
                     child: Text(
                       'Forgot Password?',
                       style: TextStyle(
@@ -166,14 +154,10 @@ class _LoginTabState extends State<LoginTab> {
                 ],
               ),
             ),
-            
+
             // Login button
-            AuthButton(
-              text: 'Login',
-              onPressed: _login,
-              isLoading: isLoading,
-            ),
-            
+            AuthButton(text: 'Login', onPressed: _login, isLoading: isLoading),
+
             // OR divider
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 24.0),
@@ -191,7 +175,7 @@ class _LoginTabState extends State<LoginTab> {
                 ],
               ),
             ),
-            
+
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [

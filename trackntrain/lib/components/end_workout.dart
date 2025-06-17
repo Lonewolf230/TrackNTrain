@@ -1,11 +1,9 @@
 
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 
 class WorkoutSummaryItem {
   final String value;
   final String label;
-  
   WorkoutSummaryItem({required this.value, required this.label});
 }
 
@@ -30,7 +28,6 @@ class WorkoutCompletionDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(24),
       ),
@@ -47,7 +44,6 @@ class WorkoutCompletionDialog extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Header Section
             Container(
               width: double.infinity,
               padding: const EdgeInsets.fromLTRB(32, 32, 32, 24),
@@ -89,12 +85,10 @@ class WorkoutCompletionDialog extends StatelessWidget {
               ),
             ),
 
-            // Content Section
             Padding(
               padding: const EdgeInsets.fromLTRB(32, 24, 32, 32),
               child: Column(
                 children: [
-                  // Summary Container
                   Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
@@ -131,7 +125,6 @@ class WorkoutCompletionDialog extends StatelessWidget {
                   ),
                   const SizedBox(height: 24),
                   
-                  // Action Buttons
                   Row(
                     children: [
                       if (showRestartButton) ...[
@@ -147,12 +140,13 @@ class WorkoutCompletionDialog extends StatelessWidget {
                       ],
                       Expanded(
                         child: _buildActionButton(
-                          onTap: onDone ?? () => context.goNamed('home'),
+                          onTap: onDone,
                           icon: Icons.check_circle_rounded,
                           label: 'Done',
                           isPrimary: true,
                         ),
                       ),
+                      
                     ],
                   ),
                 ],
@@ -174,7 +168,6 @@ class WorkoutCompletionDialog extends StatelessWidget {
       return _buildSummaryItem(summaryItems.first);
     }
 
-    // If two items, place them side by side
     if (summaryItems.length == 2) {
       return Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -182,7 +175,6 @@ class WorkoutCompletionDialog extends StatelessWidget {
       );
     }
 
-    // For more than 2 items, use a wrap or grid layout
     return Wrap(
       spacing: 20,
       runSpacing: 16,
@@ -299,6 +291,7 @@ class WorkoutCompletionDialog extends StatelessWidget {
     VoidCallback? onRestart,
     VoidCallback? onDone,
     bool showRestartButton = true,
+    VoidCallback? onClose,
   }) {
     showDialog(
       context: context,
@@ -312,6 +305,10 @@ class WorkoutCompletionDialog extends StatelessWidget {
           showRestartButton: showRestartButton,
         );
       },
-    );
+    ).then((result){
+      if(result == null && onClose != null) {
+        onClose();
+      }
+    });
   }
 }

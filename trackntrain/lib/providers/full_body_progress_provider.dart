@@ -1,6 +1,10 @@
 
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:trackntrain/utils/auth_service.dart';
 
 class ExerciseProgress {
   final String exerciseName;
@@ -12,6 +16,7 @@ class ExerciseProgress {
   final List<double> weightsList;
   final int currentExerciseIndex;
   final bool isCompleted;
+
 
   ExerciseProgress({
     required this.exerciseName,
@@ -59,6 +64,50 @@ class ExerciseProgress {
     );
   }
 
+
+factory ExerciseProgress.fromWorkoutSelectionReuse(Map<String,dynamic> exercise,int index){
+  int sets = exercise['sets'] ?? exercise['set'] ?? 0;
+  
+  List<int> repsList = [];
+  if (exercise['reps'] != null) {
+    if (exercise['reps'] is List) {
+      repsList = List<int>.from(exercise['reps']);
+    } else if (exercise['reps'] is String) {
+      repsList = exercise['reps']
+          .toString()
+          .split(',')
+          .map((e) => int.tryParse(e.trim()) ?? 0)
+          .toList();
+    }
+  }
+  
+  List<double> weightsList = [];
+  if (exercise['weights'] != null || exercise['weightsList'] != null) {
+    dynamic weights = exercise['weights'] ?? exercise['weightsList'];
+    if (weights is List) {
+      weightsList = weights.map((w) => (w as num).toDouble()).toList();
+    } else if (weights is String) {
+      weightsList = weights
+          .toString()
+          .split(',')
+          .map((e) => double.tryParse(e.trim()) ?? 0.0)
+          .toList();
+    }
+  }
+
+  return ExerciseProgress(
+    exerciseName: exercise['exerciseName'] ?? '',
+    howToPerform: exercise['howToPerform'] ?? '',
+    specialConsiderations: exercise['specialConsiderations'] ?? '',
+    avoidWhenUserHasFollowingIssues: exercise['avoidWhenUserHasFollowingIssues'] ?? '',
+    sets: sets,
+    reps: repsList,
+    weightsList: weightsList,
+    currentExerciseIndex: index,
+    isCompleted: exercise['isCompleted'] ?? false,
+  );
+}
+
   @override
   String toString() {
     // TODO: implement toString
@@ -70,22 +119,27 @@ class WorkoutProgressState{
   final List<ExerciseProgress> exercises;
   final int currentExerciseIndex;
   final bool isWorkoutCompleted;
+  final bool isReusedWorkout;
 
-  WorkoutProgressState({
+
+  const WorkoutProgressState({
     required this.exercises,
     this.currentExerciseIndex = 0,
     this.isWorkoutCompleted = false,
+    this.isReusedWorkout = false,
   });
 
   WorkoutProgressState copyWith({
     List<ExerciseProgress>? exercises,
     int? currentExerciseIndex,
     bool? isWorkoutCompleted,
+    bool? isReusedWorkout,
   }) {
     return WorkoutProgressState(
       exercises: exercises ?? this.exercises,
       currentExerciseIndex: currentExerciseIndex ?? this.currentExerciseIndex,
       isWorkoutCompleted: isWorkoutCompleted ?? this.isWorkoutCompleted,
+      isReusedWorkout: isReusedWorkout ?? this.isReusedWorkout,
     );
   }
 
@@ -98,6 +152,7 @@ class WorkoutProgressState{
 
   int get totalExercises=>exercises.length;
   bool get hasNextExercise=> currentExerciseIndex < exercises.length-1;
+  List<String> get exerciseNames=>exercises.map((e)=>e.exerciseName).toList();
 
   @override
   String toString() {
@@ -109,7 +164,7 @@ class WorkoutProgressState{
 class WorkoutProgressNotifier extends StateNotifier<WorkoutProgressState>{
   WorkoutProgressNotifier():super(WorkoutProgressState(exercises: []));
 
-  void initializeWorkout(List<Map<String,dynamic>> selectedExercises){
+  void initializeNewWorkout(List<Map<String,dynamic>> selectedExercises){
     final exercises=selectedExercises.asMap().entries
         .map((entry)=>ExerciseProgress.fromWorkoutSelection(entry.value,entry.key))
         .toList();
@@ -118,6 +173,20 @@ class WorkoutProgressNotifier extends StateNotifier<WorkoutProgressState>{
       exercises: exercises,
       currentExerciseIndex: 0,
       isWorkoutCompleted: false,
+      isReusedWorkout: false,
+    );
+  }
+
+  void initializeReusedWorkout(List<Map<String,dynamic>> selectedExercises){
+    final exercises=selectedExercises.asMap().entries
+        .map((entry)=>ExerciseProgress.fromWorkoutSelectionReuse(entry.value,entry.key))
+        .toList();
+
+    state=WorkoutProgressState(
+      exercises: exercises,
+      currentExerciseIndex: 0,
+      isWorkoutCompleted: false,
+      isReusedWorkout: true,
     );
   }
 
@@ -205,10 +274,9 @@ final isWorkoutCompletedProvider = Provider<bool>((ref) {
   return ref.watch(workoutProgressProvider).isWorkoutCompleted;
 });
 
-// final workoutProgressPercentageProvider = Provider<double>((ref) {
-//   final state = ref.watch(workoutProgressProvider);
-//   if (state.totalExercises == 0) return 0.0;
-//   return (state.compl) / state.totalExercises ;
-// });
+final exerciseNamesProvider = Provider<List<String>>((ref) {
+  return ref.watch(workoutProgressProvider).exerciseNames;
+});
+
 
 

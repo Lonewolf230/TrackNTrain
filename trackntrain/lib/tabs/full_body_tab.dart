@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:trackntrain/components/prev_workout_card.dart';
 
@@ -10,7 +11,14 @@ class FullBodyTab extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         iconTheme: const IconThemeData(color: Colors.white),
-        title: const Text('Full Body', style: TextStyle(color: Colors.white, fontFamily: 'Poppins', fontWeight: FontWeight.w600)),
+        title: const Text(
+          'Full Body',
+          style: TextStyle(
+            color: Colors.white,
+            fontFamily: 'Poppins',
+            fontWeight: FontWeight.w600,
+          ),
+        ),
         centerTitle: true,
         backgroundColor: const Color.fromARGB(255, 247, 2, 2),
         elevation: 0,
@@ -20,10 +28,7 @@ class FullBodyTab extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Colors.grey[50]!,
-              Colors.white,
-            ],
+            colors: [Colors.grey[50]!, Colors.white],
           ),
         ),
         child: SingleChildScrollView(
@@ -32,7 +37,7 @@ class FullBodyTab extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: 10),
-              
+
               // Header Card
               Container(
                 width: double.infinity,
@@ -41,10 +46,7 @@ class FullBodyTab extends StatelessWidget {
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [
-                      Colors.white,
-                      Colors.grey[50]!,
-                    ],
+                    colors: [Colors.white, Colors.grey[50]!],
                   ),
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
@@ -56,7 +58,12 @@ class FullBodyTab extends StatelessWidget {
                     ),
                   ],
                   border: Border.all(
-                    color: const Color.fromARGB(255, 247, 2, 2).withOpacity(0.1),
+                    color: const Color.fromARGB(
+                      255,
+                      247,
+                      2,
+                      2,
+                    ).withOpacity(0.1),
                     width: 1,
                   ),
                 ),
@@ -65,7 +72,12 @@ class FullBodyTab extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: const Color.fromARGB(255, 247, 2, 2).withOpacity(0.1),
+                        color: const Color.fromARGB(
+                          255,
+                          247,
+                          2,
+                          2,
+                        ).withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(
@@ -89,9 +101,9 @@ class FullBodyTab extends StatelessWidget {
                   ],
                 ),
               ),
-              
+
               const SizedBox(height: 32),
-              
+
               // Previous Workouts Section
               Container(
                 width: double.infinity,
@@ -116,7 +128,12 @@ class FullBodyTab extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: const Color.fromARGB(255, 247, 2, 2).withOpacity(0.1),
+                            color: const Color.fromARGB(
+                              255,
+                              247,
+                              2,
+                              2,
+                            ).withOpacity(0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Icon(
@@ -127,7 +144,7 @@ class FullBodyTab extends StatelessWidget {
                         ),
                         const SizedBox(width: 12),
                         Text(
-                          'Previous Workouts',
+                          'Workouts Logs',
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
@@ -138,25 +155,59 @@ class FullBodyTab extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 20),
-                    ListView(
-                      addAutomaticKeepAlives: true,
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      children: const [
-                        PrevWorkoutCard(icon: Icons.fitness_center,),
-                        SizedBox(height: 12),
-                        PrevWorkoutCard(icon: Icons.fitness_center,),
-                        SizedBox(height: 12),
-                        PrevWorkoutCard(icon: Icons.fitness_center,),
-                      ],
+                    Text(
+                      'View your previous workouts here. You can track your progress and see how you\'ve improved over time. You can also directly start a new workout based on your previous logs.',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.grey[600],
+                        fontFamily: 'Poppins',
+                      ),
+                    
+                    ),
+                    Text(
+                      'Logs will be auto deleted after 90 days.',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.red,
+                        fontFamily: 'Poppins',
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Align(
+                      alignment: Alignment.bottomRight,
+                      child: TextButton.icon(
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.red.withOpacity(0.1),
+                          backgroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 16,
+                            horizontal: 24,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            side: BorderSide(
+                              color: Colors.red,
+                              width: 2,
+                            ),
+                          ),
+                        ),
+                        onPressed: () {
+                          context.goNamed('view-workout-logs',extra: 'userFullBodyWorkouts');
+                        },
+                        label: Text(
+                          'View Logs',
+                          style: TextStyle(color: Colors.red),
+                        ),
+                        icon: Icon(Icons.arrow_circle_right_rounded,color: Colors.red,),
+                      ),
                     ),
                   ],
                 ),
               ),
-              
+
               const SizedBox(height: 32),
-              
-              // Action Buttons Section
+
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),
@@ -179,7 +230,12 @@ class FullBodyTab extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: const Color.fromARGB(255, 247, 2, 2).withOpacity(0.1),
+                            color: const Color.fromARGB(
+                              255,
+                              247,
+                              2,
+                              2,
+                            ).withOpacity(0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Icon(
@@ -200,47 +256,7 @@ class FullBodyTab extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 24),
-                    
-                    // Generate Workout Button
-                    Container(
-                      width: double.infinity,
-                      constraints: const BoxConstraints(maxWidth: 300),
-                      child: ElevatedButton(
-                        onPressed: () {
-                          print('Generate Workout');
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color.fromARGB(255, 247, 2, 2),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          elevation: 0,
-                          shadowColor: Colors.transparent,
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: const [
-                            Icon(Icons.auto_awesome, size: 20),
-                            SizedBox(width: 8),
-                            Text(
-                              'Generate Workout',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                fontFamily: 'Poppins',
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    
-                    const SizedBox(height: 16),
-                    
-                    // Create Workout Button
+                    const SizedBox(height: 20),
                     Container(
                       width: double.infinity,
                       constraints: const BoxConstraints(maxWidth: 300),
@@ -251,7 +267,10 @@ class FullBodyTab extends StatelessWidget {
                         },
                         style: OutlinedButton.styleFrom(
                           foregroundColor: const Color.fromARGB(255, 247, 2, 2),
-                          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 16,
+                            horizontal: 24,
+                          ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
                           ),
@@ -280,7 +299,7 @@ class FullBodyTab extends StatelessWidget {
                   ],
                 ),
               ),
-              
+
               const SizedBox(height: 20),
             ],
           ),
