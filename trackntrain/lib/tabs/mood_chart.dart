@@ -419,10 +419,12 @@ class _MoodTrackingScreenState extends State<MoodTrackingScreen> {
     DateTime weekendDate = currentWeekStart.add(const Duration(days: 6));
 
     try {
+      print('Running load for mood data');
       setState(() {
         isLoading = true;
       });
-
+      print('Loading mood data for week starting: $currentWeekStart');
+      print('Loading mood data until: $weekendDate');
       final snapShot =
           await FirebaseFirestore.instance
               .collection('userMetaLogs')
@@ -447,6 +449,7 @@ class _MoodTrackingScreenState extends State<MoodTrackingScreen> {
               final mood = data['mood'] ?? '';
               return MoodData(date: date, mood: mood);
             }).toList();
+      print('Data fetch done');
       });
     } catch (e) {
       print('Error loading mood data: $e');
@@ -520,82 +523,16 @@ class _MoodTrackingScreenState extends State<MoodTrackingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Mood Tracking')),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          return SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                children: [
-                  MoodChart(
-                    moodData: currentWeekData,
-                    currentWeekStart: currentWeekStart,
-                    isLoading: isLoading,
-                    onSelectDate: _selectDate,
-                    onNextWeek: _goToNextWeek,
-                    onPreviousWeek: _goToPreviousWeek,
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).primaryColor,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 12,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        suggestion =
-                            'Based on your weight data for this week, you are making steady progress towards your goals. Maintaining consistency is key to achieving long-term results, so continue tracking your weight regularly and celebrating small milestones along the way. Remember, fluctuations in weight are normal and can be influenced by factors such as hydration, sleep, and stress levels. To maximize your progress, aim for a balanced diet rich in whole foods, lean proteins, healthy fats, and plenty of fruits and vegetables. Incorporate both strength training and cardiovascular exercises into your routine, and ensure you are getting adequate rest and recovery. If you notice any plateaus or unexpected changes, consider reviewing your habits or consulting with a nutritionist or fitness professional for personalized guidance. Stay motivated, set realistic goals, and don\'t hesitate to seek support from friends, family, or online communities. Your commitment to tracking and improving your health is commendable—keep up the great work and continue striving for a healthier, happier you!';
-                      });
-                    },
-                    child: const Text(
-                      'Get AI insights',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  if (suggestion.isNotEmpty)
-                    SizedBox(
-                      height: constraints.maxHeight * 0.4,
-                      child: Container(
-                        margin: const EdgeInsets.fromLTRB(5, 0, 5, 20),
-                        child: Card(
-                          elevation: 4,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: SingleChildScrollView(
-                            child: Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Text(
-                                suggestion,
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-    );
+    return  Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: MoodChart(
+          moodData: currentWeekData,
+          currentWeekStart: currentWeekStart,
+          isLoading: isLoading,
+          onSelectDate: _selectDate,
+          onNextWeek: _goToNextWeek,
+          onPreviousWeek: _goToPreviousWeek,
+        ),
+      );
   }
 }

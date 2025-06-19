@@ -111,6 +111,27 @@ Future<void> removeMood({String? userId, String? date}) async {
 //   }
 // }
 
+Future<void> setGoal(String goal)async{
+  final userId=AuthService.currentUser?.uid;
+  if (userId == null) return;
+  final prefs=await getPrefs();
+  final key = 'goal_$userId';
+  print('Setting goal to shared prefs');
+  await prefs.setString(key, goal);
+  print('Goal set for user $userId: $goal');
+}
+
+Future<String?> getGoal() async {
+  final userId = AuthService.currentUser?.uid;
+  if (userId == null) return null;
+  final prefs = await getPrefs();
+  final key = 'goal_$userId';
+  print('Retrieving goal from shared prefs');
+  final goal = prefs.getString(key);
+  print('Retrieved goal for user $userId: $goal');
+  return goal;
+}
+
 String cleanErrorMessage(String error) {
   return error.replaceFirst('Exception:', '').trim();
 }
@@ -155,6 +176,25 @@ Future<void> setHasWorkedOutToday(bool value) async {
   await setHasWorkedOut(value);
 }
 
+Future<void> setActiveDates(List<String> activeDates)async{
+  final userId=AuthService.currentUser?.uid;
+  if (userId == null) return;
+  final prefs=await getPrefs();
+  final key = 'activeDates_$userId';
+  await prefs.setStringList(key, activeDates);
+  print('Active dates set for user $userId: $activeDates');
+}
+
+Future<List<String>> getActiveDates() async{
+  final userId=AuthService.currentUser?.uid;
+  if (userId == null) return [];
+  final prefs=await getPrefs();
+  final key = 'activeDates_$userId';
+  final activeDates = prefs.getStringList(key) ?? [];
+  print('Retrieved active dates for user $userId: $activeDates');
+  return activeDates;
+}
+
 Future<void> checkAndResetDailyPrefs() async {
   final prefs = await getPrefs();
   final today = DateTime.now().toIso8601String().split("T")[0];
@@ -173,6 +213,10 @@ Future<void> checkAndResetDailyPrefs() async {
       if (key.contains('mood_') && key.endsWith('_${DateTime.now().subtract(Duration(days: 1)).toIso8601String().split("T")[0]}')) {
         await prefs.remove(key);
         print('Removed mood for key: $key');
+      }
+      if(key.startsWith('activeDates_')) {
+        await prefs.remove(key);
+        print('Removed active dates for key: $key');
       }
     }
     

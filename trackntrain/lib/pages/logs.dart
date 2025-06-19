@@ -1,6 +1,8 @@
 
 
 import 'package:flutter/material.dart';
+import 'package:trackntrain/components/workout_calendar.dart';
+import 'package:trackntrain/pages/workout_calendar_tab.dart';
 import 'package:trackntrain/tabs/meal_logs.dart';
 import 'package:trackntrain/tabs/mood_chart.dart';
 import 'package:trackntrain/tabs/weight_chart.dart';
@@ -21,6 +23,7 @@ class _EnergyLevelLogsState extends State<EnergyLevelLogs> {
         widget.type == 'mood' ? const MoodTrackingScreen() :
         widget.type == 'weight' ? const WeightTrackingScreen() :
         widget.type == 'meal' ? const MealLogs():
+        widget.type=='workout'? const WorkoutCalendarTab():
         const Center(child: Text('Invalid type'));
 
     return Scaffold(
