@@ -1,6 +1,8 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:trackntrain/components/saveable_textfield.dart';
+import 'package:trackntrain/config.dart';
 import 'package:trackntrain/utils/auth_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:trackntrain/utils/classes.dart';
@@ -32,12 +34,11 @@ class _ProfilePageState extends State<ProfilePage> {
         prefGoal=snapshot.exists
             ? (snapshot.data() as Map<String, dynamic>)['goal'] as String?
             : null;
-        if(prefGoal!=null){
-          await setGoal(prefGoal);
-        }
-      setState(() {
-        goal = prefGoal ?? 'Add Your Goal';
-      });
+      }
+      if(prefGoal!=null && prefGoal.isNotEmpty){
+        setState(() {
+          goal=prefGoal ?? 'Add your goal';
+        }); 
       }
     } catch (e) {
       print('Error loading goal: $e');
@@ -45,8 +46,13 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   void _getUserInfo() async {
+    print('Fetching user info... from preferences');
+    _height=await getHeight();
+    _weight=await getWeight();
+    _age=await getAge();
     final user = AuthService.currentUser;
-    if (user != null) {
+    if (user != null && (_height== null || _weight == null || _age == null)) {
+      print('Fetching user info from Firestore for user: ${user.uid}');
       DocumentReference userDoc = FirebaseFirestore.instance
           .collection('users')
           .doc(user.uid);
@@ -59,11 +65,13 @@ class _ProfilePageState extends State<ProfilePage> {
           _age = data['age']?.toDouble();
         });
         print('User Info: Height: $_height, Weight: $_weight, Age: $_age');
+        await setWeight(_weight!);
+        await setHeight(_height!);
+        await setAge(_age!);
       }
       print('User Document: ${userSnapshot.data()}');
       return;
     }
-    print('No user is currently signed in.');
   }
 
   void _updateUserInfo() async {
@@ -91,6 +99,9 @@ class _ProfilePageState extends State<ProfilePage> {
           userData.toMap(isUpdate: userSnapshot.exists),
           SetOptions(merge: true),
         );
+        await setWeight(_weight!);
+        await setHeight(_height!);
+        await setAge(_age!);
         print('User info updated successfully: $userData');
       } catch (e) {
         if (!context.mounted) return;
@@ -131,6 +142,14 @@ class _ProfilePageState extends State<ProfilePage> {
   void _logout(BuildContext context) async {
     try {
       await AuthService.signOut();
+      if(context.mounted){
+        showCustomSnackBar(
+          context: context, 
+          message: 'Logged out successfully',
+          type: 'success',
+          disableCloseButton: true
+        );
+      }
     } catch (e) {
       if (!context.mounted) return;
       showCustomSnackBar(
@@ -172,9 +191,23 @@ class _ProfilePageState extends State<ProfilePage> {
       },
     );
 
+    final dio=Dio();
+
     try {
+      final String userId=AuthService.currentUser?.uid ?? '';
       await clearCurrentUserPrefs();
       await AuthService.deleteAccount();
+      await dio.post(
+        AppConfig.deletionUrl,
+        data: {
+          'userId': userId,
+        },
+        options: Options(
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        ),
+      );
       print('Account delete initialised');
 
       if (context.mounted) Navigator.of(context).pop();
@@ -184,6 +217,7 @@ class _ProfilePageState extends State<ProfilePage> {
           context: context,
           message: 'Account deleted successfully',
           type: 'success',
+          disableCloseButton: true,
         );
       }
     } catch (e) {
@@ -561,7 +595,7 @@ class _ProfilePageState extends State<ProfilePage> {
                           
                           children: [
                             Text(
-                              'Your goal',
+                              'Your weekly goal',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: Theme.of(context).primaryColor,

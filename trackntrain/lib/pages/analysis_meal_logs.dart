@@ -1,10 +1,15 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:trackntrain/components/analysis_page_card.dart';
 import 'package:trackntrain/components/suggestion_card.dart';
+import 'package:trackntrain/config.dart';
 import 'package:trackntrain/tabs/mood_chart.dart';
 import 'package:trackntrain/tabs/weight_chart.dart';
+import 'package:dio/dio.dart';
+import 'package:trackntrain/utils/auth_service.dart';
+import 'package:trackntrain/utils/misc.dart';
 
 class AnalysisMealLogs extends StatefulWidget {
   const AnalysisMealLogs({super.key});
@@ -16,18 +21,93 @@ class AnalysisMealLogs extends StatefulWidget {
 class _AnalysisMealLogsState extends State<AnalysisMealLogs> {
   String suggestion = '';
   bool isLoadingSuggestion = false;
+  bool isValid=true;
 
   Future<void> fetchSuggestion() async {
-    setState(() {
-      isLoadingSuggestion = true;
-    });
-    // Simulate a network call to fetch suggestion
-    await Future.delayed(const Duration(seconds: 2));
-    setState(() {
-      suggestion = "Analyzing your meal logs can provide valuable insights into your eating habits and nutritional intake. By reviewing the types of foods you consume, portion sizes, and meal timing, you can identify patterns that may be affecting your health and fitness goals. For example, you might discover that you tend to skip breakfast or that you often snack late at night.\n\nThis information can help you make more informed decisions about your diet, such as adjusting portion sizes, incorporating more whole foods, or planning meals ahead of time to avoid unhealthy choices. Regularly analyzing your meal logs can lead to better nutrition and overall well-being.";
-      isLoadingSuggestion = false;
-    });
+    final dio = Dio();
+    String responseText = '';
+    try {
+      setState(() {
+        isLoadingSuggestion = true;
+      });
+
+      final response = await dio.post(
+        AppConfig.aiUrl,
+        data: {'userId': AuthService.currentUser?.uid},
+        options: Options(headers: {'Content-Type': 'application/json'}),
+      );
+      responseText = response.data['aiResponse'] as String;
+      print('AI Response: $responseText');
+    } on DioException catch (e) {
+      print('Error fetching suggestion: ${e.message}');
+      showCustomSnackBar(
+        context: context,
+        message: 'Failed to fetch suggestion. Please try again later.',
+        type: 'error',
+      );
+    } catch (e) {
+      print('Unexpected error: $e');
+      showCustomSnackBar(
+        context: context,
+        message:
+            'You have reached the limit of AI requests for this week. Please try again the next Monday.',
+        type: 'error',
+      );
+    } finally {
+      setState(() {
+        suggestion = responseText;
+        isLoadingSuggestion = false;
+      });
+    }
   }
+
+  void checkValidityForAIRequest() async {
+    final DocumentReference userDoc = FirebaseFirestore.instance
+        .collection('users')
+        .doc(AuthService.currentUser?.uid);
+    final DocumentSnapshot snapshot = await userDoc.get();
+    final lastAIResponseTime = snapshot.get('lastAIResponseAt') as Timestamp?;
+
+    if (lastAIResponseTime != null) {
+      final now = DateTime.now();
+      final lastTime = lastAIResponseTime.toDate();
+
+      int weekNumber(DateTime date) {
+        final firstDayOfYear = DateTime(date.year, 1, 1);
+        final daysOffset = firstDayOfYear.weekday - 1;
+        final firstMonday = firstDayOfYear.subtract(Duration(days: daysOffset));
+        return ((date.difference(firstMonday).inDays) / 7).floor() + 1;
+      }
+
+      final nowWeek = weekNumber(now);
+      final nowYear = now.year;
+      final lastWeek = weekNumber(lastTime);
+      final lastYear = lastTime.year;
+
+      if (nowYear == lastYear && nowWeek == lastWeek) {
+        showCustomSnackBar(
+          context: context,
+          message:'You have reached the limit of AI requests for this week. Please try again next Monday. You can view your previous week insights down below.',
+          type: 'error',
+        );
+        
+        //prev week insights as fallback
+
+        final DocumentReference userDoc=FirebaseFirestore.instance
+            .collection('users')
+            .doc(AuthService.currentUser?.uid);
+        final DocumentSnapshot userSnapshot = await userDoc.get();
+        final previousWeekSuggestion = userSnapshot.get('lastAIResponse') as String?;
+        setState(() {
+          isValid = false;
+          suggestion = previousWeekSuggestion ?? 'No insights available for the previous week.';
+        });
+        return;
+      }
+    }
+    await fetchSuggestion();
+  }
+
   @override
   Widget build(BuildContext context) {
     final List<HealthTrackingCard> analysisCards = [
@@ -60,11 +140,11 @@ class _AnalysisMealLogsState extends State<AnalysisMealLogs> {
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
-            children: [
+          children: [
             ...analysisCards.map(
               (card) => Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8.0),
-              child: card,
+                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                child: card,
               ),
             ),
             const SizedBox(height: 16),
@@ -75,40 +155,43 @@ class _AnalysisMealLogsState extends State<AnalysisMealLogs> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: isLoadingSuggestion? null : fetchSuggestion,
+                onPressed:
+                    isLoadingSuggestion ? null : checkValidityForAIRequest,
                 style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).primaryColor,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                ),
-                label: Text( isLoadingSuggestion?'Analysing':'Get AI Insights',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                ),
-                ),
-                icon:isLoadingSuggestion? const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(
-                    color: Colors.white,
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation(Colors.white),
+                  backgroundColor: Theme.of(context).primaryColor,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                ) : Icon(FontAwesomeIcons.brain,
-                  color: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                 ),
+                label: Text(
+                  isLoadingSuggestion ? 'Analysing' : 'Get AI Insights',
+                  style: TextStyle(color: Colors.white, fontSize: 16),
+                ),
+                icon:
+                    isLoadingSuggestion
+                        ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation(Colors.white),
+                          ),
+                        )
+                        : Icon(FontAwesomeIcons.brain, color: Colors.white),
               ),
             ),
             const SizedBox(height: 16),
             SuggestionCard(
-              suggestion:suggestion,
+              suggestion: suggestion,
               isLoading: isLoadingSuggestion,
-              // showTypingIndicator: true,
+              showTypingIndicator:isValid? true:false,
             ),
-          ]
+          ],
         ),
       ),
     );

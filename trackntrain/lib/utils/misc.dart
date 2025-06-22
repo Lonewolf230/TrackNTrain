@@ -41,15 +41,17 @@ Future<SharedPreferences> getPrefs()async{
 
 Future<bool> hasWorkedOut() async{
   final prefs=await getPrefs();
-  final hasWorked=prefs.getBool('hasWorkedOut')?? false;
+  final userId=AuthService.currentUser?.uid;
+  final hasWorked=prefs.getBool('hasWorkedOut_$userId')?? false;
   print('Has worked out: $hasWorked');
   return hasWorked;
 }
 
 Future<void> setHasWorkedOut(bool value) async {
   final prefs = await getPrefs();
+  final userId=AuthService.currentUser?.uid;
   print('Setting hasWorkedOut to: $value');
-  await prefs.setBool('hasWorkedOut', value);
+  await prefs.setBool('hasWorkedOut_$userId', value);
 }
 
 String _getUserMoodKey({String? userId, String? date}) {
@@ -84,38 +86,14 @@ Future<void> removeMood({String? userId, String? date}) async {
   await prefs.remove(key);
 }
 
-// Future<void> checkAndResetDailyPrefs() async {
-//   final prefs = await getPrefs();
-
-//   final today = DateTime.now().toIso8601String().split("T")[0];
-//   final lastReset = prefs.getString('lastResetDate');
-
-//   if (lastReset != today) {
-//     await prefs.setBool('hasWorkedOut', false);
-//     await prefs.remove('mood');
-//     await prefs.setString('lastResetDate', today);
-
-//     print("Daily prefs reset");
-//   } else {
-//     print("Already reset today");
-//   }
-// }
-
-// Future<void> removePref(String key)async{
-//   final prefs = await getPrefs();
-//   if (prefs.containsKey(key)) {
-//     await prefs.remove(key);
-//     print("Preference '$key' removed successfully.");
-//   } else {
-//     print("Preference '$key' does not exist.");
-//   }
-// }
-
 Future<void> setGoal(String goal)async{
   final userId=AuthService.currentUser?.uid;
   if (userId == null) return;
   final prefs=await getPrefs();
   final key = 'goal_$userId';
+  final date = DateTime.now();
+  final goalWeekNumber='${getWeekNumber(date)}';
+  prefs.setString('goalWeek',goalWeekNumber);
   print('Setting goal to shared prefs');
   await prefs.setString(key, goal);
   print('Goal set for user $userId: $goal');
@@ -130,6 +108,31 @@ Future<String?> getGoal() async {
   final goal = prefs.getString(key);
   print('Retrieved goal for user $userId: $goal');
   return goal;
+}
+
+Future<void> clearGoal()async{
+  final prefs=await getPrefs();
+  final goalDate=prefs.getString('goalWeek');
+  final userId=AuthService.currentUser?.uid;
+  final DateTime today = DateTime.now();
+  final currentWeekNumber = getWeekNumber(today);
+  final goalWeekNumber = int.tryParse(goalDate ?? '0');
+  if(goalWeekNumber!=currentWeekNumber){
+    await prefs.remove('goalWeek');
+    await prefs.remove('goal_$userId');
+    print('Goal cleared for user $userId');
+  }
+  else {
+    print('Goal is still valid for user $userId');
+  }
+}
+
+int getWeekNumber(DateTime date) {
+  final firstDayOfYear = DateTime(date.year, 1, 1);
+  final daysOffset = firstDayOfYear.weekday - DateTime.monday;
+  final firstMonday = firstDayOfYear.subtract(Duration(days: daysOffset));
+  final diff = date.difference(firstMonday).inDays;
+  return ((diff) / 7).ceil();
 }
 
 String cleanErrorMessage(String error) {
@@ -154,20 +157,6 @@ String _getUserKey(String baseKey, {String? userId}) {
   return '${baseKey}_$uid';
 }
 
-// Updated workout tracking methods
-// Future<bool> hasWorkedOut({String? userId, String? date}) async {
-//   final prefs = await getPrefs();
-//   final key = _getUserDailyKey('hasWorkedOut', userId: userId, date: date);
-//   return prefs.getBool(key) ?? false;
-// }
-
-// Future<void> setHasWorkedOut(bool value, {String? userId, String? date}) async {
-//   final prefs = await getPrefs();
-//   final key = _getUserDailyKey('hasWorkedOut', userId: userId, date: date);
-//   await prefs.setBool(key, value);
-// }
-
-// Convenience methods for today's workout
 Future<bool> hasWorkedOutToday() async {
   return hasWorkedOut();
 }
@@ -195,6 +184,76 @@ Future<List<String>> getActiveDates() async{
   return activeDates;
 }
 
+Future<void> setHeight(double height)async{
+  final userId=AuthService.currentUser?.uid;
+  if (userId == null) return;
+  final prefs=await getPrefs();
+  final key = 'height_$userId';
+  print('Setting height for user $userId');
+  await prefs.setDouble(key,height);
+}
+
+Future<void> setWeight(double weight) async{
+  final userId = AuthService.currentUser?.uid;
+  if (userId == null) return;
+  final prefs = await getPrefs();
+  final key = 'weight_$userId';
+  print('Setting weight for user $userId');
+  await prefs.setDouble(key, weight);
+}
+
+Future<void> setAge(double age) async {
+  final userId = AuthService.currentUser?.uid;
+  if (userId == null) return;
+  final prefs = await getPrefs();
+  final key = 'age_$userId';
+  print('Setting age for user $userId');
+  await prefs.setDouble(key, age);
+}
+
+Future<double?> getHeight() async {
+  final userId = AuthService.currentUser?.uid;
+  if (userId == null) return null;
+  final prefs = await getPrefs();
+  final key = 'height_$userId';
+  final height = prefs.getDouble(key);
+  print('Retrieved height for user $userId: $height');
+  return height;
+}
+
+Future<double?> getWeight() async {
+  final userId = AuthService.currentUser?.uid;
+  if (userId == null) return null;
+  final prefs = await getPrefs();
+  final key = 'weight_$userId';
+  final weight = prefs.getDouble(key);
+  print('Retrieved weight for user $userId: $weight');
+  return weight;
+}
+
+Future<double?> getAge() async {
+  final userId = AuthService.currentUser?.uid;
+  if (userId == null) return null;
+  final prefs = await getPrefs();
+  final key = 'age_$userId';
+  final age = prefs.getDouble(key);
+  print('Retrieved age for user $userId: $age');
+  return age;
+}
+
+Future<void> clearWeeklyGoal() async{
+  final userId = AuthService.currentUser?.uid;
+  if (userId == null) return;
+  final prefs = await getPrefs();
+  final key = 'goal_$userId';
+  if (prefs.containsKey(key)) {
+    await prefs.remove(key);
+    print('Weekly goal cleared for user $userId');
+  } else {
+    print('No weekly goal found for user $userId');
+  }
+}
+
 Future<void> checkAndResetDailyPrefs() async {
   final prefs = await getPrefs();
   final today = DateTime.now().toIso8601String().split("T")[0];
@@ -218,35 +277,15 @@ Future<void> checkAndResetDailyPrefs() async {
         await prefs.remove(key);
         print('Removed active dates for key: $key');
       }
+      if(key.startsWith('height_') || key.startsWith('weight_') || key.startsWith('age_') || key.startsWith('goal_') || key.startsWith('goalDate_')) {
+        continue;
+      }
     }
     
     await prefs.setString('globalLastResetDate', today);
     print("Daily prefs reset for all users");
   } else {
     print("Already reset today");
-  }
-}
-
-Future<void> checkAndResetCurrentUserDailyPrefs() async {
-  final prefs = await getPrefs();
-  final uid = AuthService.currentUser?.uid;
-  
-  if (uid == null) return;
-  
-  final today = DateTime.now().toIso8601String().split("T")[0];
-  final userResetKey = 'lastResetDate_$uid';
-  final lastReset = prefs.getString(userResetKey);
-
-  if (lastReset != today) {
-    final yesterday = DateTime.now().subtract(Duration(days: 1)).toIso8601String().split("T")[0];
-    
-    await prefs.remove('hasWorkedOut_${uid}_$yesterday');
-    await prefs.remove('mood_${uid}_$yesterday');
-    
-    await prefs.setString(userResetKey, today);
-    print("Daily prefs reset for user: $uid");
-  } else {
-    print("Already reset today for current user");
   }
 }
 
@@ -292,12 +331,14 @@ Future<void> clearCurrentUserPrefs() async {
 void showCustomSnackBar({
   required BuildContext context,
   required String message,
-  String type = 'success', // default to success
+  String type = 'success',
+  bool disableCloseButton = false,
 }) {
   ScaffoldMessenger.of(context).showSnackBar(
     CustomSnackBar(
       message: message,
       type: type,
+      disableCloseButton: disableCloseButton,
     ).buildSnackBar(context),
   );
 }

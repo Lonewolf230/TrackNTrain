@@ -193,7 +193,6 @@ class _SuggestionCardState extends State<SuggestionCard> with TickerProviderStat
               height: 1.5,
             ),
             children: [
-              // Add blinking cursor while typing
               if (_isAnimating && widget.showTypingIndicator)
                 WidgetSpan(
                   child: AnimatedOpacity(

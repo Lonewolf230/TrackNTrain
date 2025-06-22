@@ -10,13 +10,12 @@
 import { onRequest } from "firebase-functions/v2/https";
 import * as logger from "firebase-functions/logger";
 import { onSchedule } from "firebase-functions/v2/scheduler";
-import * as admin from "firebase-admin";
-// import { defineString } from "firebase-functions/params";
-// import OpenAI from "openai";
-
+import admin from "firebase-admin";
+import { defineSecret } from "firebase-functions/params";
+import { GoogleGenAI } from "@google/genai";
 admin.initializeApp();
 
-// const openAIKey = defineString("OPENAI_API_KEY");
+const geminiAPIKey=defineSecret("GEMINI_API_KEY");
 
 export const helloWorld = onRequest((request, response) => {
   logger.info("Hello logs!", { structuredData: true });
@@ -28,7 +27,9 @@ export const metaLogCreation = onSchedule(
     schedule: "0 0 * * *",
     timeZone: "Asia/Kolkata",
     timeoutSeconds: 300,
-    memory: "128MiB",
+    retryCount: 3,
+    memory:"256MiB",
+    region: "asia-south1",
   },
   async (event) => {
     logger.info("Scheduled function triggered", { event });
@@ -52,9 +53,33 @@ export const metaLogCreation = onSchedule(
         day: "2-digit",
       }).format(new Date());
 
+      const prevDate = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Kolkata",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).format(new Date(new Date().setDate(new Date().getDate() - 1)));
+
+      const allPrevDayMetaDocsSnap = await admin
+        .firestore()
+        .collection("userMetaLogs")
+        .where("date", "==", prevDate)
+        .get();
+
+      const prevDayWeights: Record<string, number> = {};
+      allPrevDayMetaDocsSnap.forEach((doc) => {
+        const data = doc.data();
+        if (data?.userId && typeof data?.weight === "number") {
+          prevDayWeights[data.userId] = data.weight;
+        }
+      });
+
       const ninetyDayInFutureTimeStamp = admin.firestore.Timestamp.fromDate(
         new Date(new Date().setDate(new Date().getDate() + 90))
       );
+
+      const batchCommits: Promise<any>[] = [];
+
       for (const user of users) {
         try {
           const uid: string = user.uid;
@@ -68,25 +93,7 @@ export const metaLogCreation = onSchedule(
             continue;
           }
 
-          const prevDayMetaDoc: admin.firestore.Query = admin
-            .firestore()
-            .collection("userMetaLogs")
-            .where("userId", "==", uid)
-            .where(
-              "createdAt",
-              "==",
-              admin.firestore.Timestamp.fromDate(
-                new Date(new Date().setDate(new Date().getDate() - 1))
-              )
-            );
-          const prevDayMetaDocsSnap: admin.firestore.QuerySnapshot =
-            await prevDayMetaDoc.get();
-          let weight: number;
-          if (!prevDayMetaDocsSnap.empty) {
-            weight = 0;
-          } else {
-            weight = prevDayMetaDocsSnap.docs[0].get("weight");
-          }
+          const weight = prevDayWeights[uid] ?? 0;
           batch.set(docRef, {
             userId: uid,
             date: today,
@@ -99,8 +106,9 @@ export const metaLogCreation = onSchedule(
           });
           counter++;
           if (counter >= 500) {
-            await batch.commit();
-            logger.info("Batch of 500 meta logs created");
+            // await batch.commit();
+            batchCommits.push(batch.commit());
+            logger.info("Batch of 500 meta logs pushed to list");
             counter = 0;
             batch = admin.firestore().batch();
           }
@@ -113,12 +121,18 @@ export const metaLogCreation = onSchedule(
         }
       }
       if (counter > 0) {
-        await batch.commit();
-        logger.info(`Final batch of ${counter} meta logs created`);
+        // await batch.commit();
+        batchCommits.push(batch.commit());
+
+        logger.info(`Final batch of ${counter} meta logs pushed to list`);
       }
-      logger.info("All meta logs created successfully", {
-        structuredData: true,
-      });
+      await Promise.all(batchCommits);
+      logger.info(
+        `All meta logs length:${batchCommits.length} created successfully`,
+        {
+          structuredData: true,
+        }
+      );
     } catch (error) {
       logger.error("Error listing users:", { error });
     }
@@ -133,8 +147,16 @@ export const metaLogSpotCreation = onRequest(async (request, response) => {
     return;
   }
 
-  const date = new Date().toISOString().split("T")[0];
-  const todayTimeStamp = admin.firestore.Timestamp.fromDate(new Date());
+  // const date = new Date().toISOString().split("T")[0];
+  const date = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+  const ninetyDayInFutureTimeStamp = admin.firestore.Timestamp.fromDate(
+    new Date(new Date().setDate(new Date().getDate() + 90))
+  );
 
   try {
     const docRef: admin.firestore.DocumentReference = admin
@@ -149,7 +171,10 @@ export const metaLogSpotCreation = onRequest(async (request, response) => {
       weight: 63,
       mood: null,
       sleep: 0,
-      expireAt: todayTimeStamp,
+      expireAt: ninetyDayInFutureTimeStamp,
+    });
+    logger.info(`Meta log created for user: ${userId}`, {
+      structuredData: true,
     });
     response.status(201).send("Meta log created");
   } catch (error) {
@@ -159,7 +184,7 @@ export const metaLogSpotCreation = onRequest(async (request, response) => {
 });
 
 export const handleDeletion = onRequest(
-  { timeoutSeconds: 180 },
+  { timeoutSeconds: 180,memory:"256MiB",region:"asia-south1" },
   async (request, response) => {
     const { userId } = request.body;
     if (!userId) {
@@ -167,9 +192,10 @@ export const handleDeletion = onRequest(
       return;
     }
     try {
-      const userMetaLogsRef: admin.firestore.CollectionReference = admin
+      const userMetaLogsRef: admin.firestore.Query<admin.firestore.DocumentData> = admin
         .firestore()
-        .collection("userMetaLogs");
+        .collection("userMetaLogs")
+        .where("userId", "==", userId);
       const userDocRef: admin.firestore.DocumentReference = admin
         .firestore()
         .collection("users")
@@ -177,23 +203,25 @@ export const handleDeletion = onRequest(
       const userMealLogsRef: admin.firestore.Query<admin.firestore.DocumentData> =
         admin
           .firestore()
-          .collection("userMealLogs")
+          .collection("userMeals")
           .where("userId", "==", userId);
       const userFullBodyLogsRef: admin.firestore.Query<admin.firestore.DocumentData> =
         admin
           .firestore()
-          .collection("userFullBodyLogs")
+          .collection("userFullBodyWorkouts")
           .where("userId", "==", userId);
       const userHiitLogsRef: admin.firestore.Query<admin.firestore.DocumentData> =
         admin
           .firestore()
-          .collection("userHiitLogs")
+          .collection("userHiitWorkouts")
           .where("userId", "==", userId);
       const userWalkLogsRef: admin.firestore.Query<admin.firestore.DocumentData> =
         admin
           .firestore()
-          .collection("userWalkLogs")
+          .collection("userWalkRecords")
           .where("userId", "==", userId);
+      
+      const batchList : Promise<any>[] =[];
 
       const batch = admin.firestore().batch();
 
@@ -218,8 +246,8 @@ export const handleDeletion = onRequest(
       (await userMetaLogsRef.get()).docs.forEach((doc) => {
         batch.delete(doc.ref);
       });
-
-      await batch.commit();
+      batchList.push(batch.commit());
+      await Promise.all(batchList);
 
       logger.info(
         `Successfully deleted logs and user document for user: ${userId}`
@@ -235,74 +263,184 @@ export const handleDeletion = onRequest(
 export const getAIInsights = onRequest(
   {
     timeoutSeconds: 300,
-    memory: "128MiB",
-    // secrets: [openAIKey],
+    memory: "256MiB",
+    secrets: [geminiAPIKey],
+    region:"asia-south1", 
   },
   async (request, response) => {
-    const { userId } = request.body;
-
-    if (userId === undefined || userId === null) {
-      response.status(400).send("Missing userId");
-      return;
-    }
-
-    // console.log("Timestamp:", admin.firestore.Timestamp);
-    // console.log("fromDate function:", admin.firestore.Timestamp.fromDate);
-
-    const metaData=await getWeeklyMetaData(userId);
-    const mealData=await getWeeklyMealData(userId);
-    if (!metaData || !mealData) {
-      response.status(404).send("Please log your meals, weight and mood consistently to get a proper feedback");
-      return;
-    }
-
-    const weightsData : number[]=metaData.map((log) => log.weight);
-    const moodData: (string | null)[] = metaData.map((log) => log.mood);
-    const mealsData: any[] = mealData.map((log) => log.meals);
-
-    const weightsSummary = preprocessWeights(weightsData);
-    const moodSummary = preprocessMood(moodData);
-    const mealsSummary = preprocessMeals(mealsData);
-
-    const userDoc:admin.firestore.DocumentReference=admin.firestore().collection("users").doc(userId);
-    const userDocSnap:admin.firestore.DocumentSnapshot=await userDoc.get();
-    
-    const userGoal:string = userDocSnap.exists? userDocSnap.get("goal") : "No goal set";
-
-    const prompt=generatePrompt({
-      weightSummary:{message: weightsSummary.message || 'No weight data available'},
-      moodSummary:{message: moodSummary.message || 'No mood data available'},
-      mealSummary: {message: mealsSummary.message || 'No meal data available'},
-      userGoal: userGoal, 
-    })
-
-    // const client = new OpenAI({
-    //   apiKey: openAIKey.value(),
-    // });
-
     try {
-      // const res=await client.chat.completions.create({
-      //   model:'gpt-3.5-turbo',
-      //   messages:[{role: 'user', content: prompt}],
-      //   temperature: 0.7,
-      // })
+      const { userId } = request.body;
 
-      // const aiResponse = res.choices[0].message.content;
-      logger.info("AI response generated successfully", { structuredData: true });
-      // await userDoc.set({
-      //   lastAIResponse: aiResponse,
-      //   lastAIResponseAt: admin.firestore.Timestamp.now(),
-      // }, { merge: true });
+      if (userId === undefined || userId === null) {
+        response.status(400).send("Missing userId");
+        return;
+      }
+      logger.debug("Updated version");
+      // console.log("Timestamp:", admin.firestore.Timestamp);
+      // console.log("fromDate function:", admin.firestore.Timestamp.fromDate);
+
+      let geminiAPIKeyValue: string | undefined;
+      try {
+        geminiAPIKeyValue = geminiAPIKey.value();
+        if (!geminiAPIKeyValue) {
+          logger.error("OpenAI key is not set");
+          throw new Error("OpenAI key is not set");
+        }
+        logger.debug("OpenAI key retrieved successfully", {
+          structuredData: true,
+        });
+      } catch (error) {
+        logger.error("Error retrieving OpenAI key", { error });
+        response.status(500).send("Error retrieving OpenAI key");
+        return;
+      }
+
+      const metaData = await getWeeklyMetaData(userId);
+      const mealData = await getWeeklyMealData(userId);
+      if (!metaData || !mealData) {
+        response
+          .status(404)
+          .send(
+            "Please log your meals, weight and mood consistently to get a proper feedback"
+          );
+        return;
+      }
+
+      const weightsData: number[] = metaData.map((log) => log.weight);
+      const moodData: (string | null)[] = metaData.map((log) => log.mood);
+      const mealsData: MealDocument[] = mealData;
+
+      const weightsSummary = preprocessWeights(weightsData);
+      const moodSummary = preprocessMood(moodData);
+      const mealsSummary = preprocessMeals(mealsData);
+
+      const userDoc: admin.firestore.DocumentReference = admin
+        .firestore()
+        .collection("users")
+        .doc(userId);
+      const userDocSnap: admin.firestore.DocumentSnapshot = await userDoc.get();
+
+      const userGoal: string = userDocSnap.exists
+        ? userDocSnap.get("goal")
+        : "No goal set";
+
+      const prompt = generatePrompt({
+        weightSummary: {
+          message: weightsSummary.message || "No weight data available",
+        },
+        moodSummary: {
+          message: moodSummary.message || "No mood data available",
+        },
+        mealSummary: {
+          message: mealsSummary.message || "No meal data available",
+        },
+        userGoal: userGoal,
+      });
+
+      const ai=new GoogleGenAI({
+        apiKey: geminiAPIKeyValue,
+      })
+      const res=await ai.models.generateContent({
+        model:"gemini-2.0-flash",
+        contents:[
+          {
+            role:"model",
+            parts:[{
+              text:`You are a certified fitness and nutrition coach. You will receive a user's weekly fitness logs, including weight trends, mood entries, and meals (breakfast, lunch, dinner, snacks). Your job is to write a friendly but professional 1-week feedback report.
+
+Keep it under 500 words.
+
+The report should:
+- Highlight progress toward weight goals (e.g., "you lost 2kg this week")
+- Analyze soreness/fatigue (e.g., mood data shows soreness — explain why and suggest recovery)
+- Review meal balance and frequency (call out common patterns or excess items)
+- Suggest nutrition/training tips (based on meals/mood/weight)
+- Encourage and motivate the user based on their logged goal
+- Use the provided data to support your advice
+- Be positive and supportive, like a coach 
+- Avoid generic statements; focus on the user's specific data
+- Use the user's goal to tailor your advice
+- Use the user's mood data to suggest recovery or adjustments
+
+
+Be warm and encouraging, like a supportive coach. Do not list data. Use the data to support your advice.
+Your response should avoid headers like Subject, Summary, or Conclusion. Instead, the feedback should look like what a fitness instructor would tell his clients in a normal conversation.
+So avoid that typical format and make it look like a normal conversation.
+Also avoid any form of markdwown formatting like bold, italics, etc. Just plain text.`
+            }]
+          },
+          {
+            role:"user",
+            parts:[{
+              text:prompt
+            }]
+          }
+        ],
+        config:{
+          responseMimeType: "text/plain",
+          temperature: 0.7,
+        }
+      });
+
+      const aiResponse = res.text || "No response from AI";
+      const metaPromptTokenCount=res.usageMetadata?.promptTokenCount || 0;
+      const metaCompletionTokenCount=res.usageMetadata?.thoughtsTokenCount || 0;
+      const totalTokenCount=res.usageMetadata?.totalTokenCount
+      const toolUsePromptTokenCount= res.usageMetadata?.toolUsePromptTokenCount
+      const toolUsePromptTokensDetails= res.usageMetadata?.toolUsePromptTokensDetails
+      const promptTokenCount= res.usageMetadata?.promptTokenCount
+      const promptTokensDetails= res.usageMetadata?.promptTokensDetails
+      const data=res.data;
+
+      logger.info("AI response received", {
+        metaPromptTokenCount,
+        metaCompletionTokenCount,
+        totalTokenCount,
+        toolUsePromptTokenCount,
+        toolUsePromptTokensDetails,
+        promptTokenCount,
+        promptTokensDetails,
+        structuredData: true,
+        data: JSON.stringify(data, null, 2),
+      });
+
+      await userDoc.set(
+        {
+          lastAIResponse: aiResponse,
+          lastAIResponseAt: admin.firestore.Timestamp.now(),
+        },
+        { merge: true }
+      );
       response.status(200).send({
         prompt,
+        aiResponse,
         weightSummary: weightsSummary,
         moodSummary: moodSummary,
         mealSummary: mealsSummary,
         userGoal: userGoal,
       });
-    } catch (error) {
-      logger.error("Error generating AI response", { error });
-      response.status(500).send("Error generating AI response");
+    } catch (error:any) {
+  const apiError = error ;
+          logger.error("Error generating AI response", {
+    message: apiError?.message,
+    status: apiError?.status,
+    name: apiError?.name,
+    type: apiError?.type,
+    stack: apiError?.stack,
+    response: apiError?.response?.data ?? "(No response data)",
+  });
+
+  if (apiError?.response?.data) {
+    console.error("🧠 OpenAI Error Response:", JSON.stringify(apiError.response.data, null, 2));
+  }
+  response.status(500).json({
+    success: false,
+    error: error instanceof Error ? error.message : "Unknown error",
+    code: error?.code || "INTERNAL_ERROR",
+    status: error?.status || 500,
+    response: error?.response?.data || "No response data available",
+    
+    });
     }
   }
 );
@@ -316,7 +454,7 @@ const getWeeklyMetaData = async (userId: string) => {
   // const endofPrevWeek = new Date(today);
   // endofPrevWeek.setDate(today.getDate() - today.getDay() - 1);
   // endofPrevWeek.setHours(23, 59, 59, 999);
-    const dayOfWeek = today.getDay();
+  const dayOfWeek = today.getDay();
   // Calculate how many days since last Monday
   const daysSinceMonday = (dayOfWeek + 6) % 7;
   // Start of previous week: last Monday - 7 days
@@ -367,66 +505,6 @@ const getWeeklyMetaData = async (userId: string) => {
     { structuredData: true }
   );
   return metaLogsData;
-};
-
-const getWeeklyMealData = async (userId: string) => {
-  const today = new Date();
-
-  // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
-  const dayOfWeek = today.getDay();
-  // Calculate how many days since last Monday
-  const daysSinceMonday = (dayOfWeek + 6) % 7;
-  // Start of previous week: last Monday - 7 days
-  const startOfPrevWeek = new Date(today);
-  startOfPrevWeek.setDate(today.getDate() - daysSinceMonday - 7);
-  startOfPrevWeek.setHours(0, 0, 0, 0);
-  // End of previous week: last Sunday (yesterday if today is Monday)
-  const endOfPrevWeek = new Date(today);
-  endOfPrevWeek.setDate(today.getDate() - daysSinceMonday - 1);
-  endOfPrevWeek.setHours(23, 59, 59, 999);
-
-  logger.debug(
-    `Fetching meal logs for user: ${userId} from ${startOfPrevWeek.toISOString()} to ${endOfPrevWeek.toISOString()}`,
-    { structuredData: true }
-  );
-
-  const mealLogsRef = admin
-    .firestore()
-    .collection("userMeals")
-    .where("userId", "==", userId)
-    .where(
-      "createdAt",
-      ">=",
-      admin.firestore.Timestamp.fromDate(startOfPrevWeek)
-    )
-    .where(
-      "createdAt",
-      "<=",
-      admin.firestore.Timestamp.fromDate(endOfPrevWeek)
-    );
-
-  const mealLogsSnapshot = await mealLogsRef.get();
-  if (mealLogsSnapshot.empty) {
-    logger.info(`No meal logs found for user: ${userId} in the previous week`);
-    return null;
-  }
-
-  const mealLogsData = mealLogsSnapshot.docs.map((doc) => {
-    const data = doc.data();
-    return {
-      date: data.date,
-      meals: data.meals,
-    };
-  });
-  if (mealLogsData.length === 0) {
-    logger.info(`No meal logs found for user: ${userId} in the previous week`);
-    return null;
-  }
-  logger.info(
-    `Retrieved ${mealLogsData.length} meal logs for user: ${userId} in the previous week`,
-    { structuredData: true }
-  );
-  return mealLogsData;
 };
 
 const preprocessWeights = (weights: number[]) => {
@@ -497,30 +575,28 @@ const preprocessMood = (moods: (string | null)[]) => {
   const sorePercentage = ((moodValues.sore / totalMoods) * 100).toFixed(1);
   const cannotPercentage = ((moodValues.cannot / totalMoods) * 100).toFixed(1);
 
-  let message: string = "";
+  let message: string =
+    "The 3 possible mood states are energetic, sore and cannot work out. \n";
   if (
     moodValues.energetic > moodValues.sore &&
     moodValues.energetic > moodValues.cannot
   ) {
-    message = `You have been feeling energetic for about ${
-      moodValues.energetic / totalMoods
-    } days of the week.`;
+    message += `You have been feeling energetic for about ${moodValues.energetic} out of the ${totalMoods}
+    logged days of the week.`;
   } else if (
     moodValues.sore > moodValues.energetic &&
     moodValues.sore > moodValues.cannot
   ) {
-    message = `You have been feeling sore for about ${
-      moodValues.sore / totalMoods
-    } days of the week.`;
+    message += `You have been feeling sore for about ${moodValues.sore} out of the ${totalMoods}
+    logged days of the week.`;
   } else if (
     moodValues.cannot > moodValues.energetic &&
     moodValues.cannot > moodValues.sore
   ) {
-    message = `You have been feeling unable to work out for about ${
-      moodValues.cannot / totalMoods
-    } days of the week.`;
+    message += `You have been feeling unable to work out for about ${moodValues.cannot} out of the  ${totalMoods}
+    logged days of the week.`;
   } else {
-    message = "Your moods have been mixed this week.";
+    message += "Your moods have been mixed this week.";
   }
 
   return {
@@ -531,43 +607,219 @@ const preprocessMood = (moods: (string | null)[]) => {
   };
 };
 
-const preprocessMeals = (meals: any[]) => {
-  if (meals.length == 0) {
+interface MealItem {
+  mealName: string;
+  description?: string;
+  mealType: string;
+}
+
+interface MealDocument {
+  breakfast?: MealItem;
+  lunch?: MealItem;
+  dinner?: MealItem;
+  snacks?: MealItem[];
+  userId: string;
+  createdAt: admin.firestore.Timestamp;
+  updatedAt?: admin.firestore.Timestamp;
+  expireAt?: admin.firestore.Timestamp;
+}
+
+interface MealSummary {
+  message: string;
+  mostFrequentFoods?: Record<string, number>;
+}
+
+const isMealDocument = (data: any): data is MealDocument => {
+  return (
+    data &&
+    typeof data === "object" &&
+    typeof data.userId === "string" &&
+    data.createdAt &&
+    (data.breakfast ||
+      data.lunch ||
+      data.dinner ||
+      (Array.isArray(data.snacks) && data.snacks.length > 0))
+  );
+};
+
+const getWeeklyMealData = async (
+  userId: string
+): Promise<MealDocument[] | null> => {
+  const today = new Date();
+  const dayOfWeek = today.getDay();
+  const daysSinceMonday = (dayOfWeek + 6) % 7;
+
+  const startOfPrevWeek = new Date(today);
+  startOfPrevWeek.setDate(today.getDate() - daysSinceMonday - 7);
+  startOfPrevWeek.setHours(0, 0, 0, 0);
+
+  const endOfPrevWeek = new Date(today);
+  endOfPrevWeek.setDate(today.getDate() - daysSinceMonday - 1);
+  endOfPrevWeek.setHours(23, 59, 59, 999);
+
+  logger.debug(
+    `Fetching meal logs for user: ${userId} from ${startOfPrevWeek.toISOString()} to ${endOfPrevWeek.toISOString()}`,
+    {
+      structuredData: true,
+    }
+  );
+
+  const mealLogsSnapshot = await admin
+    .firestore()
+    .collection("userMeals")
+    .where("userId", "==", userId)
+    .where(
+      "createdAt",
+      ">=",
+      admin.firestore.Timestamp.fromDate(startOfPrevWeek)
+    )
+    .where("createdAt", "<=", admin.firestore.Timestamp.fromDate(endOfPrevWeek))
+    .get();
+
+  if (mealLogsSnapshot.empty) {
+    logger.info(`No meal logs found for user: ${userId}`);
+    return null;
+  }
+
+  logger.info(`Total documents found: ${mealLogsSnapshot.docs.length}`);
+
+  const mealsOnly: MealDocument[] = [];
+
+  mealLogsSnapshot.docs.forEach((doc, index) => {
+    const data = doc.data();
+    logger.debug(`Raw Firestore meal doc ${index}:`, {
+      docId: doc.id,
+      data: JSON.stringify(data, null, 2),
+    });
+
+    if (isMealDocument(data)) {
+      const hasBreakfast =
+        data.breakfast &&
+        typeof data.breakfast === "object" &&
+        data.breakfast.mealName;
+      const hasLunch =
+        data.lunch && typeof data.lunch === "object" && data.lunch.mealName;
+      const hasDinner =
+        data.dinner && typeof data.dinner === "object" && data.dinner.mealName;
+      const hasSnacks = Array.isArray(data.snacks) && data.snacks.length > 0;
+
+      const hasMeal = hasBreakfast || hasLunch || hasDinner || hasSnacks;
+
+      logger.debug(`Document ${index} meal check:`, {
+        hasBreakfast,
+        hasLunch,
+        hasDinner,
+        hasSnacks,
+        hasMeal,
+        breakfast: data.breakfast,
+        lunch: data.lunch,
+        dinner: data.dinner,
+        snacks: data.snacks,
+      });
+
+      if (hasMeal) {
+        mealsOnly.push(data);
+      } else {
+        logger.warn(`Document ${index}: no valid meal fields found`, {
+          availableKeys: Object.keys(data),
+          data: JSON.stringify(data, null, 2),
+        });
+      }
+    } else {
+      logger.warn(`Document ${index}: does not match MealDocument structure`, {
+        data,
+        hasUserId: typeof (data as any)?.userId === "string",
+        hasCreatedAt: !!(data as any)?.createdAt,
+        availableKeys: data ? Object.keys(data) : [],
+      });
+    }
+  });
+
+  logger.info(`Filtered meal logs count: ${mealsOnly.length}`, {
+    structuredData: true,
+  });
+
+  if (mealsOnly.length === 0) {
+    logger.warn("No valid meal documents after filtering");
+    return null;
+  }
+
+  return mealsOnly;
+};
+
+const preprocessMeals = (meals: MealDocument[]): MealSummary => {
+  if (!meals || meals.length === 0) {
     return {
       message: "You have not logged any meals this week.",
     };
   }
 
-  const mealCounts:Record<string,number>={};
-  const mealDescriptions:Record<string,string[]>={
+  const mealCounts: Record<string, number> = {};
+  const mealDescriptions: Record<string, string[]> = {
     breakfast: [],
     lunch: [],
     dinner: [],
     snack: [],
-  }
+  };
 
-  meals.forEach((meal) => {
-    const mealTypes = ["breakfast", "lunch", "dinner"];
+  logger.debug("Processing meals data", { mealsCount: meals.length });
+
+  meals.forEach((mealDoc: MealDocument, index: number) => {
+    logger.debug(`Processing meal document ${index}:`, { mealDoc });
+
+    if (!mealDoc || typeof mealDoc !== "object") {
+      logger.warn("Invalid meal document encountered, skipping", {
+        mealDoc,
+        index,
+      });
+      return;
+    }
+
+    const mealTypes: (keyof Pick<
+      MealDocument,
+      "breakfast" | "lunch" | "dinner"
+    >)[] = ["breakfast", "lunch", "dinner"];
     mealTypes.forEach((type) => {
-      if (meal[type]) {
-        const name = meal[type].mealName;
-        const desc = meal[type].description;
+      const mealItem = mealDoc[type];
+      if (mealItem && typeof mealItem === "object" && mealItem.mealName) {
+        const name = mealItem.mealName;
+        const desc = mealItem.description || "";
+
+        logger.debug(`Found ${type}:`, { name, desc });
+
         mealCounts[name] = (mealCounts[name] || 0) + 1;
         mealDescriptions[type].push(`${name} - ${desc}`);
       }
     });
 
-    if (Array.isArray(meal.snacks)) {
-      meal.snacks.forEach((snack: any) => {
-        const name = snack.mealName;
-        const desc = snack.description;
-        mealCounts[name] = (mealCounts[name] || 0) + 1;
-        mealDescriptions.snack.push(`${name} - ${desc}`);
+    if (mealDoc.snacks && Array.isArray(mealDoc.snacks)) {
+      mealDoc.snacks.forEach((snack: MealItem, snackIndex: number) => {
+        if (snack && typeof snack === "object" && snack.mealName) {
+          const name = snack.mealName;
+          const desc = snack.description || "";
+
+          logger.debug(`Found snack ${snackIndex}:`, { name, desc });
+
+          mealCounts[name] = (mealCounts[name] || 0) + 1;
+          mealDescriptions.snack.push(`${name} - ${desc}`);
+        }
       });
     }
   });
 
-  let message = `Here’s what you ate this week:\n`;
+  const totalMealsProcessed = Object.keys(mealCounts).length;
+  if (totalMealsProcessed === 0) {
+    logger.warn("No valid meals found in any documents");
+    return {
+      message: "No valid meal data found for this week.",
+    };
+  }
+  logger.debug(
+    `Total unique meals processed: ${totalMealsProcessed}`,
+    { mealCounts: JSON.stringify(mealCounts, null, 2) }
+  );
+  logger.debug('MEal processed')
+  let message = `Here's what you ate this week:\n`;
 
   Object.entries(mealDescriptions).forEach(([type, entries]) => {
     if (entries.length > 0) {
@@ -584,41 +836,40 @@ const preprocessMeals = (meals: any[]) => {
     .map(([name, count]) => `${name} (${count} times)`)
     .join(", ");
 
-  message += `\nMost frequently consumed items: ${mostFrequent}.`;
-
+  if (mostFrequent) {
+    message += `\nMost frequently consumed items: ${mostFrequent}.`;
+  }
+  logger.debug("Meal summary message generated", { message });
   return {
     message,
     mostFrequentFoods: mealCounts,
   };
-
 };
 
-interface SummaryData{
-  weightSummary:{message:string};
-  moodSummary:{message:string};
-  mealSummary:{message:string};
-  userGoal?:string;
+interface SummaryData {
+  weightSummary: { message: string };
+  moodSummary: { message: string };
+  mealSummary: { message: string };
+  userGoal?: string;
 }
 
-const generatePrompt=({
+const generatePrompt = ({
   weightSummary,
   moodSummary,
   mealSummary,
-  userGoal
-}:SummaryData):string=>{
-  
-  const prompt=`
+  userGoal,
+}: SummaryData): string => {
+  const prompt = `
   User Summary This Week:
 
   Weight: ${weightSummary.message}
   Mood: ${moodSummary.message}
   Meals: ${mealSummary.message}
-  ${userGoal ? `\nGoal: ${userGoal}` : ''}
-
-  Based on the above logs, generate a personalized weekly insight for the user.
-  The insight should mention correlations (if any), highlight progress or areas to improve, and give tips on nutrition, mood or training.
-  Let the tone be friendly and encouraging.
-  `.trim()
+  ${userGoal ? `\nGoal: ${userGoal}` : ""}
+  `.trim();
 
   return prompt;
-}
+};
+
+
+

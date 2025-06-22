@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:trackntrain/components/meal_logger.dart';
 import 'package:trackntrain/components/mood_dropdown.dart';
 import 'package:trackntrain/components/nutrition_insights_card.dart';
-import 'package:trackntrain/components/stat.dart';
 import 'package:trackntrain/pages/workout_calendar_tab.dart';
 import 'package:trackntrain/utils/db_util_funcs.dart';
 import 'package:trackntrain/utils/misc.dart';
