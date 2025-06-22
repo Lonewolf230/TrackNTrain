@@ -1,9 +1,12 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:trackntrain/components/custom_snack_bar.dart';
+import 'package:trackntrain/components/saveable_textfield.dart';
+import 'package:trackntrain/config.dart';
 import 'package:trackntrain/utils/auth_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:trackntrain/utils/classes.dart';
+import 'package:trackntrain/utils/db_util_funcs.dart';
 import 'package:trackntrain/utils/misc.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -17,10 +20,39 @@ class _ProfilePageState extends State<ProfilePage> {
   double? _height;
   double? _weight;
   double? _age;
+  String goal='Add Your Goal';
+
+  void _loadGoal() async{
+    try {
+      String? prefGoal = await getGoal();
+      if(prefGoal==null){
+        print('No goal found in preferences, fetching from Firestore');
+        final doc=FirebaseFirestore.instance
+            .collection('users')
+            .doc(AuthService.currentUser?.uid);
+        DocumentSnapshot snapshot = await doc.get();
+        prefGoal=snapshot.exists
+            ? (snapshot.data() as Map<String, dynamic>)['goal'] as String?
+            : null;
+      }
+      if(prefGoal!=null && prefGoal.isNotEmpty){
+        setState(() {
+          goal=prefGoal ?? 'Add your goal';
+        }); 
+      }
+    } catch (e) {
+      print('Error loading goal: $e');
+    }
+  }
 
   void _getUserInfo() async {
+    print('Fetching user info... from preferences');
+    _height=await getHeight();
+    _weight=await getWeight();
+    _age=await getAge();
     final user = AuthService.currentUser;
-    if (user != null) {
+    if (user != null && (_height== null || _weight == null || _age == null)) {
+      print('Fetching user info from Firestore for user: ${user.uid}');
       DocumentReference userDoc = FirebaseFirestore.instance
           .collection('users')
           .doc(user.uid);
@@ -33,11 +65,13 @@ class _ProfilePageState extends State<ProfilePage> {
           _age = data['age']?.toDouble();
         });
         print('User Info: Height: $_height, Weight: $_weight, Age: $_age');
+        await setWeight(_weight!);
+        await setHeight(_height!);
+        await setAge(_age!);
       }
       print('User Document: ${userSnapshot.data()}');
       return;
     }
-    print('No user is currently signed in.');
   }
 
   void _updateUserInfo() async {
@@ -65,6 +99,9 @@ class _ProfilePageState extends State<ProfilePage> {
           userData.toMap(isUpdate: userSnapshot.exists),
           SetOptions(merge: true),
         );
+        await setWeight(_weight!);
+        await setHeight(_height!);
+        await setAge(_age!);
         print('User info updated successfully: $userData');
       } catch (e) {
         if (!context.mounted) return;
@@ -93,11 +130,26 @@ class _ProfilePageState extends State<ProfilePage> {
     // TODO: implement initState
     super.initState();
     _getUserInfo();
+    _loadGoal();
+  }
+
+  @override
+  void dispose() {
+    // TODO: implement dispose
+    super.dispose();
   }
 
   void _logout(BuildContext context) async {
     try {
       await AuthService.signOut();
+      if(context.mounted){
+        showCustomSnackBar(
+          context: context, 
+          message: 'Logged out successfully',
+          type: 'success',
+          disableCloseButton: true
+        );
+      }
     } catch (e) {
       if (!context.mounted) return;
       showCustomSnackBar(
@@ -139,9 +191,23 @@ class _ProfilePageState extends State<ProfilePage> {
       },
     );
 
+    final dio=Dio();
+
     try {
+      final String userId=AuthService.currentUser?.uid ?? '';
       await clearCurrentUserPrefs();
       await AuthService.deleteAccount();
+      await dio.post(
+        AppConfig.deletionUrl,
+        data: {
+          'userId': userId,
+        },
+        options: Options(
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        ),
+      );
       print('Account delete initialised');
 
       if (context.mounted) Navigator.of(context).pop();
@@ -151,6 +217,7 @@ class _ProfilePageState extends State<ProfilePage> {
           context: context,
           message: 'Account deleted successfully',
           type: 'success',
+          disableCloseButton: true,
         );
       }
     } catch (e) {
@@ -493,6 +560,69 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
               ),
               const SizedBox(height: 24),
+              if(goal.isEmpty)
+              SaveableTextField(
+                initialValue: goal,
+                hintText: 'Enter a short description of your fitness goals',
+                onSave: (String value) {
+                  updateUserGoal(value);
+                  setState(() {
+                    goal = value;
+                  });
+                  
+                }
+              ),
+              const SizedBox(height:16),
+
+            if (goal.isNotEmpty)
+              SizedBox(
+                width: double.infinity,
+                child: Container(
+                  padding: EdgeInsets.all(12),
+                  margin: const EdgeInsets.symmetric(horizontal: 8),
+                  decoration: BoxDecoration(
+                    
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.red[200]!),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                    
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          
+                          children: [
+                            Text(
+                              'Your weekly goal',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).primaryColor,
+                              ),
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              goal,
+                              softWrap: true,
+                              overflow: TextOverflow.visible,
+                            ),
+                            
+                          ],
+                          
+                        ),
+                      ),
+                      IconButton(icon: Icon(Icons.edit,color: Theme.of(context).primaryColor,), onPressed: () {
+                        setState(() {
+                          goal = '';
+                        });
+                      })
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 24),
 
               Container(
                 width: double.infinity,
@@ -640,123 +770,6 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
     );
   }
-
-  //   void _showConfirmationDialog(BuildContext context) {
-  //   showDialog(
-  //     context: context,
-  //     builder: (BuildContext context) {
-  //       return AlertDialog(
-  //         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-  //         title: Row(
-  //           children: [
-  //             Container(
-  //               padding: const EdgeInsets.all(8),
-  //               decoration: BoxDecoration(
-  //                 color: Colors.red.withOpacity(0.1),
-  //                 borderRadius: BorderRadius.circular(8),
-  //               ),
-  //               child: const Icon(
-  //                 Icons.delete_forever_outlined,
-  //                 color: Colors.red,
-  //                 size: 20,
-  //               ),
-  //             ),
-  //             const SizedBox(width: 12),
-  //             const Text(
-  //               'Delete Account',
-  //               style: TextStyle(
-  //                 fontFamily: 'Poppins',
-  //                 fontWeight: FontWeight.bold,
-  //                 fontSize: 20,
-  //               ),
-  //             ),
-  //           ],
-  //         ),
-  //         content: Container(
-  //           padding: const EdgeInsets.symmetric(vertical: 8),
-  //           child: const Text(
-  //             'Are you sure you want to delete your account? This action cannot be undone.',
-  //             style: TextStyle(
-  //               fontFamily: 'Poppins',
-  //               fontSize: 16,
-  //               color: Colors.black87,
-  //               height: 1.4,
-  //             ),
-  //           ),
-  //         ),
-  //         actions: [
-  //           TextButton(
-  //             onPressed: () => Navigator.of(context).pop(),
-  //             style: TextButton.styleFrom(
-  //               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-  //               shape: RoundedRectangleBorder(
-  //                 borderRadius: BorderRadius.circular(12),
-  //               ),
-  //             ),
-  //             child: Text(
-  //               'Cancel',
-  //               style: TextStyle(
-  //                 fontSize: 16,
-  //                 color: Colors.grey[600],
-  //                 fontFamily: 'Poppins',
-  //                 fontWeight: FontWeight.w500,
-  //               ),
-  //             ),
-  //           ),
-  //           const SizedBox(width: 8),
-  //           Container(
-  //             decoration: BoxDecoration(
-  //               gradient: const LinearGradient(
-  //                 colors: [
-  //                   Colors.red,
-  //                   Color.fromARGB(255, 180, 10, 10),
-  //                 ],
-  //               ),
-  //               borderRadius: BorderRadius.circular(12),
-  //               boxShadow: [
-  //                 BoxShadow(
-  //                   color: Colors.red.withOpacity(0.3),
-  //                   blurRadius: 8,
-  //                   offset: const Offset(0, 2),
-  //                 ),
-  //               ],
-  //             ),
-  //             child: Material(
-  //               color: Colors.transparent,
-  //               child: InkWell(
-  //                 onTap: () {
-  //                   Navigator.of(context).pop();
-  //                   _deleteAccount(context);
-  //                 },
-  //                 borderRadius: BorderRadius.circular(12),
-  //                 child: const Padding(
-  //                   padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-  //                   child: Row(
-  //                     mainAxisSize: MainAxisSize.min,
-  //                     children: [
-  //                       Icon(Icons.delete_rounded, color: Colors.white, size: 18),
-  //                       SizedBox(width: 8),
-  //                       Text(
-  //                         'Delete Account',
-  //                         style: TextStyle(
-  //                           fontSize: 16,
-  //                           fontFamily: 'Poppins',
-  //                           fontWeight: FontWeight.w600,
-  //                           color: Colors.white,
-  //                         ),
-  //                       ),
-  //                     ],
-  //                   ),
-  //                 ),
-  //               ),
-  //             ),
-  //           ),
-  //         ],
-  //         actionsPadding: const EdgeInsets.fromLTRB(24, 8, 24, 20),
-  //       );
-  //     },
-  //   );
-  // }
 
   Widget _buildSelectorCard({
     required String title,

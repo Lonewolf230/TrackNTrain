@@ -233,23 +233,6 @@ class _MealLogsState extends State<MealLogs> {
                 child: _buildBody(),
               ),
             ),
-            Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 35),
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                minimumSize: const Size(double.infinity, 50),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                backgroundColor: Theme.of(context).primaryColor,
-                foregroundColor: Colors.white
-              ),
-              onPressed: () {
-
-              },
-              child: const Text('Get meal suggestions '),
-            ),
-          ),
           ],
         )
         

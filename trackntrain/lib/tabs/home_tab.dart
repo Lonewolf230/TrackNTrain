@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:trackntrain/components/meal_logger.dart';
 import 'package:trackntrain/components/mood_dropdown.dart';
 import 'package:trackntrain/components/nutrition_insights_card.dart';
-import 'package:trackntrain/components/stat.dart';
+import 'package:trackntrain/pages/workout_calendar_tab.dart';
 import 'package:trackntrain/utils/db_util_funcs.dart';
 import 'package:trackntrain/utils/misc.dart';
 
@@ -122,48 +122,46 @@ class _HomeTabState extends ConsumerState<HomeTab> {
 
             const SizedBox(height: 32),
 
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.1),
-                    spreadRadius: 0,
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Today\'s Progress',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey[800],
-                      fontFamily: 'Poppins',
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Stat(
-                    icon: FontAwesomeIcons.bolt,
-                    count: 69,
-                    subtitle: 'Streak Days',
-                  ),
-                  Stat(
-                    icon: FontAwesomeIcons.personWalking,
-                    count: 10000,
-                    subtitle: 'Steps Taken',
-                  ),
-                ],
-              ),
-            ),
+            // Container(
+            //   padding: const EdgeInsets.all(20),
+            //   decoration: BoxDecoration(
+            //     color: Colors.white,
+            //     borderRadius: BorderRadius.circular(16),
+            //     boxShadow: [
+            //       BoxShadow(
+            //         color: Colors.grey.withOpacity(0.1),
+            //         spreadRadius: 0,
+            //         blurRadius: 10,
+            //         offset: const Offset(0, 4),
+            //       ),
+            //     ],
+            //   ),
+            //   child: Column(
+            //     crossAxisAlignment: CrossAxisAlignment.start,
+            //     children: [
+            //       Text(
+            //         'Stats',
+            //         style: TextStyle(
+            //           fontSize: 20,
+            //           fontWeight: FontWeight.bold,
+            //           color: Colors.grey[800],
+            //           fontFamily: 'Poppins',
+            //         ),
+            //       ),
+            //       const SizedBox(height: 20),
+            //       Stat(
+            //         icon: FontAwesomeIcons.bolt,
+            //         count: 69,
+            //         subtitle: 'Streak Days',
+            //       ),                  // Stat(
+            //       //   icon: FontAwesomeIcons.personWalking,
+            //       //   count: 10000,
+            //       //   subtitle: 'Steps Taken',
+            //       // ),
+            //     ],
+            //   ),
+            // ),
             const SizedBox(height: 24),
-
             Row(
               children: [
                 Expanded(
@@ -317,6 +315,7 @@ class _HomeTabState extends ConsumerState<HomeTab> {
             const SizedBox(height: 12),
             NutritionInsightsCard(),
             const SizedBox(height: 24),
+            const WorkoutCalendarTab(),
 
           ],
         ),

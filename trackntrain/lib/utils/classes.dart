@@ -1,20 +1,16 @@
 
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/material.dart';
-import 'package:trackntrain/utils/auth_service.dart';
-import 'package:uuid/uuid.dart';
 
 class UserData{
   final String userId;
   int? age;
   int? weight;
   int? height;
-  String? fcmToken;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
-  UserData({required this.userId,this.age,this.weight,this.height,this.createdAt,this.updatedAt,this.fcmToken=''});
+  UserData({required this.userId,this.age,this.weight,this.height,this.createdAt,this.updatedAt});
 
   Map<String,dynamic> toMap({bool isUpdate=false}){
     Map<String,dynamic> data={
@@ -22,7 +18,6 @@ class UserData{
       'age': age,
       'weight': weight,
       'height': height,
-      'fcmToken': fcmToken ?? '',
       'updatedAt':FieldValue.serverTimestamp(),
     };
 

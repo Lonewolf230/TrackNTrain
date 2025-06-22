@@ -87,7 +87,7 @@ class MealCard extends StatelessWidget {
       child: Container(
         width: double.infinity, 
         child: Card(
-          surfaceTintColor: Colors.red.withOpacity(0.4),
+          // surfaceTintColor: Colors.red.withOpacity(0.4),
           margin: const EdgeInsets.symmetric(horizontal: 16,vertical: 5),
           elevation: 4,
           child: InkWell(

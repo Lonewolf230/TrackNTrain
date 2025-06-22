@@ -58,7 +58,7 @@ class NutritionInsightsCard extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      'Nutrition Insights',
+                      'Charts and meal Logs',
                       style: TextStyle(
                         color: Colors.red.shade700,
                         fontSize: 16,

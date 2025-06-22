@@ -7,10 +7,12 @@ class CustomSnackBar extends StatelessWidget{
     super.key,
     required this.message,
     required this.type,
+    this.disableCloseButton = false,
   });
 
   final String message;
   final String type;
+  final bool disableCloseButton;
 
   SnackBar buildSnackBar(BuildContext context) {
     return SnackBar(
@@ -25,13 +27,13 @@ class CustomSnackBar extends StatelessWidget{
       ),
       backgroundColor: type == 'error' ? Theme.of(context).primaryColor : const Color.fromARGB(255, 26, 234, 33),
       duration: const Duration(seconds: 3),
-      action: SnackBarAction(
+      action:!disableCloseButton? SnackBarAction(
         label: 'Close',
         textColor: Colors.white,
         onPressed: () {
           ScaffoldMessenger.of(context).hideCurrentSnackBar();
         },
-      ),
+      ):null,
     );
   }
 

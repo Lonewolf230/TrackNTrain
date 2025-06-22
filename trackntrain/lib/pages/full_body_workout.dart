@@ -168,8 +168,8 @@ class _FullBodyWorkoutState extends ConsumerState<FullBodyWorkout> {
                       ? workoutNameController.text
                       : null,
             );
-            await updateWorkoutStatus();
           }
+          await updateWorkoutStatus();
           if (mounted) context.goNamed('home');
         },
         onRestart: () {

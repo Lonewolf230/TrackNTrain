@@ -375,7 +375,9 @@ class _WalkProgressState extends State<WalkProgress> {
           updatedAt: DateTime.now(),
         );
         createWalk(context, walkData);
-        updateWorkoutStatus();
+        if(distance>0.2 && _elapsedSeconds>60){
+          updateWorkoutStatus();
+        }
         setState(() {
           _isRunning = false;
           _isPaused = false;

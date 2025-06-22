@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:trackntrain/pages/profile_page.dart';
 import 'package:trackntrain/tabs/home_tab.dart';
 import 'package:trackntrain/tabs/train_tab.dart';
 
