@@ -141,15 +141,14 @@ Future<void> createWalk(BuildContext context, WalkData walkData) async {
 Future<void> createOrSaveMeal(Meal meal, BuildContext context) async {
   try {
     final userId = AuthService.currentUser?.uid;
-    // final today = DateTime.now().toIso8601String().split('T')[0];
-    final today=DateTime.now().subtract(const Duration(days: 9)).toIso8601String().split('T')[0];
+    final today = DateTime.now().toIso8601String().split('T')[0];
     DocumentReference mealDoc = FirebaseFirestore.instance
         .collection('userMeals')
         .doc('$userId-$today');
 
     DocumentSnapshot docSnapshot = await mealDoc.get();
 
-    final localDate=DateTime(2025,6,11);
+    final localDate=DateTime.now();
     final utcTime=localDate.toUtc();
     final createdAtTimeStamp = Timestamp.fromDate(utcTime);
 

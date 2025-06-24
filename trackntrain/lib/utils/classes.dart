@@ -9,8 +9,11 @@ class UserData{
   int? height;
   final DateTime? createdAt;
   final DateTime? updatedAt;
+  final DateTime? lastAIResponseAt;
+  final String? lastAIResponse;
 
-  UserData({required this.userId,this.age,this.weight,this.height,this.createdAt,this.updatedAt});
+  UserData({required this.userId,this.age,this.weight,this.height,this.createdAt,this.updatedAt,
+    this.lastAIResponseAt,this.lastAIResponse});
 
   Map<String,dynamic> toMap({bool isUpdate=false}){
     Map<String,dynamic> data={
@@ -19,6 +22,8 @@ class UserData{
       'weight': weight,
       'height': height,
       'updatedAt':FieldValue.serverTimestamp(),
+      'lastAIResponseAt': null,
+      'lastAIResponse': ''
     };
 
     if(!isUpdate){

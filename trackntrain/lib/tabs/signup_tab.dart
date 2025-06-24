@@ -65,7 +65,6 @@ class _SignUpTabState extends State<SignUpTab> {
               'userId': message,
               'date': today,
               'createdAt': FieldValue.serverTimestamp(),
-              'sleep': 0,
               'hasWorkedOut': false,
               'weight': null,
               'mood': null,
