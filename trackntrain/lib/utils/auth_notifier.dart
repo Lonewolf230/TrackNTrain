@@ -20,9 +20,6 @@ class AuthNotifier extends ChangeNotifier{
     });
   }
 
-
-
-
   @override
   void dispose() {
     // TODO: implement dispose
