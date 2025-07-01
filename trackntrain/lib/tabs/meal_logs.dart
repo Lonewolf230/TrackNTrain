@@ -70,9 +70,7 @@ class _MealLogsState extends State<MealLogs> {
               ...doc.data() as Map<String,dynamic>
             }).toList();
         hasMoreData = snapshot.docs.length == pageSize;
-
-        print('initial data : ${mealLogs}');
-      }
+  }
       else{ hasMoreData = false;}
     } catch (e) {
       if(!context.mounted) return;
@@ -116,7 +114,6 @@ class _MealLogsState extends State<MealLogs> {
         hasMoreData = false;
       }
     } catch (e) {
-      print('Error loading more data: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error loading more data: $e')),
       );
@@ -267,7 +264,6 @@ class _MealLogsState extends State<MealLogs> {
     }
     return ListView.builder(controller: _scrollController,itemBuilder:(builder,index){
       if(index<mealLogs.length){
-        print('meal log: ${mealLogs[index]}');
         return _buildWorkoutCard(mealLogs[index]);
       }
       else if(hasMoreData && isLoading){

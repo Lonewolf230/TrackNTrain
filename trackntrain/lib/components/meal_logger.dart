@@ -52,7 +52,6 @@ class _MealLoggerSheetState extends State<MealLoggerSheet> {
         type: 'success',
       );
     } catch (e) {
-      print('Error saving meal data: $e');
       showCustomSnackBar(
         context: context,
         message: 'Error logging meal: $e',

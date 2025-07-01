@@ -94,7 +94,7 @@ class _HiitWorkoutState extends State<HiitWorkout>
         if (_remainingTime > 0) {
           _remainingTime--;
           _animateProgress();
-          if(_remainingTime<=3) AudioManager.playBeep();
+          if(_remainingTime<=2) AudioManager.playBeep();
         } else {
           timer.cancel();
           _startWorkPhase();
@@ -121,7 +121,7 @@ class _HiitWorkoutState extends State<HiitWorkout>
         if (_remainingTime > 0) {
           _remainingTime--;
           _animateProgress();
-          if(_remainingTime<=3) AudioManager.playBeep();
+          if(_remainingTime<=2) AudioManager.playBeep();
         } else {
           timer.cancel();
 
@@ -160,7 +160,7 @@ class _HiitWorkoutState extends State<HiitWorkout>
         if (_remainingTime > 0) {
           _remainingTime--;
           _animateProgress();
-          if(_remainingTime<=3) AudioManager.playBeep();
+          if(_remainingTime<=2) AudioManager.playBeep();
         } else {
           timer.cancel();
           _startGetReadyPhase();
@@ -201,7 +201,6 @@ class _HiitWorkoutState extends State<HiitWorkout>
           );
           saveHiit(hiitWorkout, context);
         } else if (widget.mode == 'reuse' && widget.workoutId != null) {
-          print('Updating existing HIIT workout with ID: ${widget.workoutId!}');
           changeUpdatedAt(widget.workoutId!,'userHiitWorkouts');
         }
         updateWorkoutStatus();

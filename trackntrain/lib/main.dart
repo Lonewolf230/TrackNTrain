@@ -31,16 +31,12 @@ final _router = GoRouter(
   redirect: (context, state) {
     final isAuthenticated = AuthService.isAuthenticated;
     final isAuthRoute = state.matchedLocation.startsWith('/auth');
-    print(
-      'Redirect check - Auth: $isAuthenticated, Auth Route: ${state.matchedLocation}',
-    );
+
 
     if (!isAuthenticated && !isAuthRoute) {
-      // print('Redirecting to auth page');
       return '/auth';
     }
     if (isAuthenticated && isAuthRoute) {
-      // print('Redirecting to home page');
       return '/home';
     }
     return null;
@@ -69,7 +65,6 @@ final _router = GoRouter(
               builder:(context,state){
                 final type = state.uri.queryParameters['type'];
                 if (type == null) {
-                  print('Error: No type provided for energy level logs');
                   return EnergyLevelLogs(type: 'mood');
                 }
                 return EnergyLevelLogs(type: type);

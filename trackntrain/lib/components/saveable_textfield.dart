@@ -103,10 +103,6 @@ class _SaveableTextFieldState extends State<SaveableTextField> {
                   ),
                 ],
               )
-            // : IconButton(
-            //     icon: const Icon(Icons.edit, color: Colors.red),
-            //     onPressed: _startEditing,
-            //   ),
         ),
       ),
     );

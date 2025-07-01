@@ -163,7 +163,6 @@ class WorkoutCompletionDialog extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    // If only one item, center it
     if (summaryItems.length == 1) {
       return _buildSummaryItem(summaryItems.first);
     }

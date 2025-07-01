@@ -121,7 +121,7 @@ class _SuggestionCardState extends State<SuggestionCard> with TickerProviderStat
             if (widget.isLoading)
               _buildLoadingIndicator()
             else if (_displayedText.isNotEmpty || widget.suggestion.isNotEmpty)
-              _buildTextContent()
+              _buildMarkdownContent()
             else
               const SizedBox.shrink(),
           ],
@@ -180,40 +180,36 @@ class _SuggestionCardState extends State<SuggestionCard> with TickerProviderStat
     );
   }
 
-  Widget _buildTextContent() {
+  Widget _buildMarkdownContent() {
+    String textToDisplay = widget.showTypingIndicator ? _displayedText : widget.suggestion;
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        RichText(
-          text: TextSpan(
-            text: widget.showTypingIndicator ? _displayedText : widget.suggestion,
-            style: const TextStyle(
-              fontSize: 16,
-              color: Colors.black87,
-              height: 1.5,
-            ),
-            children: [
-              if (_isAnimating && widget.showTypingIndicator)
-                WidgetSpan(
-                  child: AnimatedOpacity(
-                    opacity: _isAnimating ? 1.0 : 0.0,
-                    duration: const Duration(milliseconds: 500),
-                    child: Container(
-                      width: 2,
-                      height: 20,
-                      color: Theme.of(context).primaryColor,
-                      margin: const EdgeInsets.only(left: 2),
-                    ),
-                  ),
-                ),
-            ],
-          ),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: _parseMarkdown(textToDisplay),
         ),
-        
-        // Progress indicator for typing
+
+        // Typing cursor
         if (_isAnimating && widget.showTypingIndicator)
           Padding(
-            padding: const EdgeInsets.only(top: 8),
+            padding: const EdgeInsets.only(top: 4),
+            child: AnimatedOpacity(
+              opacity: _isAnimating ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 500),
+              child: Container(
+                width: 2,
+                height: 20,
+                color: Theme.of(context).primaryColor,
+              ),
+            ),
+          ),
+
+        // Progress indicator for typing animation
+        if (_isAnimating && widget.showTypingIndicator)
+          Padding(
+            padding: const EdgeInsets.only(top: 12),
             child: LinearProgressIndicator(
               value: _characterCount.value / widget.suggestion.length,
               backgroundColor: Colors.grey[300],
@@ -223,6 +219,261 @@ class _SuggestionCardState extends State<SuggestionCard> with TickerProviderStat
             ),
           ),
       ],
+    );
+  }
+
+  List<Widget> _parseMarkdown(String text) {
+    List<Widget> widgets = [];
+    List<String> lines = text.split('\n');
+    
+    for (int i = 0; i < lines.length; i++) {
+      String line = lines[i];
+      
+      if (line.trim().isEmpty) {
+        widgets.add(const SizedBox(height: 8));
+        continue;
+      }
+      
+      // Headers
+      if (line.startsWith('### ')) {
+        widgets.add(_buildHeader(line.substring(4), 18));
+      } else if (line.startsWith('## ')) {
+        widgets.add(_buildHeader(line.substring(3), 20));
+      } else if (line.startsWith('# ')) {
+        widgets.add(_buildHeader(line.substring(2), 24));
+      }
+      // Bullet points
+      else if (line.trim().startsWith('- ') || line.trim().startsWith('* ')) {
+        widgets.add(_buildBulletPoint(line.trim().substring(2)));
+      }
+      // Numbered lists
+      else if (RegExp(r'^\d+\.\s').hasMatch(line.trim())) {
+        String content = line.trim().replaceFirst(RegExp(r'^\d+\.\s'), '');
+        String number = line.trim().split('.')[0];
+        widgets.add(_buildNumberedPoint(content, number));
+      }
+      // Code blocks
+      else if (line.trim().startsWith('```')) {
+        // Find the end of code block
+        int endIndex = i + 1;
+        List<String> codeLines = [];
+        while (endIndex < lines.length && !lines[endIndex].trim().startsWith('```')) {
+          codeLines.add(lines[endIndex]);
+          endIndex++;
+        }
+        if (endIndex < lines.length) {
+          widgets.add(_buildCodeBlock(codeLines.join('\n')));
+          i = endIndex; // Skip processed lines
+        }
+      }
+      // Blockquotes
+      else if (line.trim().startsWith('> ')) {
+        widgets.add(_buildBlockquote(line.substring(2)));
+      }
+      // Regular paragraph
+      else {
+        widgets.add(_buildParagraph(line));
+      }
+      
+      // Add spacing between elements
+      if (i < lines.length - 1) {
+        widgets.add(const SizedBox(height: 8));
+      }
+    }
+    
+    return widgets;
+  }
+
+  Widget _buildHeader(String text, double fontSize) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: RichText(
+        text: _parseInlineMarkdown(text, TextStyle(
+          fontSize: fontSize,
+          fontWeight: FontWeight.bold,
+          color: Theme.of(context).primaryColor,
+          height: 1.3,
+        )),
+      ),
+    );
+  }
+
+  Widget _buildParagraph(String text) {
+    return RichText(
+      text: _parseInlineMarkdown(text, const TextStyle(
+        fontSize: 16,
+        color: Colors.black87,
+        height: 1.5,
+      )),
+    );
+  }
+
+  Widget _buildBulletPoint(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            margin: const EdgeInsets.only(top: 8, right: 8),
+            width: 4,
+            height: 4,
+            decoration: const BoxDecoration(
+              color: Colors.black87,
+              shape: BoxShape.circle,
+            ),
+          ),
+          Expanded(
+            child: RichText(
+              text: _parseInlineMarkdown(text, const TextStyle(
+                fontSize: 16,
+                color: Colors.black87,
+                height: 1.5,
+              )),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNumberedPoint(String text, String number) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 20,
+            child: Text(
+              '$number.',
+              style: const TextStyle(
+                fontSize: 16,
+                color: Colors.black87,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: RichText(
+              text: _parseInlineMarkdown(text, const TextStyle(
+                fontSize: 16,
+                color: Colors.black87,
+                height: 1.5,
+              )),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCodeBlock(String code) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey[300]!),
+      ),
+      child: Text(
+        code,
+        style: const TextStyle(
+          fontFamily: 'monospace',
+          fontSize: 14,
+          color: Colors.black87,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBlockquote(String text) {
+    return Container(
+      padding: const EdgeInsets.only(left: 12, top: 8, bottom: 8),
+      decoration: BoxDecoration(
+        border: Border(
+          left: BorderSide(
+            color: Theme.of(context).primaryColor,
+            width: 4,
+          ),
+        ),
+      ),
+      child: RichText(
+        text: _parseInlineMarkdown(text, TextStyle(
+          fontSize: 16,
+          color: Colors.grey[600],
+          fontStyle: FontStyle.italic,
+          height: 1.5,
+        )),
+      ),
+    );
+  }
+
+  TextSpan _parseInlineMarkdown(String text, TextStyle baseStyle) {
+    List<TextSpan> spans = [];
+    
+    // Replace **bold** and __bold__
+    text = text.replaceAllMapped(RegExp(r'\*\*(.*?)\*\*'), (match) {
+      return '§BOLD§${match.group(1)}§/BOLD§';
+    });
+    text = text.replaceAllMapped(RegExp(r'__(.*?)__'), (match) {
+      return '§BOLD§${match.group(1)}§/BOLD§';
+    });
+    
+    // Replace *italic* and _italic_
+    text = text.replaceAllMapped(RegExp(r'\*(.*?)\*'), (match) {
+      return '§ITALIC§${match.group(1)}§/ITALIC§';
+    });
+    text = text.replaceAllMapped(RegExp(r'_(.*?)_'), (match) {
+      return '§ITALIC§${match.group(1)}§/ITALIC§';
+    });
+    
+
+    List<String> parts = text.split(RegExp(r'§(BOLD|ITALIC|CODE|/BOLD|/ITALIC|/CODE)§'));
+    
+    TextStyle currentStyle = baseStyle;
+    bool isBold = false;
+    bool isItalic = false;
+    bool isCode = false;
+    
+    for (int i = 0; i < parts.length; i++) {
+      String part = parts[i];
+      
+      if (part == 'BOLD') {
+        isBold = true;
+        currentStyle = _updateStyle(baseStyle, isBold, isItalic, isCode);
+      } else if (part == '/BOLD') {
+        isBold = false;
+        currentStyle = _updateStyle(baseStyle, isBold, isItalic, isCode);
+      } else if (part == 'ITALIC') {
+        isItalic = true;
+        currentStyle = _updateStyle(baseStyle, isBold, isItalic, isCode);
+      } else if (part == '/ITALIC') {
+        isItalic = false;
+        currentStyle = _updateStyle(baseStyle, isBold, isItalic, isCode);
+      } else if (part == 'CODE') {
+        isCode = true;
+        currentStyle = _updateStyle(baseStyle, isBold, isItalic, isCode);
+      } else if (part == '/CODE') {
+        isCode = false;
+        currentStyle = _updateStyle(baseStyle, isBold, isItalic, isCode);
+      } else if (part.isNotEmpty) {
+        spans.add(TextSpan(text: part, style: currentStyle));
+      }
+    }
+    
+    return TextSpan(children: spans);
+  }
+
+  TextStyle _updateStyle(TextStyle baseStyle, bool isBold, bool isItalic, bool isCode) {
+    return baseStyle.copyWith(
+      fontWeight: isBold ? FontWeight.bold : baseStyle.fontWeight,
+      fontStyle: isItalic ? FontStyle.italic : baseStyle.fontStyle,
+      backgroundColor: isCode ? Colors.grey[200] : baseStyle.backgroundColor,
+      fontFamily: isCode ? 'monospace' : baseStyle.fontFamily,
+      fontSize: isCode ? (baseStyle.fontSize! - 2) : baseStyle.fontSize,
     );
   }
 }

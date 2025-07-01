@@ -26,7 +26,6 @@ class _ProfilePageState extends State<ProfilePage> {
     try {
       String? prefGoal = await getGoal();
       if(prefGoal==null){
-        print('No goal found in preferences, fetching from Firestore');
         final doc=FirebaseFirestore.instance
             .collection('users')
             .doc(AuthService.currentUser?.uid);
@@ -41,12 +40,10 @@ class _ProfilePageState extends State<ProfilePage> {
         }); 
       }
     } catch (e) {
-      print('Error loading goal: $e');
     }
   }
 
   void _getUserInfo() async {
-    print('Fetching user info... from preferences');
     _height=await getHeight();
     _weight=await getWeight();
     _age=await getAge();
@@ -64,13 +61,10 @@ class _ProfilePageState extends State<ProfilePage> {
           _weight = data['weight']?.toDouble();
           _age = data['age']?.toDouble();
         });
-        print('User Info: Height: $_height, Weight: $_weight, Age: $_age');
         await setWeight(_weight!);
         await setHeight(_height!);
         await setAge(_age!);
-      }
-      print('User Document: ${userSnapshot.data()}');
-      return;
+      }      return;
     }
   }
 
@@ -102,7 +96,6 @@ class _ProfilePageState extends State<ProfilePage> {
         await setWeight(_weight!);
         await setHeight(_height!);
         await setAge(_age!);
-        print('User info updated successfully: $userData');
       } catch (e) {
         if (!context.mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -866,70 +859,9 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  //generated sliding pickers
 
   void _showHeightPicker(BuildContext context) {
-    final bool isIOS = Theme.of(context).platform == TargetPlatform.iOS;
-
-    if (isIOS) {
-      _showCupertinoHeightPicker(context);
-    } else {
-      _showMaterialHeightPicker(context);
-    }
-  }
-
-  void _showCupertinoHeightPicker(BuildContext context) {
-    showCupertinoModalPopup(
-      context: context,
-      builder: (BuildContext context) {
-        return Container(
-          height: 300,
-          color: Colors.white,
-          child: Column(
-            children: [
-              Container(
-                height: 50,
-                color: Colors.grey[200],
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    CupertinoButton(
-                      child: const Text('Cancel'),
-                      onPressed: () => Navigator.of(context).pop(),
-                    ),
-                    CupertinoButton(
-                      child: const Text('Done'),
-                      onPressed: () => Navigator.of(context).pop(),
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: CupertinoPicker(
-                  itemExtent: 40,
-                  onSelectedItemChanged: (int index) {
-                    setState(() {
-                      _height = 120 + index.toDouble();
-                    });
-                  },
-                  scrollController: FixedExtentScrollController(
-                    initialItem: (_height! - 120).toInt(),
-                  ),
-                  children: List<Widget>.generate(121, (int index) {
-                    return Center(
-                      child: Text(
-                        '${120 + index} cm',
-                        style: const TextStyle(fontSize: 20),
-                      ),
-                    );
-                  }),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
+    _showMaterialHeightPicker(context);
   }
 
   void _showMaterialHeightPicker(BuildContext context) {
@@ -1010,71 +942,10 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  // Show weight picker dialog
   void _showWeightPicker(BuildContext context) {
-    final bool isIOS = Theme.of(context).platform == TargetPlatform.iOS;
-
-    if (isIOS) {
-      _showCupertinoWeightPicker(context);
-    } else {
-      _showMaterialWeightPicker(context);
-    }
+    _showMaterialWeightPicker(context);
   }
 
-  void _showCupertinoWeightPicker(BuildContext context) {
-    showCupertinoModalPopup(
-      context: context,
-      builder: (BuildContext context) {
-        final double initialWeight = _weight ?? 30.0;
-        return Container(
-          height: 300,
-          color: Colors.white,
-          child: Column(
-            children: [
-              Container(
-                height: 50,
-                color: Colors.grey[200],
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    CupertinoButton(
-                      child: const Text('Cancel'),
-                      onPressed: () => Navigator.of(context).pop(),
-                    ),
-                    CupertinoButton(
-                      child: const Text('Done'),
-                      onPressed: () => Navigator.of(context).pop(),
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: CupertinoPicker(
-                  itemExtent: 40,
-                  onSelectedItemChanged: (int index) {
-                    setState(() {
-                      _weight = 30 + index.toDouble();
-                    });
-                  },
-                  scrollController: FixedExtentScrollController(
-                    initialItem: (initialWeight - 30).toInt(),
-                  ),
-                  children: List<Widget>.generate(171, (int index) {
-                    return Center(
-                      child: Text(
-                        '${30 + index} kg',
-                        style: const TextStyle(fontSize: 20),
-                      ),
-                    );
-                  }),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
 
   void _showMaterialWeightPicker(BuildContext context) {
     final double initialWeight = _weight ?? 30.0;
@@ -1157,67 +1028,7 @@ class _ProfilePageState extends State<ProfilePage> {
   // Show age picker dialog
   void _showAgePicker(BuildContext context) {
     final bool isIOS = Theme.of(context).platform == TargetPlatform.iOS;
-
-    if (isIOS) {
-      _showCupertinoAgePicker(context);
-    } else {
-      _showMaterialAgePicker(context);
-    }
-  }
-
-  void _showCupertinoAgePicker(BuildContext context) {
-    showCupertinoModalPopup(
-      context: context,
-      builder: (BuildContext context) {
-        final double initialAge = _age ?? 25.0;
-        return Container(
-          height: 300,
-          color: Colors.white,
-          child: Column(
-            children: [
-              Container(
-                height: 50,
-                color: Colors.grey[200],
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    CupertinoButton(
-                      child: const Text('Cancel'),
-                      onPressed: () => Navigator.of(context).pop(),
-                    ),
-                    CupertinoButton(
-                      child: const Text('Done'),
-                      onPressed: () => Navigator.of(context).pop(),
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: CupertinoPicker(
-                  itemExtent: 40,
-                  onSelectedItemChanged: (int index) {
-                    setState(() {
-                      _age = 12 + index.toDouble();
-                    });
-                  },
-                  scrollController: FixedExtentScrollController(
-                    initialItem: (_age! - 12).toInt(),
-                  ),
-                  children: List<Widget>.generate(89, (int index) {
-                    return Center(
-                      child: Text(
-                        '${12 + index} years',
-                        style: const TextStyle(fontSize: 20),
-                      ),
-                    );
-                  }),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
+    _showMaterialAgePicker(context);
   }
 
   void _showMaterialAgePicker(BuildContext context) {

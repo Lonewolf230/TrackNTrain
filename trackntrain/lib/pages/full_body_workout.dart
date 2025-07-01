@@ -142,7 +142,6 @@ class _FullBodyWorkoutState extends ConsumerState<FullBodyWorkout> {
     }
 
     if (currentIndex >= ref.read(totalExercisesProvider) - 1) {
-      print('Exercise List :${ref.read(exerciseNamesProvider)}');
       WorkoutCompletionDialog.show(
         context,
         summaryItems: [
@@ -189,8 +188,6 @@ class _FullBodyWorkoutState extends ConsumerState<FullBodyWorkout> {
           }
         },
       );
-      print('Workout completed');
-      print(ref.read(workoutProgressProvider));
       return;
     }
 

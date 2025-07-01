@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:trackntrain/components/custom_snack_bar.dart';
 import 'package:trackntrain/utils/auth_service.dart';
 import 'package:trackntrain/utils/classes.dart';
 import 'package:trackntrain/utils/google_auth_utils.dart';
@@ -68,10 +67,11 @@ class _SignUpTabState extends State<SignUpTab> {
               'hasWorkedOut': false,
               'weight': null,
               'mood': null,
+              'lastAIResponse':"",
+              'lastAIResponseAt': null,
             });
       }
     } on Exception catch (e) {
-      print('Sign up message: ${e.toString()}');
 
       if (mounted) {
         setState(() {
@@ -94,7 +94,6 @@ class _SignUpTabState extends State<SignUpTab> {
     });
     try {
       final message = await signInWithGoogle();
-      print('Sign up with Google message: $message');
 
       if (message != null) {
         UserData userData = UserData(userId: message);

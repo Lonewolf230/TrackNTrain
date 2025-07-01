@@ -37,9 +37,7 @@ class _AnalysisMealLogsState extends State<AnalysisMealLogs> {
         options: Options(headers: {'Content-Type': 'application/json'}),
       );
       responseText = response.data['aiResponse'] as String;
-      print('AI Response: $responseText');
     } on DioException catch (e) {
-      print('Error fetching suggestion: ${e.message}');
       showCustomSnackBar(
         context: context,
         message: 'Failed to fetch suggestion. Please try again later.',

@@ -32,20 +32,16 @@ class PrevWorkoutCard extends ConsumerWidget {
         (workoutLog['exercises'] as List).map((exercise) {
           return exercise as Map<String, dynamic>;
         }).toList();
-    print('Selected Exercises: $selectedExercises');
-    print('');
-    print('');
+  
     ref.read(workoutProvider.notifier).insertWorkoutData(selectedExercises);
     List<Map<String, dynamic>> workout = ref.read(
       selectedExercisesListProvider,
     );
-    print('Selected Exercises: $workout');
     context.goNamed(
       'start-full-body',
       queryParameters: {'mode': 'reuse', 'workoutId': workoutLog['id'] ?? ''},
       extra: {'workoutData': workout},
     );
-    print('Finished nav');
   }
 
   void _handleDelete(BuildContext context){
@@ -91,7 +87,6 @@ class PrevWorkoutCard extends ConsumerWidget {
       }
     }
     catch(e){
-      print('Error deleting workout: $e');
 
     }
   }
@@ -119,15 +114,11 @@ class PrevWorkoutCard extends ConsumerWidget {
       onDismissed: (direction)=>_handleDelete(context),
       child: InkWell(
         onTap: () {
-          print('Workout Log tapped');
-          print('Workout Log Details: : ${workoutLog.toString()}');
-          print('Workout Type: $workoutType');
+
           if (workoutType == 'userFullBodyWorkouts') {
             formWorkoutState(ref, context);
           } else if (workoutType == 'userHiitWorkouts') {
-            print('Hiit workout log tapped');
-            print('Workout Log Details: : ${workoutLog}');
-            print('Workout Id: ${workoutLog['id']}');
+
             context.goNamed(
               'hiit-started',
               queryParameters: {
@@ -248,7 +239,6 @@ class PrevWorkoutCard extends ConsumerWidget {
                       color: Color.fromARGB(255, 247, 2, 2),
                     ),
                     onPressed: () {
-                      print('Workout Log Details: : $workoutLog');
                       showWorkoutDialog(context, workoutLog);
                     },
                   ),

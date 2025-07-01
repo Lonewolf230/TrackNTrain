@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
-import 'package:trackntrain/components/prev_workout_card.dart';
 
 class FullBodyTab extends StatelessWidget {
   const FullBodyTab({super.key});
@@ -104,7 +102,6 @@ class FullBodyTab extends StatelessWidget {
 
               const SizedBox(height: 32),
 
-              // Previous Workouts Section
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),
@@ -262,7 +259,6 @@ class FullBodyTab extends StatelessWidget {
                       constraints: const BoxConstraints(maxWidth: 300),
                       child: OutlinedButton(
                         onPressed: () {
-                          print('Create your Workout');
                           context.goNamed('create-full-body');
                         },
                         style: OutlinedButton.styleFrom(

@@ -30,7 +30,6 @@ class _WorkoutLogsPageState extends State<WorkoutLogsPage> {
   void initState() {
     // TODO: implement initState
     super.initState();
-    print('WorkoutLogsPage initialized with type: ${widget.type}');
     _loadInitialData();
     _scrollController.addListener(_onScroll);
   }
@@ -119,7 +118,6 @@ class _WorkoutLogsPageState extends State<WorkoutLogsPage> {
         hasMoreData = false;
       }
     } catch (e) {
-      print('Error loading more data: $e');
       showCustomSnackBar(
         context: context, 
         message: 'Error loading more data: $e',

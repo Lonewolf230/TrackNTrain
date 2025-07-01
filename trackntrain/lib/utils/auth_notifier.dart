@@ -7,7 +7,6 @@ import 'package:trackntrain/utils/auth_service.dart';
 
 class AuthNotifier extends ChangeNotifier{
   late StreamSubscription<User?> _authSubscription;
-  late StreamSubscription<User?> _userSubscription;
   User? _currentUser;
   User? get currentUser => _currentUser;
   bool get isAuthenticated => _currentUser != null;

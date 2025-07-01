@@ -148,9 +148,8 @@ Future<void> createOrSaveMeal(Meal meal, BuildContext context) async {
 
     DocumentSnapshot docSnapshot = await mealDoc.get();
 
-    final localDate=DateTime.now();
-    final utcTime=localDate.toUtc();
-    final createdAtTimeStamp = Timestamp.fromDate(utcTime);
+
+    final createdAtTimeStamp = Timestamp.fromDate(DateTime.now());
 
     final expireAt=Timestamp.fromDate(
       DateTime.now().add(const Duration(days: 90)),
@@ -197,17 +196,13 @@ Future<void> updateWeightMeta(double weight)async{
     if(userId == null) {
       throw Exception('User not authenticated');
     }
-    final String today= DateTime.now().toIso8601String().split('T')[0];
-    // final String today = DateTime.now().toIso8601String().split('T')[0];
-    // final String today = DateTime.now().subtract(const Duration(days: 1)).toIso8601String().split('T')[0];
+    final String today = DateTime.now().toIso8601String().split('T')[0];
 
     DocumentReference docRef = FirebaseFirestore.instance
       .collection('userMetaLogs')
       .doc('${userId}_$today');
 
-    // Convert today (yyyy-MM-dd) to a DateTime and then to a Firestore Timestamp for createdAt
-    // final DateTime todayDate = DateTime.parse(today);
-    // final Timestamp todayTimestamp = Timestamp.fromDate(todayDate);
+
     
     DocumentSnapshot docSnapshot=await docRef.get();
     if(!docSnapshot.exists) {
@@ -221,11 +216,9 @@ Future<void> updateWeightMeta(double weight)async{
         'sleep': 0,
         'hasWorkedOut': false,
       }, SetOptions(merge: true));
-      print('Weight meta created for $today');
       return;
     }
 
-    // DocumentSnapshot docSnapshot=await docRef.get();
     if(docSnapshot.exists) {
       await docRef.update({
         'weight': weight,
@@ -234,7 +227,6 @@ Future<void> updateWeightMeta(double weight)async{
   } catch (e) {
     throw Exception('Error updating weight meta: $e');
   }
-
 }
 
 Future<void> updateWorkoutStatus() async {
@@ -245,7 +237,6 @@ Future<void> updateWorkoutStatus() async {
     }
 
     if (await hasWorkedOutToday()) {
-      print('User has already worked out today');
       return;
     }
 
@@ -263,9 +254,7 @@ Future<void> updateWorkoutStatus() async {
 
     await setHasWorkedOutToday(true);
     
-    print('Workout status updated successfully');
   } catch (e) {
-    print('Error updating workout status: $e');
     throw Exception('Error updating workout status: $e');
   }
 }
@@ -278,6 +267,7 @@ Future<void> updateMoodMeta(String mood) async {
     }
 
     final String today = DateTime.now().toIso8601String().split('T')[0];
+
     DocumentReference docRef = FirebaseFirestore.instance
         .collection('userMetaLogs')
         .doc('${userId}_$today'); 
@@ -289,9 +279,7 @@ Future<void> updateMoodMeta(String mood) async {
       'date': today, 
     }, SetOptions(merge: true));
 
-    print('Mood meta updated successfully');
   } catch (e) {
-    print('Error updating mood meta: $e');
     throw Exception('Error updating mood meta: $e');
   }
 }
@@ -313,10 +301,7 @@ Future<void> updateUserGoal(String goal) async{
       'userId': userId, 
     }, SetOptions(merge: true));
     await setGoal(goal);
-
-    print('User goal updated successfully');
   } catch (e) {
-    print('Error updating user goal: $e');
     throw Exception('Error updating user goal: $e');
   }
 }

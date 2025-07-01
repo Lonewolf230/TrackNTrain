@@ -226,66 +226,101 @@ class WeightChart extends StatelessWidget {
     );
   }
 
+
   Widget _buildWeekNavigation(BuildContext context, DateTime weekEnd) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        GestureDetector(
-          onTap: onPreviousWeek,
-          child: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Theme.of(context).primaryColor,
-              borderRadius: BorderRadius.circular(8),
+  return LayoutBuilder(
+    builder: (context, constraints) {
+      double availableWidth = constraints.maxWidth - 120; 
+      
+      // Determine date format based on available width
+      String dateText;
+      if (availableWidth > 200) {
+        dateText = '${currentWeekStart.day}/${currentWeekStart.month}/${currentWeekStart.year} - ${weekEnd.day}/${weekEnd.month}/${weekEnd.year}';
+      } else if (availableWidth > 150) {
+        dateText = '${currentWeekStart.day}/${currentWeekStart.month}/${currentWeekStart.year.toString().substring(2)} - ${weekEnd.day}/${weekEnd.month}/${weekEnd.year.toString().substring(2)}';
+      } else {
+        if (currentWeekStart.month == weekEnd.month && currentWeekStart.year == weekEnd.year) {
+          dateText = '${currentWeekStart.day}-${weekEnd.day}/${currentWeekStart.month}/${currentWeekStart.year.toString().substring(2)}';
+        } else if (currentWeekStart.year == weekEnd.year) {
+          dateText = '${currentWeekStart.day}/${currentWeekStart.month} - ${weekEnd.day}/${weekEnd.month}/${weekEnd.year.toString().substring(2)}';
+        } else {
+          dateText = '${currentWeekStart.day}/${currentWeekStart.month}/${currentWeekStart.year.toString().substring(2)} - ${weekEnd.day}/${weekEnd.month}/${weekEnd.year.toString().substring(2)}';
+        }
+      }
+
+      return Row(
+        children: [
+          // Previous button
+          GestureDetector(
+            onTap: onPreviousWeek,
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Theme.of(context).primaryColor,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 16),
             ),
-            child: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 16),
           ),
-        ),
-        const SizedBox(width: 12),
-        GestureDetector(
-          onTap: onSelectDate,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              border: Border.all(color: Theme.of(context).primaryColor),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.calendar_today,
-                  color: Theme.of(context).primaryColor,
-                  size: 16,
+          const SizedBox(width: 12),
+          
+          // Flexible date container
+          Expanded(
+            child: GestureDetector(
+              onTap: onSelectDate,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Theme.of(context).primaryColor),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  '${currentWeekStart.day}/${currentWeekStart.month}/${currentWeekStart.year} - ${weekEnd.day}/${weekEnd.month}/${weekEnd.year}',
-                  style: TextStyle(
-                    color: Theme.of(context).primaryColor,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.calendar_today,
+                      color: Theme.of(context).primaryColor,
+                      size: 16,
+                    ),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        dateText,
+                        style: TextStyle(
+                          color: Theme.of(context).primaryColor,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
-        ),
-        const SizedBox(width: 12),
-        GestureDetector(
-          onTap: onNextWeek,
-          child: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Theme.of(context).primaryColor,
-              borderRadius: BorderRadius.circular(8),
+          
+          const SizedBox(width: 12),
+          
+          // Next button
+          GestureDetector(
+            onTap: onNextWeek,
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Theme.of(context).primaryColor,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 16),
             ),
-            child: const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 16),
           ),
-        ),
-      ],
-    );
-  }
+        ],
+      );
+    },
+  );
+}
 
   List<FlSpot> _generateWeekSpots() {
     List<FlSpot> spots = [];
@@ -315,7 +350,7 @@ class WeightChart extends StatelessWidget {
   Widget _buildWeightSummary() {
     if (weightData.isEmpty) return const SizedBox(width: 20,height: 20,);
     final List<double> weights = weightData.map((e) => e.weight).toList();
-    print('Weight Data : ${weights}');
+
     final currentWeight = weightData.last.weight;
     final startWeight = weightData.first.weight;
     final weightChange = currentWeight - startWeight;
@@ -377,8 +412,7 @@ class _WeightTrackingScreenState extends State<WeightTrackingScreen> {
 
   void _loadWeekData() async{
 
-    final weekEnd=currentWeekStart.add(const Duration(days: 6));
-    print('Loaded data for week: ${currentWeekStart.toLocal()} - ${weekEnd.toLocal()}');
+    final weekEnd=currentWeekStart.add(const Duration(days: 7));
     
     try {
       setState(() {

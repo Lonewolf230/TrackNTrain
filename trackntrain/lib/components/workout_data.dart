@@ -3,7 +3,8 @@ void showWorkoutDialog(BuildContext context, Map<String, dynamic> workoutLog) {
   final sensitiveKeys = [
     'id',
     'createdAt',
-    'updatedAt', 
+    'updatedAt',
+    'expireAt', 
     'userId',
     'user_id',
     'timestamp',
@@ -495,13 +496,13 @@ String secondsToHoursMinutesSeconds(int seconds, {bool showSeconds = true}) {
 
   String result = '';
   if (hours > 0) {
-    result += '$hours hour${hours > 1 ? 's' : ''} ';
+    result += '$hours hr${hours > 1 ? 's' : ''} ';
   }
   if (minutes > 0) {
-    result += '$minutes minute${minutes > 1 ? 's' : ''} ';
+    result += '$minutes min${minutes > 1 ? 's' : ''} ';
   }
   if (showSeconds && secs > 0) {
-    result += '$secs second${secs > 1 ? 's' : ''}';
+    result += '$secs sec${secs > 1 ? 's' : ''}';
   }
 
   return result.trim();
@@ -516,16 +517,25 @@ Widget _buildOtherDataSection(Map<String, dynamic> data) {
     }
 
     if(key.toLowerCase().toString()=='averagespeed'){
-      data[key] = _formatValue('${data[key]} km/h');
+        double? rawValue = double.tryParse(data[key].toString());
+        if (rawValue != null) {
+          String rounded = rawValue.toStringAsFixed(2); 
+          data[key] = _formatValue('$rounded km/h');
+        }
     }
 
     if(key.toLowerCase().toString()=='distance' || key.toLowerCase().toString()=='totaldistance'){
-      data[key] = _formatValue('${data[key]} km');
+        double? rawValue = double.tryParse(data[key].toString());
+        if (rawValue != null) {
+          String rounded = rawValue.toStringAsFixed(2); 
+          data[key] = _formatValue('$rounded km');
+        }
     }
 
     if(key.toLowerCase().toString()=='elapsedtime' || key.toLowerCase().toString()=='totalduration'){
-      data[key] = _formatValue(secondsToHoursMinutesSeconds(data[key], showSeconds: false));
+      data[key] = _formatValue(secondsToHoursMinutesSeconds(data[key], showSeconds: true));
     }
+
 
   }
 

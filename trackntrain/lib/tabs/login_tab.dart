@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import 'package:trackntrain/components/custom_snack_bar.dart';
 import 'package:trackntrain/utils/auth_service.dart';
 import 'package:trackntrain/utils/google_auth_utils.dart';
 import 'package:trackntrain/utils/misc.dart';
@@ -40,7 +38,6 @@ class _LoginTabState extends State<LoginTab> {
           _emailController.text.trim(),
           _passwordController.text.trim(),
         );
-        print(AuthService.currentUser);
       } on Exception catch (e) {
         if (mounted) {
           setState(() {
@@ -134,7 +131,6 @@ class _LoginTabState extends State<LoginTab> {
               },
             ),
 
-            // Remember me and Forgot password
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 16.0),
               child: Row(
@@ -155,10 +151,8 @@ class _LoginTabState extends State<LoginTab> {
               ),
             ),
 
-            // Login button
             AuthButton(text: 'Login', onPressed: _login, isLoading: isLoading),
 
-            // OR divider
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 24.0),
               child: Row(

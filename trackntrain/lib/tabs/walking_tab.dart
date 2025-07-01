@@ -2,7 +2,6 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
-import 'package:trackntrain/components/prev_workout_card.dart';
 
 class WalkingTab extends StatelessWidget{
   const WalkingTab({super.key});
@@ -35,7 +34,6 @@ class WalkingTab extends StatelessWidget{
             children: [
               const SizedBox(height: 10),
               
-              // Header Card
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(24),
@@ -94,7 +92,6 @@ class WalkingTab extends StatelessWidget{
               
               const SizedBox(height: 32),
               
-              // Previous Workouts Section
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),
@@ -248,7 +245,6 @@ class WalkingTab extends StatelessWidget{
                       constraints: const BoxConstraints(maxWidth: 300),
                       child: OutlinedButton(
                         onPressed: () {
-                          print('Start a walk');
                           context.goNamed('walk-progress');
                         },
                         style: OutlinedButton.styleFrom(

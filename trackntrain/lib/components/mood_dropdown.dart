@@ -92,7 +92,6 @@ class _MoodDropdownState extends State<MoodDropdown> {
       String? mood = await getMood();
 
       if (mood == null || mood.isEmpty) {
-        print("No mood found in SharedPreferences, checking Firestore...");
         final docRef = FirebaseFirestore.instance
             .collection('userMetaLogs')
             .doc('${uid}_$today');
@@ -103,8 +102,6 @@ class _MoodDropdownState extends State<MoodDropdown> {
           mood = docMap?['mood'];
           
           if (mood != null && mood.isNotEmpty) {
-            print("Mood found in Firestore: $mood");
-            print("Saving mood to SharedPreferences: $mood");
             await setMood(mood);
           }
         }

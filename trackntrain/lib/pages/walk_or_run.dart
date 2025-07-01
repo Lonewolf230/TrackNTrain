@@ -54,7 +54,6 @@ class _WalkProgressState extends State<WalkProgress> {
     super.dispose();
   }
 
-  // Enhanced location settings for real device
   LocationSettings get _locationSettings {
     if (Theme.of(context).platform == TargetPlatform.android) {
       return AndroidSettings(
@@ -104,16 +103,9 @@ class _WalkProgressState extends State<WalkProgress> {
       locationSettings: _locationSettings,
     ).listen(
       (Position position) {
-        print(
-          'Stream location update: ${position.latitude}, ${position.longitude}',
-        );
-        print(
-          'Accuracy: ${position.accuracy}m, Provider: ${position.isMocked ? "Mock" : "Real"}',
-        );
 
         // Filter out inaccurate GPS readings
         if (position.accuracy > _maxAcceptableAccuracy) {
-          print('Rejecting location: accuracy too low (${position.accuracy}m)');
           return;
         }
 
@@ -129,7 +121,6 @@ class _WalkProgressState extends State<WalkProgress> {
 
           //Debouncing so that updates happen only if a minimum time has passed
           if (timeDiffMs < _minTimeBetweenUpdates) {
-            print('Rejecting location: too frequent (${timeDiffMs}ms)');
             return;
           }
 
@@ -140,9 +131,6 @@ class _WalkProgressState extends State<WalkProgress> {
             newLocation.longitude,
           );
 
-          print(
-            'Distance moved: ${distance.toStringAsFixed(2)}m in ${timeDiffMs}ms',
-          );
 
           // Only calc speed if a min dist in passed
           if (distance >= _minDistanceThreshold && timeDiffMs > 0) {
@@ -150,21 +138,15 @@ class _WalkProgressState extends State<WalkProgress> {
 
             if (calculatedSpeed <= _maxReasonableSpeed) {
               shouldUpdateSpeed = true;
-              print(
-                'Calculated speed: ${(calculatedSpeed * 3.6).toStringAsFixed(1)} km/h',
-              );
+
             } else {
               //Avoiding GPS spikes
-              print(
-                'Rejecting speed: too high (${(calculatedSpeed * 3.6).toStringAsFixed(1)} km/h)',
-              );
               return;
             }
           } else if (distance < _minDistanceThreshold) {
             //Avoid updates if distance is too small
             calculatedSpeed = 0.0;
             shouldUpdateSpeed = true;
-            print('Distance too small, setting speed to 0');
           }
         } else {
           // First location update
@@ -221,9 +203,7 @@ class _WalkProgressState extends State<WalkProgress> {
                     _minDistanceThreshold) {
               _routePoints.add(newLocation);
               _updateAverageSpeed();
-              print(
-                'Added point to route. Total points: ${_routePoints.length}',
-              );
+
             }
           }
         });
@@ -233,7 +213,6 @@ class _WalkProgressState extends State<WalkProgress> {
         _mapController.move(newLocation, _mapController.camera.zoom);
       },
       onError: (error) {
-        print('Location stream error: $error');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             backgroundColor: Theme.of(context).primaryColor,
@@ -429,11 +408,9 @@ class _WalkProgressState extends State<WalkProgress> {
       }
 
       LocationPermission permission = await Geolocator.checkPermission();
-      print('Current permission status: $permission');
 
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
-        print('Permission after request: $permission');
 
         if (permission == LocationPermission.denied) {
           showCustomSnackBar(
@@ -466,12 +443,10 @@ class _WalkProgressState extends State<WalkProgress> {
         _locationPermissionGranted = true;
       });
 
-      print('Location permission granted, starting location tracking...');
 
       await _getCurrentLocation();
       _startLocationStream();
     } catch (e) {
-      print('Error in permission request: $e');
       showCustomSnackBar(
         context: context,
         message: 'Error requesting location permission: $e',
@@ -483,22 +458,14 @@ class _WalkProgressState extends State<WalkProgress> {
   // Get current location with enhanced error handling
   Future<void> _getCurrentLocation() async {
     if (!_locationPermissionGranted) {
-      print('Location permission not granted');
       return;
     }
 
     try {
-      print('Getting current location...');
 
       Position position = await Geolocator.getCurrentPosition(
         locationSettings: _locationSettings,
       );
-
-      print('Got location: ${position.latitude}, ${position.longitude}');
-      print('Accuracy: ${position.accuracy}m');
-      print('Provider: ${position.isMocked ? "Mock/Emulator" : "Real GPS"}');
-      print('Altitude: ${position.altitude}m');
-      print('Speed: ${position.speed}m/s');
 
       LatLng newLocation = LatLng(position.latitude, position.longitude);
 
@@ -511,13 +478,11 @@ class _WalkProgressState extends State<WalkProgress> {
 
         if (_isRunning && !_isPaused) {
           _routePoints.add(newLocation);
-          print('Added point to route. Total points: ${_routePoints.length}');
         }
       });
 
       _mapController.move(newLocation, 18.0);
     } catch (e) {
-      print('Error getting location: $e');
 
       String errorMessage = 'Failed to get location: ';
       if (e.toString().contains('PERMISSION_DENIED')) {

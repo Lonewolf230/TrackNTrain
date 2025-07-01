@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:trackntrain/providers/workout_providers.dart';
 class OrderConfig extends ConsumerWidget {
@@ -25,7 +24,6 @@ class OrderConfig extends ConsumerWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Header
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
@@ -183,7 +181,6 @@ class OrderConfig extends ConsumerWidget {
               // Start Workout button
               ElevatedButton(
                 onPressed: () {
-                  print(selectedExercisesList);
                   context.goNamed('start-full-body',
                     queryParameters: {'mode':'new'},
                     extra: {'workoutData':null}  
