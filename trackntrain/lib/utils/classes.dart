@@ -4,7 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class UserData{
   final String userId;
-  int? age;
+  String? dob;
   int? weight;
   int? height;
   final DateTime? createdAt;
@@ -12,13 +12,13 @@ class UserData{
   final DateTime? lastAIResponseAt;
   final String? lastAIResponse;
 
-  UserData({required this.userId,this.age,this.weight,this.height,this.createdAt,this.updatedAt,
+  UserData({required this.userId,this.dob,this.weight,this.height,this.createdAt,this.updatedAt,
     this.lastAIResponseAt,this.lastAIResponse});
 
   Map<String,dynamic> toMap({bool isUpdate=false}){
     Map<String,dynamic> data={
       'userId': userId,
-      'age': age,
+      'dob': dob,
       'weight': weight,
       'height': height,
       'updatedAt':FieldValue.serverTimestamp(),

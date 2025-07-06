@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:trackntrain/components/custom_snack_bar.dart';
 import 'package:trackntrain/utils/auth_service.dart';
+import 'package:trackntrain/utils/connectivity.dart';
 import 'package:trackntrain/utils/db_util_funcs.dart';
 import 'package:trackntrain/utils/misc.dart';
 
@@ -19,7 +20,7 @@ class _MoodDropdownState extends State<MoodDropdown> {
   bool _isLoading = false;
   Timer? _dayCheckTimer;
   String? _currentDay;
-
+  final ConnectivityService _connectivityService = ConnectivityService();
   @override
   void initState() {
     super.initState();
@@ -130,6 +131,11 @@ class _MoodDropdownState extends State<MoodDropdown> {
 
     if (value == null || value.isEmpty) {
       await removeMood();
+      return;
+    }
+
+    final isConnected=await _connectivityService.checkAndShowError(context,'No internet connection : Cannot log to database');
+    if(!isConnected){
       return;
     }
 

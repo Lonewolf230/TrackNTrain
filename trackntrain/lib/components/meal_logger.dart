@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:trackntrain/components/custom_snack_bar.dart';
 import 'package:trackntrain/utils/classes.dart';
+import 'package:trackntrain/utils/connectivity.dart';
 import 'package:trackntrain/utils/db_util_funcs.dart';
 import 'package:trackntrain/utils/misc.dart';
 
@@ -17,6 +17,7 @@ class _MealLoggerSheetState extends State<MealLoggerSheet> {
   String _selectedMealType = 'Breakfast';
   final List<String> _mealTypes = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
   final _formKey = GlobalKey<FormState>();
+  final ConnectivityService _connectivityService = ConnectivityService();
 
   @override
   void dispose() {
@@ -37,6 +38,14 @@ class _MealLoggerSheetState extends State<MealLoggerSheet> {
       mealName: mealName,
       description: description,
     );
+
+    final isConnected = await _connectivityService.checkAndShowError(context,'No internet connection : Cannot log to database');
+    if (!isConnected) {
+      _mealNameController.clear();
+      _descController.clear();
+      if (mounted) Navigator.pop(context);
+      return;
+    }
 
     try {
       await createOrSaveMeal(meal, context);

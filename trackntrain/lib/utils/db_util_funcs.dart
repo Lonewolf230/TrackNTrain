@@ -224,7 +224,14 @@ Future<void> updateWeightMeta(double weight)async{
         'weight': weight,
       });
     } 
-  } catch (e) {
+  }on FirebaseException catch(e){
+    if (e.code == 'unavailable') {
+      throw Exception('Please connect to the internet');
+    } else {
+      throw Exception('Error updating weight meta: $e');
+    }
+  }
+   catch (e) {
     throw Exception('Error updating weight meta: $e');
   }
 }

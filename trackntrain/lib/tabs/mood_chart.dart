@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:trackntrain/utils/auth_service.dart';
+import 'package:trackntrain/utils/connectivity.dart';
 import 'package:trackntrain/utils/misc.dart';
 
 class MoodData {
@@ -97,7 +98,7 @@ class MoodChart extends StatelessWidget {
     if (weekSpots.isEmpty) {
       return const Center(
         child: Text(
-          'No energy data available for this week',
+          'No energy data available for this week / No Internet',
           style: TextStyle(fontSize: 16, color: Colors.grey),
         ),
       );

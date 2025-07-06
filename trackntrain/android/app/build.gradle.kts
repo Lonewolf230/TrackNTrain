@@ -26,6 +26,7 @@ android {
         targetSdk = 35
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        multiDexEnabled = true
     }
 
     buildTypes {
@@ -35,12 +36,9 @@ android {
     }
 }
 
-// dependencies {
-//     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
-//     implementation(platform("com.google.firebase:firebase-bom:32.8.0"))
-//     implementation("com.google.firebase:firebase-auth")
-//     implementation("com.google.firebase:firebase-messaging")
-// }
+dependencies {
+    implementation("com.google.android.material:material:1.14.0-alpha02")
+}
 
 flutter {
     source = "../.."

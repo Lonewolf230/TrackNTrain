@@ -5,6 +5,7 @@ import 'package:trackntrain/components/meal_logger.dart';
 import 'package:trackntrain/components/mood_dropdown.dart';
 import 'package:trackntrain/components/nutrition_insights_card.dart';
 import 'package:trackntrain/pages/workout_calendar_tab.dart';
+import 'package:trackntrain/utils/connectivity.dart';
 import 'package:trackntrain/utils/db_util_funcs.dart';
 import 'package:trackntrain/utils/misc.dart';
 
@@ -18,6 +19,7 @@ class HomeTab extends ConsumerStatefulWidget {
 class _HomeTabState extends ConsumerState<HomeTab> {
   String? _mood;
   final TextEditingController _weightController = TextEditingController();
+  final ConnectivityService _connectivityService = ConnectivityService();
   @override
   void initState() {
     super.initState();
@@ -265,7 +267,6 @@ class _HomeTabState extends ConsumerState<HomeTab> {
             NutritionInsightsCard(),
             const SizedBox(height: 24),
             const WorkoutCalendarTab(),
-
           ],
         ),
       ),
@@ -366,23 +367,38 @@ class _HomeTabState extends ConsumerState<HomeTab> {
                 ),
               ),
               ElevatedButton(
-                onPressed: () {
+                onPressed: () async {
                   if (_weightController.text.isNotEmpty) {
                     final double? weight = double.tryParse(
                       _weightController.text,
                     );
                     if (weight != null) {
+                      final isConnected=await _connectivityService.checkAndShowError(context,'No internet connection : Cannot log to database');
+                      if (!isConnected){
+                        _weightController.clear();
+                        Navigator.pop(context);
+                        return;
+                      }
+                      try {
+                        await updateWeightMeta(weight);
 
-                      updateWeightMeta(weight);
+                        _weightController.clear();
+                        Navigator.pop(context);
 
-                      _weightController.clear();
-                      Navigator.pop(context);
-
-                      showCustomSnackBar(
-                        context: context,
-                        message: 'Weight logged: $weight kg',
-                        type: 'success',
-                      );
+                        showCustomSnackBar(
+                          context: context,
+                          message: 'Weight logged: $weight kg',
+                          type: 'success',
+                        );
+                      } catch (e) {
+                        _weightController.clear();
+                        Navigator.pop(context);
+                        showCustomSnackBar(
+                          context: context,
+                          message: 'Error logging weight: $e',
+                          type: 'error',
+                        );
+                      }
                     }
                   }
                 },

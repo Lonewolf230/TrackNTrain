@@ -4,6 +4,7 @@ import 'package:skeletonizer/skeletonizer.dart';
 import 'package:trackntrain/components/custom_snack_bar.dart';
 import 'package:trackntrain/components/meal_card.dart';
 import 'package:trackntrain/utils/auth_service.dart';
+import 'package:trackntrain/utils/connectivity.dart';
 
 class MealLogs extends StatefulWidget {
   const MealLogs({super.key});
@@ -23,6 +24,7 @@ class _MealLogsState extends State<MealLogs> {
   bool isLoading = false;
   bool isInitialLoading = true;
   DocumentSnapshot? lastDoc;
+  final ConnectivityService _connectivityService = ConnectivityService();
 
   static const int pageSize = 10; 
 
@@ -47,13 +49,17 @@ class _MealLogsState extends State<MealLogs> {
   }
 
   Future<void> _loadInitialData() async{
+
     if(isLoading) return;
+
     setState(() {
       isLoading = true;
       isInitialLoading = true;
     });
 
     try {
+      bool isConnected= await _connectivityService.checkAndShowError(context, 'No internet connection. Logs shown might not be correct.');
+      if(isConnected){
       Query query=FirebaseFirestore.instance
           .collection('userMeals')
           .where('userId',isEqualTo: AuthService.currentUser?.uid)
@@ -70,8 +76,12 @@ class _MealLogsState extends State<MealLogs> {
               ...doc.data() as Map<String,dynamic>
             }).toList();
         hasMoreData = snapshot.docs.length == pageSize;
+      }
   }
-      else{ hasMoreData = false;}
+      else{ 
+        hasMoreData = false;
+        mealLogs=[];
+      }
     } catch (e) {
       if(!context.mounted) return;
         CustomSnackBar(message: 'Error loading initial data: $e', type: 'error').buildSnackBar(context);
@@ -242,6 +252,7 @@ class _MealLogsState extends State<MealLogs> {
     if(isInitialLoading){
       return ListView.builder(itemBuilder: (context,index)=>_buildSkeletonCard(),itemCount: 10,);
     }
+
     if (mealLogs.isEmpty && !isLoading) {
       return Center(
         child: Column(

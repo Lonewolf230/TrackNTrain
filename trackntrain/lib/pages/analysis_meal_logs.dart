@@ -9,6 +9,7 @@ import 'package:trackntrain/tabs/mood_chart.dart';
 import 'package:trackntrain/tabs/weight_chart.dart';
 import 'package:dio/dio.dart';
 import 'package:trackntrain/utils/auth_service.dart';
+import 'package:trackntrain/utils/connectivity.dart';
 import 'package:trackntrain/utils/misc.dart';
 
 class AnalysisMealLogs extends StatefulWidget {
@@ -22,15 +23,20 @@ class _AnalysisMealLogsState extends State<AnalysisMealLogs> {
   String suggestion = '';
   bool isLoadingSuggestion = false;
   bool isValid=true;
+  final ConnectivityService _connectivityService = ConnectivityService();
 
   Future<void> fetchSuggestion() async {
+    bool isConnected = await _connectivityService.checkAndShowError(context, 'No internet connection. Please try again later.');
+    if (!isConnected) {
+      return;
+    }
     final dio = Dio();
     String responseText = '';
     try {
       setState(() {
         isLoadingSuggestion = true;
       });
-
+      print(AppConfig.aiUrl);
       final response = await dio.post(
         AppConfig.aiUrl,
         data: {'userId': AuthService.currentUser?.uid},

@@ -4,6 +4,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:trackntrain/components/prev_workout_card.dart';
 import 'package:trackntrain/utils/auth_service.dart';
+import 'package:trackntrain/utils/connectivity.dart';
 import 'package:trackntrain/utils/misc.dart';
 
 class WorkoutLogsPage extends StatefulWidget{
@@ -23,6 +24,7 @@ class _WorkoutLogsPageState extends State<WorkoutLogsPage> {
   DocumentSnapshot? lastDoc;
   IconData icon = Icons.fitness_center;
   String workoutType='workout'; 
+  final ConnectivityService _connectivityService = ConnectivityService();
 
   static const int pageSize = 10; 
 
@@ -47,6 +49,7 @@ class _WorkoutLogsPageState extends State<WorkoutLogsPage> {
   }
 
   Future<void> _loadInitialData() async{
+    await _connectivityService.checkAndShowError(context, 'No internet connection. Logs shown might not be correct.');
     if(isLoading) return;
     setState(() {
       isLoading = true;

@@ -8,6 +8,7 @@ import 'dart:async';
 import 'package:trackntrain/components/end_workout.dart';
 import 'package:trackntrain/utils/auth_service.dart';
 import 'package:trackntrain/utils/classes.dart';
+import 'package:trackntrain/utils/connectivity.dart';
 import 'package:trackntrain/utils/db_util_funcs.dart';
 import 'package:trackntrain/utils/misc.dart';
 
@@ -27,6 +28,9 @@ class _WalkProgressState extends State<WalkProgress> {
   bool _isRunning = false;
   bool _isPaused = false;
 
+  bool _isConnected=true;
+  late ConnectivityService connectivityService;
+
   final List<LatLng> _routePoints = [];
   LatLng? _currentLocation;
   bool _locationPermissionGranted = false;
@@ -43,6 +47,16 @@ class _WalkProgressState extends State<WalkProgress> {
   void initState() {
     super.initState();
     _requestLocationPermission();
+    connectivityService = ConnectivityService();
+    _listenToConnecitivity(); 
+  }
+
+  void _listenToConnecitivity() {
+    connectivityService.connectivityStream.listen((isConnected) {
+      setState(() {
+        _isConnected = isConnected;
+      });
+    });
   }
 
   @override
@@ -751,6 +765,30 @@ class _WalkProgressState extends State<WalkProgress> {
                           ),
                         ),
                       ),
+                      Positioned(
+                        top: 16,
+                        left: 16,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.8),
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.1),
+                                spreadRadius: 1,
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: ConnectivityStatusWidget(
+                            isConnected: _isConnected,
+                        ),
+                      )),
                       Positioned(
                         bottom: 16,
                         right: 16,

@@ -86,6 +86,7 @@ Future<void> setGoal(String goal)async{
   final goalWeekNumber='${getWeekNumber(date)}';
   prefs.setString('goalWeek',goalWeekNumber);
   await prefs.setString(key, goal);
+  print('Goal set successfully for user: $userId');
 }
 
 Future<String?> getGoal() async {
@@ -94,6 +95,7 @@ Future<String?> getGoal() async {
   final prefs = await getPrefs();
   final key = 'goal_$userId';
   final goal = prefs.getString(key);
+  print('Goal retrieved: $goal');
   return goal;
 }
 
@@ -172,6 +174,7 @@ Future<void> setHeight(double height)async{
   final prefs=await getPrefs();
   final key = 'height_$userId';
   await prefs.setDouble(key,height);
+  print('Height set successfully for user: $userId');
 }
 
 Future<void> setWeight(double weight) async{
@@ -180,14 +183,17 @@ Future<void> setWeight(double weight) async{
   final prefs = await getPrefs();
   final key = 'weight_$userId';
   await prefs.setDouble(key, weight);
+  print('Weight set successfully for user: $userId');
 }
 
-Future<void> setAge(double age) async {
+Future<void> setAge(String dob) async {
   final userId = AuthService.currentUser?.uid;
   if (userId == null) return;
   final prefs = await getPrefs();
-  final key = 'age_$userId';
-  await prefs.setDouble(key, age);
+  final key = 'dob_$userId';
+  print('Setting DOB: $dob for user: $userId');
+  await prefs.setString(key, dob);
+  print('DOB set successfully for user: $userId');
 }
 
 Future<double?> getHeight() async {
@@ -196,6 +202,7 @@ Future<double?> getHeight() async {
   final prefs = await getPrefs();
   final key = 'height_$userId';
   final height = prefs.getDouble(key);
+  print('Height retrieved: $height');
   return height;
 }
 
@@ -205,16 +212,34 @@ Future<double?> getWeight() async {
   final prefs = await getPrefs();
   final key = 'weight_$userId';
   final weight = prefs.getDouble(key);
+  print('Weight retrieved: $weight');
   return weight;
 }
 
-Future<double?> getAge() async {
+Future<DateTime?> getAge() async {
   final userId = AuthService.currentUser?.uid;
   if (userId == null) return null;
+  
   final prefs = await getPrefs();
-  final key = 'age_$userId';
-  final age = prefs.getDouble(key);
-  return age;
+  final key = 'dob_$userId';
+  final dob = prefs.getString(key);
+  
+  // Return null if no DOB is stored
+  if (dob == null || dob.isEmpty) return null;
+  
+  final DateTime? dOB = parseDOBFromStorage(dob);
+  print('DOB retrieved: $dOB');
+  return dOB;
+}
+
+DateTime? parseDOBFromStorage(String dobString) {
+  try {
+    return DateTime.parse(dobString);
+  } catch (e) {
+    // Handle invalid date format gracefully
+    print('Invalid date format: $dobString');
+    return null;
+  }
 }
 
 Future<void> clearWeeklyGoal() async{

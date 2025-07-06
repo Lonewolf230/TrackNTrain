@@ -8,6 +8,7 @@ import 'package:trackntrain/components/previous_workout_display.dart';
 import 'package:trackntrain/components/stop_without_finishing.dart';
 import 'package:trackntrain/providers/full_body_progress_provider.dart';
 import 'package:trackntrain/providers/workout_providers.dart';
+import 'package:trackntrain/utils/connectivity.dart';
 import 'package:trackntrain/utils/db_util_funcs.dart';
 import 'package:trackntrain/utils/misc.dart';
 
@@ -33,13 +34,16 @@ class _FullBodyWorkoutState extends ConsumerState<FullBodyWorkout> {
   final TextEditingController repsController = TextEditingController();
   final TextEditingController maxWeightController = TextEditingController();
   final TextEditingController workoutNameController = TextEditingController();
+  bool _isConnected = false;
+  late ConnectivityService connectivityService;
 
   bool get isReuseMode => widget.mode == 'reuse';
 
   @override
   void initState() {
     super.initState();
-
+    connectivityService = ConnectivityService();
+    _listenToConnecitivity();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (isReuseMode && widget.previousWorkoutData != null) {
         ref
@@ -54,6 +58,14 @@ class _FullBodyWorkoutState extends ConsumerState<FullBodyWorkout> {
               .initializeNewWorkout(selectedExercises);
         }
       }
+    });
+  }
+
+  void _listenToConnecitivity() {
+    connectivityService.connectivityStream.listen((isConnected) {
+      setState(() {
+        _isConnected = isConnected;
+      });
     });
   }
 
@@ -327,6 +339,7 @@ class _FullBodyWorkoutState extends ConsumerState<FullBodyWorkout> {
                         ),
                       ),
                     ),
+                    ConnectivityStatusWidget(isConnected: _isConnected,),
                     const SizedBox(width: 16),
                     Container(
                       padding: const EdgeInsets.symmetric(
