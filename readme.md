@@ -57,6 +57,30 @@ TrackNTrain is more than just a fitness log — it's your digital coach, account
 
 The ```./trackntrain``` folder contains the client-side Flutter code. So far the app is built for android only. 
 
+## Screenshots
+
+<div style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;">
+
+  <img src="./screenshots/Screenshot_1751794008.png" alt="Screenshot" style="width: 250px; height: 500px;">
+  <img src="./screenshots/Screenshot_1751823010.png" alt="Screenshot" style="width: 250px; height: 500px;">
+  <img src="./screenshots/Screenshot_1751871841.png" alt="Screenshot" style="width: 250px; height: 500px;">
+  
+  <img src="./screenshots/Screenshot_1751871866.png" alt="Screenshot" style="width: 250px; height: 500px;">
+  <img src="./screenshots/Screenshot_1751871872.png" alt="Screenshot" style="width: 250px; height: 500px;">
+  <img src="./screenshots/Screenshot_1751871885.png" alt="Screenshot" style="width: 250px; height: 500px;">
+  
+  <img src="./screenshots/Screenshot_1751871890.png" alt="Screenshot" style="width: 250px; height: 500px;">
+  <img src="./screenshots/Screenshot_1751871904.png" alt="Screenshot" style="width: 250px; height: 500px;">
+  <img src="./screenshots/Screenshot_1751871921.png" alt="Screenshot" style="width: 250px; height: 500px;">
+  
+  <img src="./screenshots/Screenshot_1751871935.png" alt="Screenshot" style="width: 250px; height: 500px;">
+  <img src="./screenshots/Screenshot_1751871937.png" alt="Screenshot" style="width: 250px; height: 500px;">
+
+</div>
+
+
+
+
 **Folder-structure**
 - lib/
   - main.dart
