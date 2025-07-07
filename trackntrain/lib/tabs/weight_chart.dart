@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:trackntrain/main.dart';
 import 'package:trackntrain/utils/auth_service.dart';
 import 'package:trackntrain/utils/misc.dart';
 
@@ -437,11 +438,7 @@ class _WeightTrackingScreenState extends State<WeightTrackingScreen> {
       });
     } catch (e) {
       if(context.mounted){
-        showCustomSnackBar(
-          context: context,
-          message: 'Error loading weight data: $e',
-          type: 'error',
-        );
+        showGlobalSnackBar(message: 'Error loading weight data: $e', type: 'error');
       }
     }
     finally{

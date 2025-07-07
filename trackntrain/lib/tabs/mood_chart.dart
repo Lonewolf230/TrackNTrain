@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:trackntrain/main.dart';
 import 'package:trackntrain/utils/auth_service.dart';
 import 'package:trackntrain/utils/connectivity.dart';
 import 'package:trackntrain/utils/misc.dart';
@@ -469,11 +470,7 @@ class _MoodTrackingScreenState extends State<MoodTrackingScreen> {
     } catch (e) {
       setState(() {
         currentWeekData = [];
-        showCustomSnackBar(
-          context: context,
-          message: 'Error loading mood data: $e',
-          type: 'error',
-        );
+        showGlobalSnackBar(message: 'Error loading mood data: $e', type: 'error');
       });
     } finally {
       setState(() {

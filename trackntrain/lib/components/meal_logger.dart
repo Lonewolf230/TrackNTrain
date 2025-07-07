@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:trackntrain/main.dart';
 import 'package:trackntrain/utils/classes.dart';
 import 'package:trackntrain/utils/connectivity.dart';
 import 'package:trackntrain/utils/db_util_funcs.dart';
@@ -55,17 +56,10 @@ class _MealLoggerSheetState extends State<MealLoggerSheet> {
         _selectedMealType = 'Breakfast';
       });
       if (mounted) Navigator.pop(context);
-      showCustomSnackBar(
-        context: context,
-        message: 'Meal logged successfully',
-        type: 'success',
-      );
+      showGlobalSnackBar(message: 'Meal logged successfully', type: 'success');
     } catch (e) {
-      showCustomSnackBar(
-        context: context,
-        message: 'Error logging meal: $e',
-        type: 'error',
-      );
+      showGlobalSnackBar(message: 'Error logging meal: $e', type: 'error'); 
+      
     }
   }
 

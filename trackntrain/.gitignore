@@ -172,6 +172,8 @@ app.*.symbols
 # Firebase configuration files / Google Services (e.g. APIs or Firebase)
 /ios/Runner/GoogleService-Info.plist
 /android/app/google-services.json
+/android/app/upload-keystore.jks
+/android/key.properties
 /lib/firebase_options.dart
 # Google Maps API
 google_maps_api.xml

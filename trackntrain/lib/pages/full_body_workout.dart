@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -6,6 +8,7 @@ import 'package:trackntrain/components/end_workout.dart';
 import 'package:trackntrain/components/modern_text_field.dart';
 import 'package:trackntrain/components/previous_workout_display.dart';
 import 'package:trackntrain/components/stop_without_finishing.dart';
+import 'package:trackntrain/main.dart';
 import 'package:trackntrain/providers/full_body_progress_provider.dart';
 import 'package:trackntrain/providers/workout_providers.dart';
 import 'package:trackntrain/utils/connectivity.dart';
@@ -36,6 +39,7 @@ class _FullBodyWorkoutState extends ConsumerState<FullBodyWorkout> {
   final TextEditingController workoutNameController = TextEditingController();
   bool _isConnected = false;
   late ConnectivityService connectivityService;
+  StreamSubscription<bool>? _connectivitySubscription;
 
   bool get isReuseMode => widget.mode == 'reuse';
 
@@ -43,7 +47,7 @@ class _FullBodyWorkoutState extends ConsumerState<FullBodyWorkout> {
   void initState() {
     super.initState();
     connectivityService = ConnectivityService();
-    _listenToConnecitivity();
+    _listenToConnectivity();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (isReuseMode && widget.previousWorkoutData != null) {
         ref
@@ -61,8 +65,8 @@ class _FullBodyWorkoutState extends ConsumerState<FullBodyWorkout> {
     });
   }
 
-  void _listenToConnecitivity() {
-    connectivityService.connectivityStream.listen((isConnected) {
+  void _listenToConnectivity() {
+    _connectivitySubscription = connectivityService.connectivityStream.listen((isConnected) {
       setState(() {
         _isConnected = isConnected;
       });
@@ -71,6 +75,7 @@ class _FullBodyWorkoutState extends ConsumerState<FullBodyWorkout> {
 
   @override
   void dispose() {
+    _connectivitySubscription?.cancel();
     setsController.dispose();
     repsController.dispose();
     maxWeightController.dispose();
@@ -126,29 +131,21 @@ class _FullBodyWorkoutState extends ConsumerState<FullBodyWorkout> {
 
     if (!isReuseMode) {
       if (reps.length != sets) {
-        showCustomSnackBar(
-          context: context,
-          message: 'Number of reps must match number of sets',
-          type: 'error',
-        );
+        showGlobalSnackBar(message: 'Number of reps must match number of sets', type: 'error');
         return;
       }
 
       if (weightsList.length != sets) {
-        showCustomSnackBar(
-          context: context,
-          message: 'Number of weights must match number of sets',
-          type: 'error',
-        );
+        showGlobalSnackBar(message: 'Number of weights must match number of sets', type: 'error');
         return;
       }
 
       if (sets <= 0 || reps.isEmpty) {
-        showCustomSnackBar(
-          context: context,
+        showGlobalSnackBar(
           message: 'Please enter valid sets and reps',
           type: 'error',
         );
+
         return;
       }
     }
@@ -173,7 +170,6 @@ class _FullBodyWorkoutState extends ConsumerState<FullBodyWorkout> {
             maxWeightController.clear();
             await saveFullBody(
               ref.read(workoutProgressProvider).exercises,
-              context,
               name:
                   workoutNameController.text.isNotEmpty
                       ? workoutNameController.text
@@ -181,6 +177,7 @@ class _FullBodyWorkoutState extends ConsumerState<FullBodyWorkout> {
             );
           }
           await updateWorkoutStatus();
+          ref.read(workoutProvider.notifier).clearSelection();
           if (mounted) context.goNamed('home');
         },
         onRestart: () {
@@ -539,7 +536,7 @@ class _FullBodyWorkoutState extends ConsumerState<FullBodyWorkout> {
                         onPressed: () {
                           showDialog(
                             context: context,
-                            builder: (context) => StopWithoutFinishing(),
+                            builder: (context) => StopWithoutFinishing(type: 'full-body',),
                           );
                         },
                         style: ElevatedButton.styleFrom(

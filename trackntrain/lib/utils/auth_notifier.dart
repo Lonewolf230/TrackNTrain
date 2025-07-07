@@ -14,7 +14,7 @@ class AuthNotifier extends ChangeNotifier{
   AuthNotifier(){
     _currentUser = AuthService.currentUser;
     _authSubscription=AuthService.authStateChanges.listen((User? user){
-      print('AuthNotifier: User state changed: ${user?.uid}');
+      // print('AuthNotifier: User state changed: ${user?.uid}');
       _currentUser = user; 
       notifyListeners();
     });

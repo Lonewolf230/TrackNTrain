@@ -55,6 +55,7 @@ class _HiitWorkoutState extends State<HiitWorkout>
 
   bool _isConnected = true;
   late ConnectivityService connectivityService;
+  StreamSubscription<bool>? _connectivitySubscription;
 
   @override
   void initState() {
@@ -74,7 +75,7 @@ class _HiitWorkoutState extends State<HiitWorkout>
   }
 
   void _listenToConnectivity() {
-    connectivityService.connectivityStream.listen((isConnected) {
+    _connectivitySubscription = connectivityService.connectivityStream.listen((isConnected) {
       setState(() {
         _isConnected = isConnected;
       });
@@ -83,6 +84,7 @@ class _HiitWorkoutState extends State<HiitWorkout>
 
   @override
   void dispose() {
+    _connectivitySubscription?.cancel();
     _timer?.cancel();
     _controller.dispose();
     super.dispose();

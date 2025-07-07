@@ -14,7 +14,7 @@ class ConnectivityService {
     } on SocketException catch (_) {
       return false;
     } catch (e) {
-      print('Error checking internet connection: $e');
+      // print('Error checking internet connection: $e');
       return false;
     }
   }
@@ -53,6 +53,10 @@ class ConnectivityService {
   void showNoConnectionSnackBar(BuildContext context,String message) {
     
     showCustomSnackBar(context: context, message: message,type: 'error');
+  }
+
+  void clearConnectivityInstance(){
+
   }
 }
 

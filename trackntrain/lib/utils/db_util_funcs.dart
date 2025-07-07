@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:trackntrain/components/custom_snack_bar.dart';
+import 'package:trackntrain/main.dart';
 import 'package:trackntrain/providers/full_body_progress_provider.dart';
 import 'package:trackntrain/utils/auth_service.dart';
 import 'package:trackntrain/utils/classes.dart';
@@ -8,12 +9,12 @@ import 'package:trackntrain/utils/misc.dart';
 
 Future<void> saveFullBody(
   List<ExerciseProgress> workoutData,
-  BuildContext context, {
+  {
   String? existingWorkoutId,
   String? name,
 }) async {
   try {
-    print('Starting save');
+    // print('Starting save');
     final FullBodyWorkout workout = FullBodyWorkout(
       userId: AuthService.currentUser?.uid ?? '',
       exercises:
@@ -48,14 +49,10 @@ Future<void> saveFullBody(
       workout.toFirestoreMap(isUpdate: docSnapshot.exists),
       SetOptions(merge: true),
     );
-    print('Full body workout saved successfully with ID: ${fullBodyDoc.id}');
+    // print('Full body workout saved successfully with ID: ${fullBodyDoc.id}');
   } catch (e) {
-    print('Error saving full body workout: $e');
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error saving full body workout: $e')),
-      );
-    }
+    // print('Error saving full body workout: $e');
+    showGlobalSnackBar(message: 'Error saving full body workout: $e', type: 'error');
   }
 }
 
@@ -65,11 +62,11 @@ Future<void> changeUpdatedAt(String workoutId, String collectionName) async {
         .collection(collectionName)
         .doc(workoutId);
     await docRef.update({'updatedAt': FieldValue.serverTimestamp()});
-    print(
-      'Updated at timestamp changed successfully for workout ID: $workoutId',
-    );
+    // print(
+    //   'Updated at timestamp changed successfully for workout ID: $workoutId',
+    // );
   } catch (e) {
-    print('Error changing updated at timestamp: $e');
+    // print('Error changing updated at timestamp: $e');
   }
 }
 
@@ -92,14 +89,10 @@ Future<void> saveHiit(
       workout.toFireStoreMap(isUpdate: docSnapshot.exists),
       SetOptions(merge: true),
     );
-    print('HIIT workout saved successfully with ID: ${hiitDoc.id}');
+    // print('HIIT workout saved successfully with ID: ${hiitDoc.id}');
   } catch (e) {
     print('Error saving HIIT workout: $e');
-    if (context.mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error saving HIIT workout: $e')));
-    }
+    // showGlobalSnackBar(message: 'Error saving HIIT workout: $e', type: 'error');
   }
 }
 
@@ -113,9 +106,9 @@ Future<void> deleteDoc(
         .collection(collectionName)
         .doc(docId)
         .delete();
-    print('Document deleted successfully from $collectionName with ID: $docId');
+    // print('Document deleted successfully from $collectionName with ID: $docId');
   } catch (e) {
-    print('Error deleting document: $e');
+    // print('Error deleting document: $e');
     if (context.mounted) {
       CustomSnackBar(message: 'Error deleting document: $e', type:'error').buildSnackBar(context);
     }
@@ -127,14 +120,10 @@ Future<void> createWalk(BuildContext context, WalkData walkData) async {
     DocumentReference doc =
         FirebaseFirestore.instance.collection('userWalkRecords').doc();
     await doc.set(walkData.toFireStoreMap(), SetOptions(merge: true));
-    print('Walk data saved successfully with ID: ${doc.id}');
+    // print('Walk data saved successfully with ID: ${doc.id}');
   } catch (e) {
-    print('Error saving walk data: $e');
-    if (context.mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error saving walk data: $e')));
-    }
+    // print('Error saving walk data: $e');
+    showGlobalSnackBar(message: 'Error saving walk data: $e', type: 'error');
   }
 }
 
@@ -156,13 +145,13 @@ Future<void> createOrSaveMeal(Meal meal, BuildContext context) async {
     );
 
     final Map<String,dynamic> dataToSet={
+      'userId':userId,
       'updatedAt': FieldValue.serverTimestamp(),
     };
 
     if(!docSnapshot.exists){
       dataToSet['expireAt']=expireAt;
       dataToSet['createdAt']=createdAtTimeStamp;
-      dataToSet['userId']=AuthService.currentUser?.uid ?? '';
     }
     
     if (meal.mealType != 'Snack') {
@@ -184,7 +173,7 @@ Future<void> createOrSaveMeal(Meal meal, BuildContext context) async {
     if (!context.mounted) return;
   
   } catch (e) {
-    print('Error saving meal data: $e');
+    // print('Error saving meal data: $e');
     rethrow;
   }
 }
@@ -221,6 +210,7 @@ Future<void> updateWeightMeta(double weight)async{
 
     if(docSnapshot.exists) {
       await docRef.update({
+        'userId':userId,
         'weight': weight,
       });
     } 

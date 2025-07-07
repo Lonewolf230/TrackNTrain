@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:trackntrain/components/custom_snack_bar.dart';
 import 'package:trackntrain/components/meal_card.dart';
+import 'package:trackntrain/main.dart';
 import 'package:trackntrain/utils/auth_service.dart';
 import 'package:trackntrain/utils/connectivity.dart';
 
@@ -124,9 +125,7 @@ class _MealLogsState extends State<MealLogs> {
         hasMoreData = false;
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error loading more data: $e')),
-      );
+      showGlobalSnackBar(message: 'Error loading more data: $e', type: 'error');
     } finally {
       setState(() {
         isLoading = false;

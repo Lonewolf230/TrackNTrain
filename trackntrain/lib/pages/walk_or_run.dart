@@ -6,11 +6,11 @@ import 'package:geolocator/geolocator.dart';
 import 'dart:async';
 
 import 'package:trackntrain/components/end_workout.dart';
+import 'package:trackntrain/main.dart';
 import 'package:trackntrain/utils/auth_service.dart';
 import 'package:trackntrain/utils/classes.dart';
 import 'package:trackntrain/utils/connectivity.dart';
 import 'package:trackntrain/utils/db_util_funcs.dart';
-import 'package:trackntrain/utils/misc.dart';
 
 class WalkProgress extends StatefulWidget {
   const WalkProgress({super.key});
@@ -30,6 +30,7 @@ class _WalkProgressState extends State<WalkProgress> {
 
   bool _isConnected=true;
   late ConnectivityService connectivityService;
+  StreamSubscription<bool>? _connectivitySubscription;
 
   final List<LatLng> _routePoints = [];
   LatLng? _currentLocation;
@@ -48,11 +49,11 @@ class _WalkProgressState extends State<WalkProgress> {
     super.initState();
     _requestLocationPermission();
     connectivityService = ConnectivityService();
-    _listenToConnecitivity(); 
+    _listenToConnectivity(); 
   }
 
-  void _listenToConnecitivity() {
-    connectivityService.connectivityStream.listen((isConnected) {
+  void _listenToConnectivity() {
+    _connectivitySubscription = connectivityService.connectivityStream.listen((isConnected) {
       setState(() {
         _isConnected = isConnected;
       });
@@ -61,6 +62,7 @@ class _WalkProgressState extends State<WalkProgress> {
 
   @override
   void dispose() {
+    _connectivitySubscription?.cancel();
     _timer?.cancel();
     _locationTimer?.cancel();
     _positionStreamSubscription?.cancel();
@@ -367,8 +369,8 @@ class _WalkProgressState extends State<WalkProgress> {
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
         );
-        createWalk(context, walkData);
         if(distance>0.2 && _elapsedSeconds>60){
+          createWalk(context, walkData);
           updateWorkoutStatus();
         }
         setState(() {
@@ -401,6 +403,7 @@ class _WalkProgressState extends State<WalkProgress> {
     try {
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
+        
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             backgroundColor: Theme.of(context).primaryColor,
@@ -427,12 +430,7 @@ class _WalkProgressState extends State<WalkProgress> {
         permission = await Geolocator.requestPermission();
 
         if (permission == LocationPermission.denied) {
-          showCustomSnackBar(
-            context: context,
-            message:
-                'Location permission denied. Please enable it in settings.',
-            type: 'error',
-          );
+          showGlobalSnackBar(message: 'Location permissions are denied. Please enable them in app settings.', type: 'error');
           return;
         }
       }
@@ -461,11 +459,7 @@ class _WalkProgressState extends State<WalkProgress> {
       await _getCurrentLocation();
       _startLocationStream();
     } catch (e) {
-      showCustomSnackBar(
-        context: context,
-        message: 'Error requesting location permission: $e',
-        type: 'error',
-      );
+      showGlobalSnackBar(message: 'Error requesting location permission: $e', type: 'error');
     }
   }
 

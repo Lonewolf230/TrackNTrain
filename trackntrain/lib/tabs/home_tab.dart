@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:trackntrain/components/meal_logger.dart';
 import 'package:trackntrain/components/mood_dropdown.dart';
 import 'package:trackntrain/components/nutrition_insights_card.dart';
+import 'package:trackntrain/main.dart';
 import 'package:trackntrain/pages/workout_calendar_tab.dart';
 import 'package:trackntrain/utils/connectivity.dart';
 import 'package:trackntrain/utils/db_util_funcs.dart';
@@ -376,25 +377,23 @@ class _HomeTabState extends ConsumerState<HomeTab> {
                       final isConnected=await _connectivityService.checkAndShowError(context,'No internet connection : Cannot log to database');
                       if (!isConnected){
                         _weightController.clear();
-                        Navigator.pop(context);
+                        if(context.mounted)Navigator.pop(context);
                         return;
                       }
                       try {
                         await updateWeightMeta(weight);
 
                         _weightController.clear();
-                        Navigator.pop(context);
-
-                        showCustomSnackBar(
-                          context: context,
-                          message: 'Weight logged: $weight kg',
+                        if(context.mounted)Navigator.pop(context);
+                        showGlobalSnackBar(message: 
+                          'Weight logged successfully',
                           type: 'success',
                         );
-                      } catch (e) {
+                      }
+                      catch (e) {
                         _weightController.clear();
-                        Navigator.pop(context);
-                        showCustomSnackBar(
-                          context: context,
+                        if(context.mounted)Navigator.pop(context);
+                        showGlobalSnackBar(
                           message: 'Error logging weight: $e',
                           type: 'error',
                         );

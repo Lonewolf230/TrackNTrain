@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:trackntrain/components/saveable_textfield.dart';
 import 'package:trackntrain/config.dart';
+import 'package:trackntrain/main.dart';
 import 'package:trackntrain/utils/auth_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:trackntrain/utils/classes.dart';
@@ -73,22 +74,12 @@ class _ProfilePageState extends State<ProfilePage> {
       return;
     }
     try {
+      clearCurrentUserPrefs();
       await AuthService.signOut();
-      if (context.mounted) {
-        showCustomSnackBar(
-          context: context,
-          message: 'Logged out successfully',
-          type: 'success',
-          disableCloseButton: true,
-        );
-      }
+      showGlobalSnackBar(message: 'Logged out successfully', type: 'success');
     } catch (e) {
       if (!context.mounted) return;
-      showCustomSnackBar(
-        context: context,
-        message: e.toString(),
-        type: 'error',
-      );
+      showGlobalSnackBar(message: e.toString(), type: 'error'); 
     }
   }
 
@@ -117,19 +108,10 @@ class _ProfilePageState extends State<ProfilePage> {
     await setHeight(_height!);
     
     if (!context.mounted) return;
-
-    showCustomSnackBar(
-      context: context, 
-      message: 'Height updated successfully',
-      disableCloseButton: true,
-    );
+    showGlobalSnackBar(message: 'Height updated successfully', type: 'success');
   } catch (e) {
     if (!context.mounted) return;
-    showCustomSnackBar(
-      context: context, 
-      message: 'Error updating height: $e',
-      type: 'error',
-    );
+    showGlobalSnackBar(message: 'Error updating height: $e', type: 'error');
   }
 }
 
@@ -158,18 +140,11 @@ void _updateWeight() async {
     await setWeight(_weight!);
     
     if (!context.mounted) return;
-    showCustomSnackBar(
-      context: context, 
-      message: 'Weight updated successfully',
-      disableCloseButton: true,
-    );
+    showGlobalSnackBar(message: 'Weight updated successfully', type: 'success');
   } catch (e) {
     if (!context.mounted) return;
-    showCustomSnackBar(
-      context: context, 
-      message: 'Error updating weight: $e',
-      type:'error'
-    );
+    showGlobalSnackBar(message: 'Error updating weight: $e', type: 'error');
+
   }
 }
 
@@ -197,18 +172,11 @@ void _updateDateOfBirth() async {
     await setAge(_formatDOB(_dateOfBirth!));
     
     if (!context.mounted) return;
-    showCustomSnackBar(
-      context: context, 
-      message: 'Date of birth updated successfully',
-      disableCloseButton: true,
-    );
+    showGlobalSnackBar(message: 'Date of birth updated successfully', type: 'success');
   } catch (e) {
     if (!context.mounted) return;
-    showCustomSnackBar(
-      context: context, 
-      message: 'Error updating date of birth: $e',
-      type: 'error',
-    );
+    showGlobalSnackBar(message: 'Error updating date of birth: $e', type: 'error');
+
   }
 }
 
@@ -222,13 +190,13 @@ void _getUserInfo() async {
   final user = AuthService.currentUser;
   if (user != null &&(_height==null || _weight==null || _dateOfBirth==null)) {
     try {
-    print('Fetching user info from Firestore for user: ${user.uid}');
+    // print('Fetching user info from Firestore for user: ${user.uid}');
 
       DocumentReference userDoc = FirebaseFirestore.instance
           .collection('users')
           .doc(user.uid);
       DocumentSnapshot userSnapshot = await userDoc.get();
-      print('Document Status: ${userSnapshot.exists}');
+      // print('Document Status: ${userSnapshot.exists}');
       if (userSnapshot.exists) {
         final data = userSnapshot.data() as Map<String, dynamic>;
         
@@ -248,14 +216,12 @@ void _getUserInfo() async {
         }
       }
       
-      // Update UI regardless of whether data was found or not
       if (mounted) {
         setState(() {});
       }
       
     } catch (e) {
-      print('Error fetching user info from Firestore: $e');
-      // Still update UI even if Firestore fails
+      // print('Error fetching user info from Firestore: $e');
       if (mounted) {
         setState(() {});
       }
@@ -268,7 +234,7 @@ String _formatDOB(DateTime dateOfBirth) {
   try {
     return dateOfBirth.toIso8601String().split('T')[0];
   } catch (e) {
-    print('Error formatting date: $e');
+    // print('Error formatting date: $e');
     return '';
   }
 }
@@ -309,18 +275,20 @@ String _formatDOB(DateTime dateOfBirth) {
     final dio = Dio();
 
     try {
-      print('Deleting account for user: ${AuthService.currentUser?.uid}');
-      final String userId = AuthService.currentUser?.uid ?? '';
+      // print('Deleting account for user: ${AuthService.currentUser?.uid}');
+      final String idToken= await AuthService.currentUser?.getIdToken() ?? '';
       await clearCurrentUserPrefs();
       await AuthService.deleteAccount();
       await dio.post(
         AppConfig.deletionUrl,
-        data: {'userId': userId},
         options: Options(
-          headers: {'Content-Type': 'application/json'},
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $idToken',
+          },
         ),
       );
-      print('Account delete initialised');
+      // print('Account delete initialised');
 
       navigator.pop(); 
 
@@ -341,7 +309,7 @@ String _formatDOB(DateTime dateOfBirth) {
       
     }
     catch (e) {
-      print('Error deleting account: $e');
+      // print('Error deleting account: $e');
       navigator.pop(); 
       await Future.delayed(const Duration(seconds: 1));
       String errorMessage=e.toString();

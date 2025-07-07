@@ -11,9 +11,9 @@
     <uses-permission android:name="android.permission.INTERNET" />
 
     <application
-        android:label="trackntrain"
+        android:label="TrackNTrain"
         android:name="${applicationName}"
-        android:icon="@mipmap/launcher_icon"
+        android:icon="@mipmap/ic_launcher"
         android:enableOnBackInvokedCallback="true">
 
         <!-- <service

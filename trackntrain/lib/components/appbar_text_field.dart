@@ -50,7 +50,7 @@ class AppbarTextField extends StatelessWidget {
       textInputAction: TextInputAction.search,
       onSubmitted: (value) {
         // Handle search action
-        print('Search: $value');
+        // print('Search: $value');
       },
     );
   }

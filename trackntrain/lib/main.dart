@@ -162,18 +162,18 @@ final _router = GoRouter(
                         int.tryParse(
                           state.uri.queryParameters['rounds']!,
                         );
-                    print('Rounds: $rounds');
+                    // print('Rounds: $rounds');
                     final rest =
                         int.tryParse(
                           state.uri.queryParameters['rest']!,
                         );
-                    print('Rest: $rest');
+                    // print('Rest: $rest');
                     final work =
                         int.tryParse(
                           state.uri.queryParameters['work']!,
                         ) ;
                     final name= state.uri.queryParameters['name']??'My HIIT Workout';
-                    print('Work: $work');
+                    // print('Work: $work');
                     return HiitWorkout(
                       mode:mode,
                       exercises: exercises,
@@ -194,6 +194,34 @@ final _router = GoRouter(
   ],
 );
 
+void showGlobalSnackBar({
+  required String message,
+  String type = 'success',
+  bool disableCloseButton = false,
+}) {
+  MyApp.scaffoldMessengerKey.currentState?.showSnackBar(
+    SnackBar(
+      content: Text(message, style: const TextStyle(
+        color: Colors.white,
+        fontSize: 16,
+        fontWeight: FontWeight.bold,
+      )),
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+      ),
+      backgroundColor: type == 'error' ? Colors.red : const Color.fromARGB(255, 26, 234, 33),
+      duration: const Duration(seconds: 3),
+      action: !disableCloseButton ? SnackBarAction(
+        label: 'Close',
+        textColor: Colors.white,
+        onPressed: () {
+          MyApp.scaffoldMessengerKey.currentState?.hideCurrentSnackBar();
+        },
+      ) : null,
+    ),
+  );
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -215,10 +243,11 @@ void main() async {
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
-
+  static final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
+      scaffoldMessengerKey: scaffoldMessengerKey,
       routerConfig: _router,
       title: 'Auth App',
       debugShowCheckedModeBanner: false,

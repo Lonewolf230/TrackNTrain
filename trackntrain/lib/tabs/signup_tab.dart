@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:trackntrain/main.dart';
 import 'package:trackntrain/utils/auth_service.dart';
 import 'package:trackntrain/utils/classes.dart';
 import 'package:trackntrain/utils/google_auth_utils.dart';
@@ -78,11 +79,7 @@ class _SignUpTabState extends State<SignUpTab> {
           isLoading = false;
         });
         if (e.toString() != null || e.toString()?.isNotEmpty == true) {
-          showCustomSnackBar(
-            context: context,
-            message: cleanErrorMessage(e.toString()),
-            type: 'error',
-          );
+          showGlobalSnackBar(message: cleanErrorMessage(e.toString()), type: 'error');
         }
       }
     }
@@ -127,11 +124,7 @@ class _SignUpTabState extends State<SignUpTab> {
           isLoading = false;
         });
         if (e.toString() != null || e.toString().isNotEmpty) {
-          showCustomSnackBar(
-            context: context,
-            message: cleanErrorMessage(e.toString()),
-            type: 'error',
-          );
+          showGlobalSnackBar(message: cleanErrorMessage(e.toString()), type: 'error');
         }
       }
     }

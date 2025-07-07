@@ -186,12 +186,24 @@ export const metaLogSpotCreation = onRequest(async (request, response) => {
 export const handleDeletion = onRequest(
   { timeoutSeconds: 180,memory:"256MiB",region:"asia-south1" },
   async (request, response) => {
-    const { userId } = request.body;
-    if (!userId) {
-      response.status(400).send("Missing userId");
-      return;
-    }
+    let userId: string | undefined;
     try {
+      const idToken=request.headers.authorization?.split("Bearer ")[1];
+
+      if(!idToken){
+        response.status(401).send("Unauthorized: Missing ID token");
+        return;
+      }
+
+      let decodedToken;
+      try {
+        decodedToken=await admin.auth().verifyIdToken(idToken);
+      } catch (error) {
+        response.status(401).send("Unauthorized: Invalid ID token");
+        return;
+      }
+
+      userId=decodedToken.uid;
       const userMetaLogsRef: admin.firestore.Query<admin.firestore.DocumentData> = admin
         .firestore()
         .collection("userMetaLogs")
@@ -268,13 +280,25 @@ export const getAIInsights = onRequest(
     region:"asia-south1", 
   },
   async (request, response) => {
+    let userId: string | undefined;
     try {
-      const { userId } = request.body;
+      const idToken=request.headers.authorization?.split("Bearer ")[1];
 
-      if (userId === undefined || userId === null) {
-        response.status(400).send("Missing userId");
+      if(!idToken){
+        response.status(401).send("Unauthorized: Missing ID token");
         return;
       }
+
+      let decodedToken;
+      try {
+        decodedToken=await admin.auth().verifyIdToken(idToken);
+      } catch (error) {
+        response.status(401).send("Unauthorized: Invalid ID token");
+        return;
+      }
+
+      userId=decodedToken.uid;
+      logger.info(`User ID: ${userId}`, { structuredData: true });
       logger.debug("Updated version");
       // console.log("Timestamp:", admin.firestore.Timestamp);
       // console.log("fromDate function:", admin.firestore.Timestamp.fromDate);
