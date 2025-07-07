@@ -29,7 +29,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.trackntrain"
+        applicationId = "com.manish2306j.trackntrain"
         minSdk = 23
         targetSdk = 35
         versionCode = flutter.versionCode
