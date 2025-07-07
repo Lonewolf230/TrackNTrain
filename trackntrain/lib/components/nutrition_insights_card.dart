@@ -7,7 +7,6 @@ class NutritionInsightsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: (){
-        print('Nutrition Insights Card tapped');
         context.goNamed('analysis_meal_logs');
       },
       splashColor: Colors.red.withOpacity(0.2),

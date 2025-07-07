@@ -183,7 +183,7 @@ class _CreateHiitPageState extends State<CreateHiitPage> {
   }
 
   void startWorkout() {
-    print(finalExercises);
+    // print(finalExercises);
     final exerciseNames =
         finalExercises.map((e) => e['name'] as String).toList();
     context.goNamed(

@@ -10,7 +10,6 @@ import 'package:trackntrain/utils/quotes.dart';
 class TrainTab extends StatelessWidget {
   const TrainTab({super.key});
 
-  // Map workout type to its corresponding screen
   static final Map<String, Widget Function()> workoutPages = {
     'full-body': () => const FullBodyTab(),
     'walking': () => const WalkingTab(),
@@ -61,7 +60,6 @@ class TrainTab extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             const SizedBox(height: 10),
-            // Quote Card
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(24),
@@ -112,7 +110,6 @@ class TrainTab extends StatelessWidget {
             ),
             const SizedBox(height: 32),
             
-            // Workouts Section
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(20),

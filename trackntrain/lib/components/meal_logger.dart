@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:trackntrain/components/custom_snack_bar.dart';
+import 'package:trackntrain/main.dart';
 import 'package:trackntrain/utils/classes.dart';
+import 'package:trackntrain/utils/connectivity.dart';
 import 'package:trackntrain/utils/db_util_funcs.dart';
 import 'package:trackntrain/utils/misc.dart';
 
@@ -17,6 +18,7 @@ class _MealLoggerSheetState extends State<MealLoggerSheet> {
   String _selectedMealType = 'Breakfast';
   final List<String> _mealTypes = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
   final _formKey = GlobalKey<FormState>();
+  final ConnectivityService _connectivityService = ConnectivityService();
 
   @override
   void dispose() {
@@ -38,6 +40,14 @@ class _MealLoggerSheetState extends State<MealLoggerSheet> {
       description: description,
     );
 
+    final isConnected = await _connectivityService.checkAndShowError(context,'No internet connection : Cannot log to database');
+    if (!isConnected) {
+      _mealNameController.clear();
+      _descController.clear();
+      if (mounted) Navigator.pop(context);
+      return;
+    }
+
     try {
       await createOrSaveMeal(meal, context);
       _mealNameController.clear();
@@ -46,18 +56,10 @@ class _MealLoggerSheetState extends State<MealLoggerSheet> {
         _selectedMealType = 'Breakfast';
       });
       if (mounted) Navigator.pop(context);
-      showCustomSnackBar(
-        context: context,
-        message: 'Meal logged successfully',
-        type: 'success',
-      );
+      showGlobalSnackBar(message: 'Meal logged successfully', type: 'success');
     } catch (e) {
-      print('Error saving meal data: $e');
-      showCustomSnackBar(
-        context: context,
-        message: 'Error logging meal: $e',
-        type: 'error',
-      );
+      showGlobalSnackBar(message: 'Error logging meal: $e', type: 'error'); 
+      
     }
   }
 

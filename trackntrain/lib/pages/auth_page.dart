@@ -35,7 +35,7 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
               padding: const EdgeInsets.symmetric(horizontal: 24.0),
               child: Column(
                 children: [
-                  // App logo
+
                   Container(
                     height: 100,
                     decoration: BoxDecoration(
@@ -69,7 +69,7 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
               ),
             ),
             const SizedBox(height: 40),
-            // Tab bar
+
             TabBar(
               controller: _tabController,
               indicatorColor: Theme.of(context).primaryColor,

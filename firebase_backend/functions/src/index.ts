@@ -186,12 +186,24 @@ export const metaLogSpotCreation = onRequest(async (request, response) => {
 export const handleDeletion = onRequest(
   { timeoutSeconds: 180,memory:"256MiB",region:"asia-south1" },
   async (request, response) => {
-    const { userId } = request.body;
-    if (!userId) {
-      response.status(400).send("Missing userId");
-      return;
-    }
+    let userId: string | undefined;
     try {
+      const idToken=request.headers.authorization?.split("Bearer ")[1];
+
+      if(!idToken){
+        response.status(401).send("Unauthorized: Missing ID token");
+        return;
+      }
+
+      let decodedToken;
+      try {
+        decodedToken=await admin.auth().verifyIdToken(idToken);
+      } catch (error) {
+        response.status(401).send("Unauthorized: Invalid ID token");
+        return;
+      }
+
+      userId=decodedToken.uid;
       const userMetaLogsRef: admin.firestore.Query<admin.firestore.DocumentData> = admin
         .firestore()
         .collection("userMetaLogs")
@@ -268,13 +280,25 @@ export const getAIInsights = onRequest(
     region:"asia-south1", 
   },
   async (request, response) => {
+    let userId: string | undefined;
     try {
-      const { userId } = request.body;
+      const idToken=request.headers.authorization?.split("Bearer ")[1];
 
-      if (userId === undefined || userId === null) {
-        response.status(400).send("Missing userId");
+      if(!idToken){
+        response.status(401).send("Unauthorized: Missing ID token");
         return;
       }
+
+      let decodedToken;
+      try {
+        decodedToken=await admin.auth().verifyIdToken(idToken);
+      } catch (error) {
+        response.status(401).send("Unauthorized: Invalid ID token");
+        return;
+      }
+
+      userId=decodedToken.uid;
+      logger.info(`User ID: ${userId}`, { structuredData: true });
       logger.debug("Updated version");
       // console.log("Timestamp:", admin.firestore.Timestamp);
       // console.log("fromDate function:", admin.firestore.Timestamp.fromDate);
@@ -346,27 +370,33 @@ export const getAIInsights = onRequest(
           {
             role:"model",
             parts:[{
-              text:`You are a certified fitness and nutrition coach. You will receive a user's weekly fitness logs, including weight trends, mood entries, and meals (breakfast, lunch, dinner, snacks). Your job is to write a friendly but professional 1-week feedback report.
-
-Keep it under 500 words.
+              text:`
+              You are a certified fitness and nutrition coach who just finished reviewing a client's weekly data logs. Your job is to send them a friendly and personalized voice-note-style message — like you would to your own client.
+              Keep it under 700 words.
 
 The report should:
-- Highlight progress toward weight goals (e.g., "you lost 2kg this week")
-- Analyze soreness/fatigue (e.g., mood data shows soreness — explain why and suggest recovery)
-- Review meal balance and frequency (call out common patterns or excess items)
 - Suggest nutrition/training tips (based on meals/mood/weight)
-- Encourage and motivate the user based on their logged goal
-- Use the provided data to support your advice
-- Be positive and supportive, like a coach 
-- Avoid generic statements; focus on the user's specific data
-- Use the user's goal to tailor your advice
 - Use the user's mood data to suggest recovery or adjustments
+- Be casual, positive, and supportive — like you're talking to them directly
+- Avoid headers like “Subject” or “Weekly Report”
+- Avoid markdown or bullet points
+- Avoid generic praise like “keep up the good work” unless justified
+- Use **specific insights** from their weight, mood, and meal data to guide your advice
+- Provide workout and training advice based on their mood and weight data and goal.(Provide actual tips not generic ones)
+- Use the user’s goal to **tailor the feedback**
+- If something is lacking, gently call it out constructively
 
 
-Be warm and encouraging, like a supportive coach. Do not list data. Use the data to support your advice.
-Your response should avoid headers like Subject, Summary, or Conclusion. Instead, the feedback should look like what a fitness instructor would tell his clients in a normal conversation.
-So avoid that typical format and make it look like a normal conversation.
-Also avoid any form of markdwown formatting like bold, italics, etc. Just plain text.`
+Instructions:
+- Imagine you just looked at this data, and now you're **talking casually but intelligently** to your client.
+- Include at least one motivational reflection that ties to their **specific progress or goal.**
+- Do not use formal structure or generic advice.
+- Make it feel like a personal conversation and avoid giving similar advice to every user.
+- Also avoid blindly reading the user's data back to them. 
+- Avoid suggesting they can ask further questions or that they can reach out for more help. (We only allow one query per week so ignore telling all this)
+
+Now write your message as a trainer who truly cares about this person’s journey.`
+                        
             }]
           },
           {

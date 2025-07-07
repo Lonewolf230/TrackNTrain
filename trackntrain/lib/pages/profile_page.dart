@@ -1,11 +1,13 @@
 import 'package:dio/dio.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:trackntrain/components/saveable_textfield.dart';
 import 'package:trackntrain/config.dart';
+import 'package:trackntrain/main.dart';
 import 'package:trackntrain/utils/auth_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:trackntrain/utils/classes.dart';
+import 'package:trackntrain/utils/connectivity.dart';
 import 'package:trackntrain/utils/db_util_funcs.dart';
 import 'package:trackntrain/utils/misc.dart';
 
@@ -19,119 +21,43 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   double? _height;
   double? _weight;
-  double? _age;
-  String goal='Add Your Goal';
+  String goal = 'Add Your Goal';
+  DateTime? _dateOfBirth;
+  final ConnectivityService _connectivityService = ConnectivityService();
 
-  void _loadGoal() async{
+  void _loadGoal() async {
     try {
       String? prefGoal = await getGoal();
-      if(prefGoal==null){
-        print('No goal found in preferences, fetching from Firestore');
-        final doc=FirebaseFirestore.instance
+      if (prefGoal == null) {
+        print('No goal found in SharedPreferences, fetching from Firestore');
+        final doc = FirebaseFirestore.instance
             .collection('users')
             .doc(AuthService.currentUser?.uid);
         DocumentSnapshot snapshot = await doc.get();
-        prefGoal=snapshot.exists
-            ? (snapshot.data() as Map<String, dynamic>)['goal'] as String?
-            : null;
+        prefGoal =
+            snapshot.exists
+                ? (snapshot.data() as Map<String, dynamic>)['goal'] as String?
+                : null;
+        await setGoal(prefGoal ?? 'Add your goal');
       }
-      if(prefGoal!=null && prefGoal.isNotEmpty){
+      if (prefGoal != null && prefGoal.isNotEmpty) {
         setState(() {
-          goal=prefGoal ?? 'Add your goal';
-        }); 
+          goal = prefGoal ?? 'Add your goal';
+        });
       }
     } catch (e) {
-      print('Error loading goal: $e');
+
     }
   }
-
-  void _getUserInfo() async {
-    print('Fetching user info... from preferences');
-    _height=await getHeight();
-    _weight=await getWeight();
-    _age=await getAge();
-    final user = AuthService.currentUser;
-    if (user != null && (_height== null || _weight == null || _age == null)) {
-      print('Fetching user info from Firestore for user: ${user.uid}');
-      DocumentReference userDoc = FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid);
-      DocumentSnapshot userSnapshot = await userDoc.get();
-      if (userSnapshot.exists) {
-        final data = userSnapshot.data() as Map<String, dynamic>;
-        setState(() {
-          _height = data['height']?.toDouble();
-          _weight = data['weight']?.toDouble();
-          _age = data['age']?.toDouble();
-        });
-        print('User Info: Height: $_height, Weight: $_weight, Age: $_age');
-        await setWeight(_weight!);
-        await setHeight(_height!);
-        await setAge(_age!);
-      }
-      print('User Document: ${userSnapshot.data()}');
-      return;
-    }
-  }
-
-  void _updateUserInfo() async {
-    final user = AuthService.currentUser;
-    if (user != null) {
-      try {
-        DocumentReference userDoc = FirebaseFirestore.instance
-            .collection('users')
-            .doc(user.uid);
-        DocumentSnapshot userSnapshot = await userDoc.get();
-        UserData userData = UserData(
-          userId: user.uid,
-          age: _age?.toInt(),
-          weight: _weight?.toInt(),
-          height: _height?.toInt(),
-          createdAt:
-              userSnapshot.exists
-                  ? ((userSnapshot.data() as Map<String, dynamic>)['createdAt']
-                          as Timestamp?)
-                      ?.toDate()
-                  : DateTime.now(),
-        );
-
-        await userDoc.set(
-          userData.toMap(isUpdate: userSnapshot.exists),
-          SetOptions(merge: true),
-        );
-        await setWeight(_weight!);
-        await setHeight(_height!);
-        await setAge(_age!);
-        print('User info updated successfully: $userData');
-      } catch (e) {
-        if (!context.mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            duration: const Duration(seconds: 2),
-            shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.all(Radius.circular(8)),
-            ),
-            backgroundColor: Colors.red,
-            content: Text(
-              'Error updating user info: $e',
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
-        );
-      }
-    } else {
-      print('No user is currently signed in.');
-    }
-  }
-
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
     _getUserInfo();
     _loadGoal();
+
   }
+  
 
   @override
   void dispose() {
@@ -140,27 +66,182 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   void _logout(BuildContext context) async {
+    final isConnected = await _connectivityService.checkAndShowError(
+      context,
+      'No Internet Connection : Cannot logout',
+    );
+    if (!isConnected) {
+      return;
+    }
     try {
+      clearCurrentUserPrefs();
       await AuthService.signOut();
-      if(context.mounted){
-        showCustomSnackBar(
-          context: context, 
-          message: 'Logged out successfully',
-          type: 'success',
-          disableCloseButton: true
-        );
-      }
+      showGlobalSnackBar(message: 'Logged out successfully', type: 'success');
     } catch (e) {
       if (!context.mounted) return;
-      showCustomSnackBar(
-        context: context,
-        message: e.toString(),
-        type: 'error',
-      );
+      showGlobalSnackBar(message: e.toString(), type: 'error'); 
     }
   }
 
+  void _updateHeight() async {
+  final user = AuthService.currentUser;
+  if (user == null || _height == null) return;
+  bool isConnected = await _connectivityService.checkAndShowError(
+    context,
+    'No Internet Connection : Cannot update height',
+  );
+
+  if(!isConnected) {
+    return;
+  }
+  
+  try {
+    DocumentReference userDoc = FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid);
+    
+    await userDoc.set(
+      {'height': _height!.toInt()},
+      SetOptions(merge: true),
+    );
+    
+    await setHeight(_height!);
+    
+    if (!context.mounted) return;
+    showGlobalSnackBar(message: 'Height updated successfully', type: 'success');
+  } catch (e) {
+    if (!context.mounted) return;
+    showGlobalSnackBar(message: 'Error updating height: $e', type: 'error');
+  }
+}
+
+void _updateWeight() async {
+  final user = AuthService.currentUser;
+  if (user == null || _weight == null) return;
+
+  bool isConnected = await _connectivityService.checkAndShowError(
+    context,
+    'No Internet Connection : Cannot update weight',
+  );
+  if(!isConnected) {
+    return;
+  }
+  
+  try {
+    DocumentReference userDoc = FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid);
+    
+    await userDoc.set(
+      {'weight': _weight!.toInt()},
+      SetOptions(merge: true),
+    );
+    
+    await setWeight(_weight!);
+    
+    if (!context.mounted) return;
+    showGlobalSnackBar(message: 'Weight updated successfully', type: 'success');
+  } catch (e) {
+    if (!context.mounted) return;
+    showGlobalSnackBar(message: 'Error updating weight: $e', type: 'error');
+
+  }
+}
+
+void _updateDateOfBirth() async {
+  final user = AuthService.currentUser;
+  if (user == null || _dateOfBirth == null) return;
+  bool isConnected = await _connectivityService.checkAndShowError(
+    context,
+    'No Internet Connection : Cannot update date of birth',
+  );
+  if(!isConnected) {
+    return;
+  }
+  
+  try {
+    DocumentReference userDoc = FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid);
+    
+    await userDoc.set(
+      {'dob': _formatDOB(_dateOfBirth!)},
+      SetOptions(merge: true),
+    );
+    
+    await setAge(_formatDOB(_dateOfBirth!));
+    
+    if (!context.mounted) return;
+    showGlobalSnackBar(message: 'Date of birth updated successfully', type: 'success');
+  } catch (e) {
+    if (!context.mounted) return;
+    showGlobalSnackBar(message: 'Error updating date of birth: $e', type: 'error');
+
+  }
+}
+
+// Updated _getUserInfo to handle new accounts with no data
+void _getUserInfo() async {
+  // First try to get from SharedPreferences
+  _height = await getHeight();
+  _weight = await getWeight();
+  _dateOfBirth = await getAge();
+  
+  final user = AuthService.currentUser;
+  if (user != null &&(_height==null || _weight==null || _dateOfBirth==null)) {
+    try {
+    // print('Fetching user info from Firestore for user: ${user.uid}');
+
+      DocumentReference userDoc = FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid);
+      DocumentSnapshot userSnapshot = await userDoc.get();
+      // print('Document Status: ${userSnapshot.exists}');
+      if (userSnapshot.exists) {
+        final data = userSnapshot.data() as Map<String, dynamic>;
+        
+        if (_height == null && data['height'] != null) {
+          _height = data['height']?.toDouble();
+          if (_height != null) await setHeight(_height!);
+        }
+        
+        if (_weight == null && data['weight'] != null) {
+          _weight = data['weight']?.toDouble();
+          if (_weight != null) await setWeight(_weight!);
+        }
+        
+        if (_dateOfBirth == null && data['dob'] != null) {
+          _dateOfBirth = parseDOBFromStorage(data['dob']);
+          if (_dateOfBirth != null) await setAge(_formatDOB(_dateOfBirth!));
+        }
+      }
+      
+      if (mounted) {
+        setState(() {});
+      }
+      
+    } catch (e) {
+      // print('Error fetching user info from Firestore: $e');
+      if (mounted) {
+        setState(() {});
+      }
+    }
+  }
+}
+
+// Safe format function
+String _formatDOB(DateTime dateOfBirth) {
+  try {
+    return dateOfBirth.toIso8601String().split('T')[0];
+  } catch (e) {
+    // print('Error formatting date: $e');
+    return '';
+  }
+}
+
   void _deleteAccount(BuildContext context) async {
+    final navigator= Navigator.of(context);
+    final scaffoldMessenger=ScaffoldMessenger.of(context);
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -191,45 +272,64 @@ class _ProfilePageState extends State<ProfilePage> {
       },
     );
 
-    final dio=Dio();
+    final dio = Dio();
 
     try {
-      final String userId=AuthService.currentUser?.uid ?? '';
+      // print('Deleting account for user: ${AuthService.currentUser?.uid}');
+      final String idToken= await AuthService.currentUser?.getIdToken() ?? '';
       await clearCurrentUserPrefs();
       await AuthService.deleteAccount();
       await dio.post(
         AppConfig.deletionUrl,
-        data: {
-          'userId': userId,
-        },
         options: Options(
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': 'Bearer $idToken',
           },
         ),
       );
-      print('Account delete initialised');
+      // print('Account delete initialised');
 
-      if (context.mounted) Navigator.of(context).pop();
+      navigator.pop(); 
 
-      if (context.mounted) {
-        showCustomSnackBar(
-          context: context,
-          message: 'Account deleted successfully',
-          type: 'success',
-          disableCloseButton: true,
-        );
-      }
-    } catch (e) {
-      if (context.mounted) Navigator.of(context).pop();
-
-      if (context.mounted) {
-        showCustomSnackBar(
-          context: context,
-          message: 'Error deleting account: $e',
-          type: 'error',
-        );
-      }
+      scaffoldMessenger.showSnackBar(
+        SnackBar(
+          duration: const Duration(seconds: 4),
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(8)),
+          ),
+          backgroundColor: Colors.green,
+          content: const Text(
+            'Account deleted successfully',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+        ),
+      );
+      
+    }
+    catch (e) {
+      // print('Error deleting account: $e');
+      navigator.pop(); 
+      await Future.delayed(const Duration(seconds: 1));
+      String errorMessage=e.toString();
+      scaffoldMessenger.showSnackBar(
+      SnackBar(
+        duration: const Duration(seconds: 4),
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(8)),
+        ),
+        backgroundColor: Colors.red,
+        content: Text(
+          errorMessage.contains('requires-recent-login') || 
+          errorMessage.contains('For security reasons, please log-out and log back in')
+              ? 'For security reasons, please log-out and log back in to delete your account.'
+              : 'Failed to delete account: $errorMessage',
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+      ));
+      
     }
   }
 
@@ -318,8 +418,16 @@ class _ProfilePageState extends State<ProfilePage> {
               child: Material(
                 color: Colors.transparent,
                 child: InkWell(
-                  onTap: () {
+                  onTap: () async {
                     Navigator.of(context).pop();
+                    final isConnected = await _connectivityService
+                        .checkAndShowError(
+                          context,
+                          'No Internet Connection : Cannot delete account',
+                        );
+                    if (!isConnected) {
+                      return;
+                    }
                     _deleteAccount(context);
                   },
                   borderRadius: BorderRadius.circular(12),
@@ -550,9 +658,9 @@ class _ProfilePageState extends State<ProfilePage> {
                     _buildSelectorCard(
                       title: 'Age',
                       value:
-                          _age != null
-                              ? '${_age?.toInt()} years'
-                              : 'Please set your age',
+                          _dateOfBirth != null
+                              ? _formatDOB(_dateOfBirth!)
+                              : 'Please set your date of birth',
                       icon: Icons.cake_outlined,
                       onTap: () => _showAgePicker(context),
                     ),
@@ -560,67 +668,68 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
               ),
               const SizedBox(height: 24),
-              if(goal.isEmpty)
-              SaveableTextField(
-                initialValue: goal,
-                hintText: 'Enter a short description of your fitness goals',
-                onSave: (String value) {
-                  updateUserGoal(value);
-                  setState(() {
-                    goal = value;
-                  });
-                  
-                }
-              ),
-              const SizedBox(height:16),
+              if (goal.isEmpty)
+                SaveableTextField(
+                  initialValue: goal,
+                  hintText: 'Enter a short description of your fitness goals',
+                  onSave: (String value) {
+                    updateUserGoal(value);
+                    setState(() {
+                      goal = value;
+                    });
+                  },
+                ),
+              const SizedBox(height: 16),
 
-            if (goal.isNotEmpty)
-              SizedBox(
-                width: double.infinity,
-                child: Container(
-                  padding: EdgeInsets.all(12),
-                  margin: const EdgeInsets.symmetric(horizontal: 8),
-                  decoration: BoxDecoration(
-                    
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.red[200]!),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                    
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          
-                          children: [
-                            Text(
-                              'Your weekly goal',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Theme.of(context).primaryColor,
+              if (goal.isNotEmpty)
+                SizedBox(
+                  width: double.infinity,
+                  child: Container(
+                    padding: EdgeInsets.all(12),
+                    margin: const EdgeInsets.symmetric(horizontal: 8),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.red[200]!),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+
+                            children: [
+                              Text(
+                                'Your weekly goal',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Theme.of(context).primaryColor,
+                                ),
                               ),
-                            ),
-                            SizedBox(height: 4),
-                            Text(
-                              goal,
-                              softWrap: true,
-                              overflow: TextOverflow.visible,
-                            ),
-                            
-                          ],
-                          
+                              SizedBox(height: 4),
+                              Text(
+                                goal,
+                                softWrap: true,
+                                overflow: TextOverflow.visible,
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                      IconButton(icon: Icon(Icons.edit,color: Theme.of(context).primaryColor,), onPressed: () {
-                        setState(() {
-                          goal = '';
-                        });
-                      })
-                    ],
+                        IconButton(
+                          icon: Icon(
+                            Icons.edit,
+                            color: Theme.of(context).primaryColor,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              goal = '';
+                            });
+                          },
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
 
               const SizedBox(height: 24),
 
@@ -866,70 +975,8 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  //generated sliding pickers
-
   void _showHeightPicker(BuildContext context) {
-    final bool isIOS = Theme.of(context).platform == TargetPlatform.iOS;
-
-    if (isIOS) {
-      _showCupertinoHeightPicker(context);
-    } else {
-      _showMaterialHeightPicker(context);
-    }
-  }
-
-  void _showCupertinoHeightPicker(BuildContext context) {
-    showCupertinoModalPopup(
-      context: context,
-      builder: (BuildContext context) {
-        return Container(
-          height: 300,
-          color: Colors.white,
-          child: Column(
-            children: [
-              Container(
-                height: 50,
-                color: Colors.grey[200],
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    CupertinoButton(
-                      child: const Text('Cancel'),
-                      onPressed: () => Navigator.of(context).pop(),
-                    ),
-                    CupertinoButton(
-                      child: const Text('Done'),
-                      onPressed: () => Navigator.of(context).pop(),
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: CupertinoPicker(
-                  itemExtent: 40,
-                  onSelectedItemChanged: (int index) {
-                    setState(() {
-                      _height = 120 + index.toDouble();
-                    });
-                  },
-                  scrollController: FixedExtentScrollController(
-                    initialItem: (_height! - 120).toInt(),
-                  ),
-                  children: List<Widget>.generate(121, (int index) {
-                    return Center(
-                      child: Text(
-                        '${120 + index} cm',
-                        style: const TextStyle(fontSize: 20),
-                      ),
-                    );
-                  }),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
+    _showMaterialHeightPicker(context);
   }
 
   void _showMaterialHeightPicker(BuildContext context) {
@@ -953,7 +1000,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     actions: [
                       TextButton(
                         onPressed: () {
-                          _updateUserInfo();
+                          _updateHeight();
                           setState(() {});
                           Navigator.of(context).pop();
                         },
@@ -1010,70 +1057,8 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  // Show weight picker dialog
   void _showWeightPicker(BuildContext context) {
-    final bool isIOS = Theme.of(context).platform == TargetPlatform.iOS;
-
-    if (isIOS) {
-      _showCupertinoWeightPicker(context);
-    } else {
-      _showMaterialWeightPicker(context);
-    }
-  }
-
-  void _showCupertinoWeightPicker(BuildContext context) {
-    showCupertinoModalPopup(
-      context: context,
-      builder: (BuildContext context) {
-        final double initialWeight = _weight ?? 30.0;
-        return Container(
-          height: 300,
-          color: Colors.white,
-          child: Column(
-            children: [
-              Container(
-                height: 50,
-                color: Colors.grey[200],
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    CupertinoButton(
-                      child: const Text('Cancel'),
-                      onPressed: () => Navigator.of(context).pop(),
-                    ),
-                    CupertinoButton(
-                      child: const Text('Done'),
-                      onPressed: () => Navigator.of(context).pop(),
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: CupertinoPicker(
-                  itemExtent: 40,
-                  onSelectedItemChanged: (int index) {
-                    setState(() {
-                      _weight = 30 + index.toDouble();
-                    });
-                  },
-                  scrollController: FixedExtentScrollController(
-                    initialItem: (initialWeight - 30).toInt(),
-                  ),
-                  children: List<Widget>.generate(171, (int index) {
-                    return Center(
-                      child: Text(
-                        '${30 + index} kg',
-                        style: const TextStyle(fontSize: 20),
-                      ),
-                    );
-                  }),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
+    _showMaterialWeightPicker(context);
   }
 
   void _showMaterialWeightPicker(BuildContext context) {
@@ -1097,7 +1082,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     actions: [
                       TextButton(
                         onPressed: () {
-                          _updateUserInfo();
+                          _updateWeight();
                           setState(() {});
                           Navigator.of(context).pop();
                         },
@@ -1157,75 +1142,29 @@ class _ProfilePageState extends State<ProfilePage> {
   // Show age picker dialog
   void _showAgePicker(BuildContext context) {
     final bool isIOS = Theme.of(context).platform == TargetPlatform.iOS;
-
-    if (isIOS) {
-      _showCupertinoAgePicker(context);
-    } else {
-      _showMaterialAgePicker(context);
-    }
+    _showMaterialDOBPicker(context);
   }
 
-  void _showCupertinoAgePicker(BuildContext context) {
-    showCupertinoModalPopup(
-      context: context,
-      builder: (BuildContext context) {
-        final double initialAge = _age ?? 25.0;
-        return Container(
-          height: 300,
-          color: Colors.white,
-          child: Column(
-            children: [
-              Container(
-                height: 50,
-                color: Colors.grey[200],
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    CupertinoButton(
-                      child: const Text('Cancel'),
-                      onPressed: () => Navigator.of(context).pop(),
-                    ),
-                    CupertinoButton(
-                      child: const Text('Done'),
-                      onPressed: () => Navigator.of(context).pop(),
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: CupertinoPicker(
-                  itemExtent: 40,
-                  onSelectedItemChanged: (int index) {
-                    setState(() {
-                      _age = 12 + index.toDouble();
-                    });
-                  },
-                  scrollController: FixedExtentScrollController(
-                    initialItem: (_age! - 12).toInt(),
-                  ),
-                  children: List<Widget>.generate(89, (int index) {
-                    return Center(
-                      child: Text(
-                        '${12 + index} years',
-                        style: const TextStyle(fontSize: 20),
-                      ),
-                    );
-                  }),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  void _showMaterialAgePicker(BuildContext context) {
+  void _showMaterialDOBPicker(BuildContext context) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       builder: (BuildContext context) {
-        final double initialAge = _age ?? 25.0;
+        final DateTime now = DateTime.now();
+        DateTime initialDate;
+        final DateTime firstDate = DateTime(now.year - 100);
+        if (_dateOfBirth != null) {
+          if (_dateOfBirth!.isAfter(firstDate)) {
+            initialDate = _dateOfBirth!;
+          } else if (_dateOfBirth!.isBefore(firstDate)) {
+            initialDate = firstDate;
+          } else {
+            initialDate = _dateOfBirth!;
+          }
+        } else {
+          initialDate = DateTime(now.year, now.month, now.day - 1);
+        }
+
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setModalState) {
             return Container(
@@ -1233,7 +1172,7 @@ class _ProfilePageState extends State<ProfilePage> {
               child: Column(
                 children: [
                   AppBar(
-                    title: const Text('Select Age'),
+                    title: const Text('Select Date of Birth'),
                     leading: IconButton(
                       icon: const Icon(Icons.close),
                       onPressed: () => Navigator.of(context).pop(),
@@ -1241,7 +1180,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     actions: [
                       TextButton(
                         onPressed: () {
-                          _updateUserInfo();
+                          _updateDateOfBirth();
                           setState(() {});
                           Navigator.of(context).pop();
                         },
@@ -1255,36 +1194,28 @@ class _ProfilePageState extends State<ProfilePage> {
                     ],
                   ),
                   Expanded(
-                    child: ListWheelScrollView.useDelegate(
-                      itemExtent: 50,
-                      perspective: 0.005,
-                      diameterRatio: 1.5,
-                      physics: const FixedExtentScrollPhysics(),
-                      controller: FixedExtentScrollController(
-                        initialItem: (initialAge - 12).toInt(),
+                    child: Theme(
+                      data: Theme.of(context).copyWith(
+                        colorScheme: ColorScheme.light(
+                          primary: Theme.of(context).primaryColor,
+                          onPrimary: Colors.white,
+                          secondary: Theme.of(context).primaryColor,
+                          onSecondary: Colors.white,
+                        ),
                       ),
-                      onSelectedItemChanged: (int index) {
-                        setModalState(() {
-                          _age = 12 + index.toDouble();
-                        });
-                      },
-                      childDelegate: ListWheelChildBuilderDelegate(
-                        childCount: 89,
-                        builder: (context, index) {
-                          return Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 20),
-                            alignment: Alignment.center,
-                            child: Text(
-                              '${12 + index} years',
-                              style: TextStyle(
-                                fontSize: 22,
-                                fontWeight:
-                                    (_age == 12 + index)
-                                        ? FontWeight.bold
-                                        : FontWeight.normal,
-                              ),
-                            ),
-                          );
+                      child: CalendarDatePicker(
+                        initialDate: initialDate,
+                        currentDate: _dateOfBirth ?? DateTime.now(),
+                        firstDate: DateTime(now.year - 100), // 100 years ago
+                        lastDate: DateTime(
+                          now.year,
+                          now.month,
+                          now.day,
+                        ), // Minimum age of 12
+                        onDateChanged: (DateTime selectedDate) {
+                          setModalState(() {
+                            _dateOfBirth = selectedDate;
+                          });
                         },
                       ),
                     ),
@@ -1297,4 +1228,5 @@ class _ProfilePageState extends State<ProfilePage> {
       },
     );
   }
+
 }

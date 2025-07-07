@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:trackntrain/components/prev_workout_card.dart';
+import 'package:trackntrain/main.dart';
 import 'package:trackntrain/utils/auth_service.dart';
+import 'package:trackntrain/utils/connectivity.dart';
 import 'package:trackntrain/utils/misc.dart';
 
 class WorkoutLogsPage extends StatefulWidget{
@@ -23,6 +25,7 @@ class _WorkoutLogsPageState extends State<WorkoutLogsPage> {
   DocumentSnapshot? lastDoc;
   IconData icon = Icons.fitness_center;
   String workoutType='workout'; 
+  final ConnectivityService _connectivityService = ConnectivityService();
 
   static const int pageSize = 10; 
 
@@ -30,7 +33,6 @@ class _WorkoutLogsPageState extends State<WorkoutLogsPage> {
   void initState() {
     // TODO: implement initState
     super.initState();
-    print('WorkoutLogsPage initialized with type: ${widget.type}');
     _loadInitialData();
     _scrollController.addListener(_onScroll);
   }
@@ -48,6 +50,7 @@ class _WorkoutLogsPageState extends State<WorkoutLogsPage> {
   }
 
   Future<void> _loadInitialData() async{
+    await _connectivityService.checkAndShowError(context, 'No internet connection. Logs shown might not be correct.');
     if(isLoading) return;
     setState(() {
       isLoading = true;
@@ -75,11 +78,7 @@ class _WorkoutLogsPageState extends State<WorkoutLogsPage> {
       else{ hasMoreData = false;}
     } catch (e) {
       if(!context.mounted) return;
-      showCustomSnackBar(
-        context: context,
-        message:  'Error loading initial data: $e',
-        type: 'error'
-      );
+      showGlobalSnackBar(message: 'Error loading initial data: $e', type: 'error');
     }
     finally{
       setState(() {
@@ -119,12 +118,8 @@ class _WorkoutLogsPageState extends State<WorkoutLogsPage> {
         hasMoreData = false;
       }
     } catch (e) {
-      print('Error loading more data: $e');
-      showCustomSnackBar(
-        context: context, 
-        message: 'Error loading more data: $e',
-        type: 'error'
-      );
+      if(!context.mounted) return;
+      showGlobalSnackBar(message: 'Error loading more data: $e', type: 'error');
     } finally {
       setState(() {
         isLoading = false;

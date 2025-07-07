@@ -1,7 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:trackntrain/main.dart';
 import 'package:trackntrain/utils/auth_service.dart';
+import 'package:trackntrain/utils/connectivity.dart';
 import 'package:trackntrain/utils/misc.dart';
 
 class MoodData {
@@ -97,7 +99,7 @@ class MoodChart extends StatelessWidget {
     if (weekSpots.isEmpty) {
       return const Center(
         child: Text(
-          'No energy data available for this week',
+          'No energy data available for this week / No Internet',
           style: TextStyle(fontSize: 16, color: Colors.grey),
         ),
       );
@@ -213,10 +215,7 @@ class MoodChart extends StatelessWidget {
                   (data) => _isSameDay(data.date, currentDay),
                   orElse: () => MoodData(date: currentDay, mood: ''),
                 );
-                print(
-                  'Day: $dayIndex, Date: ${currentDay.toIso8601String()}, Mood: ${moodForDay.mood}, Value: ${moodForDay.moodValue}',
-                );
-                // print('Mood data length for day $dayIndex: ${moodData[dayIndex].moodValue}');
+
 
                 if (moodForDay.mood.isEmpty) {
                   return FlDotCirclePainter(radius: 0);
@@ -281,9 +280,6 @@ class MoodChart extends StatelessWidget {
       // Only add spots for days with actual mood data
       if (moodForDay.mood.isNotEmpty) {
         spots.add(FlSpot(dayIndex.toDouble(), moodForDay.moodValue));
-        print(
-          'Day: $dayIndex, Date: ${currentDay.toIso8601String()}, Mood: ${moodForDay.mood}, Value: ${moodForDay.moodValue}',
-        );
       }
     }
 
@@ -311,73 +307,96 @@ class MoodChart extends StatelessWidget {
   }
 
   Widget _buildWeekNavigation(BuildContext context, DateTime weekEnd) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        GestureDetector(
-          onTap: onPreviousWeek,
-          child: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Theme.of(context).primaryColor,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const Icon(
-              Icons.arrow_back_ios,
-              color: Colors.white,
-              size: 16,
+  return LayoutBuilder(
+    builder: (context, constraints) {
+      double availableWidth = constraints.maxWidth - 120; // 120 for buttons and spacing
+      
+      // Determine date format based on available width
+      String dateText;
+      if (availableWidth > 200) {
+        dateText = '${currentWeekStart.day}/${currentWeekStart.month}/${currentWeekStart.year} - ${weekEnd.day}/${weekEnd.month}/${weekEnd.year}';
+      } else if (availableWidth > 150) {
+        dateText = '${currentWeekStart.day}/${currentWeekStart.month}/${currentWeekStart.year.toString().substring(2)} - ${weekEnd.day}/${weekEnd.month}/${weekEnd.year.toString().substring(2)}';
+      } else {
+        if (currentWeekStart.month == weekEnd.month && currentWeekStart.year == weekEnd.year) {
+          dateText = '${currentWeekStart.day}-${weekEnd.day}/${currentWeekStart.month}/${currentWeekStart.year.toString().substring(2)}';
+        } else if (currentWeekStart.year == weekEnd.year) {
+          dateText = '${currentWeekStart.day}/${currentWeekStart.month} - ${weekEnd.day}/${weekEnd.month}/${weekEnd.year.toString().substring(2)}';
+        } else {
+          dateText = '${currentWeekStart.day}/${currentWeekStart.month}/${currentWeekStart.year.toString().substring(2)} - ${weekEnd.day}/${weekEnd.month}/${weekEnd.year.toString().substring(2)}';
+        }
+      }
+
+      return Row(
+        children: [
+          GestureDetector(
+            onTap: onPreviousWeek,
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Theme.of(context).primaryColor,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 16),
             ),
           ),
-        ),
-        const SizedBox(width: 12),
-        GestureDetector(
-          onTap: onSelectDate,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              border: Border.all(color: Theme.of(context).primaryColor),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.calendar_today,
-                  color: Theme.of(context).primaryColor,
-                  size: 16,
+          const SizedBox(width: 12),
+          
+          Expanded(
+            child: GestureDetector(
+              onTap: onSelectDate,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Theme.of(context).primaryColor),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  '${currentWeekStart.day}/${currentWeekStart.month}/${currentWeekStart.year} - ${weekEnd.day}/${weekEnd.month}/${weekEnd.year}',
-                  style: TextStyle(
-                    color: Theme.of(context).primaryColor,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.calendar_today,
+                      color: Theme.of(context).primaryColor,
+                      size: 16,
+                    ),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        dateText,
+                        style: TextStyle(
+                          color: Theme.of(context).primaryColor,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
-        ),
-        const SizedBox(width: 12),
-        GestureDetector(
-          onTap: onNextWeek,
-          child: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Theme.of(context).primaryColor,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const Icon(
-              Icons.arrow_forward_ios,
-              color: Colors.white,
-              size: 16,
+          
+          const SizedBox(width: 12),
+          
+          GestureDetector(
+            onTap: onNextWeek,
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Theme.of(context).primaryColor,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 16),
             ),
           ),
-        ),
-      ],
-    );
-  }
+        ],
+      );
+    },
+  );
+}
 
   Widget _buildLegendItem(String label, Color color) {
     return Row(
@@ -416,15 +435,13 @@ class _MoodTrackingScreenState extends State<MoodTrackingScreen> {
   }
 
   void _loadData() async {
-    DateTime weekendDate = currentWeekStart.add(const Duration(days: 6));
+    DateTime weekendDate = currentWeekStart.add(const Duration(days: 7));
 
     try {
-      print('Running load for mood data');
       setState(() {
         isLoading = true;
       });
-      print('Loading mood data for week starting: $currentWeekStart');
-      print('Loading mood data until: $weekendDate');
+ 
       final snapShot =
           await FirebaseFirestore.instance
               .collection('userMetaLogs')
@@ -449,17 +466,11 @@ class _MoodTrackingScreenState extends State<MoodTrackingScreen> {
               final mood = data['mood'] ?? '';
               return MoodData(date: date, mood: mood);
             }).toList();
-      print('Data fetch done');
       });
     } catch (e) {
-      print('Error loading mood data: $e');
       setState(() {
         currentWeekData = [];
-        showCustomSnackBar(
-          context: context,
-          message: 'Error loading mood data: $e',
-          type: 'error',
-        );
+        showGlobalSnackBar(message: 'Error loading mood data: $e', type: 'error');
       });
     } finally {
       setState(() {
@@ -478,7 +489,6 @@ class _MoodTrackingScreenState extends State<MoodTrackingScreen> {
   }
 
   void _selectDate() async {
-    print('Current week start: $currentWeekStart');
     final selectedDate = await showDatePicker(
       barrierDismissible: true,
       builder: (context, child) {

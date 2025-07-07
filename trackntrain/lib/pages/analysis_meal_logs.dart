@@ -5,11 +5,12 @@ import 'package:go_router/go_router.dart';
 import 'package:trackntrain/components/analysis_page_card.dart';
 import 'package:trackntrain/components/suggestion_card.dart';
 import 'package:trackntrain/config.dart';
+import 'package:trackntrain/main.dart';
 import 'package:trackntrain/tabs/mood_chart.dart';
 import 'package:trackntrain/tabs/weight_chart.dart';
 import 'package:dio/dio.dart';
 import 'package:trackntrain/utils/auth_service.dart';
-import 'package:trackntrain/utils/misc.dart';
+import 'package:trackntrain/utils/connectivity.dart';
 
 class AnalysisMealLogs extends StatefulWidget {
   const AnalysisMealLogs({super.key});
@@ -22,33 +23,35 @@ class _AnalysisMealLogsState extends State<AnalysisMealLogs> {
   String suggestion = '';
   bool isLoadingSuggestion = false;
   bool isValid=true;
+  final ConnectivityService _connectivityService = ConnectivityService();
 
   Future<void> fetchSuggestion() async {
+    bool isConnected = await _connectivityService.checkAndShowError(context, 'No internet connection. Please try again later.');
+    if (!isConnected) {
+      return;
+    }
     final dio = Dio();
     String responseText = '';
     try {
       setState(() {
         isLoadingSuggestion = true;
       });
-
+      // print(AppConfig.aiUrl);
+      final String idToken=await AuthService.currentUser?.getIdToken()??'';
+      // print('ID Token: $idToken');
       final response = await dio.post(
         AppConfig.aiUrl,
-        data: {'userId': AuthService.currentUser?.uid},
-        options: Options(headers: {'Content-Type': 'application/json'}),
+        options: Options(headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $idToken',
+        }),
       );
       responseText = response.data['aiResponse'] as String;
-      print('AI Response: $responseText');
     } on DioException catch (e) {
-      print('Error fetching suggestion: ${e.message}');
-      showCustomSnackBar(
-        context: context,
-        message: 'Failed to fetch suggestion. Please try again later.',
-        type: 'error',
-      );
+      showGlobalSnackBar(message: 'Error fetching AI insights: ${e.message}', type: 'error');
     } catch (e) {
-      print('Unexpected error: $e');
-      showCustomSnackBar(
-        context: context,
+      // print('Unexpected error: $e');
+       showGlobalSnackBar(
         message:
             'You have reached the limit of AI requests for this week. Please try again the next Monday.',
         type: 'error',
@@ -85,9 +88,8 @@ class _AnalysisMealLogsState extends State<AnalysisMealLogs> {
       final lastYear = lastTime.year;
 
       if (nowYear == lastYear && nowWeek == lastWeek) {
-        showCustomSnackBar(
-          context: context,
-          message:'You have reached the limit of AI requests for this week. Please try again next Monday. You can view your previous week insights down below.',
+        showGlobalSnackBar(message: 
+          'You have already requested AI insights for this week. Please try again next week. Meanwhile, you can check your previous week insights.',
           type: 'error',
         );
         

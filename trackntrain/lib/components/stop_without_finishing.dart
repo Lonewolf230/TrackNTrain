@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:trackntrain/providers/workout_providers.dart';
 
-class StopWithoutFinishing extends StatelessWidget {
-  const StopWithoutFinishing({super.key});
+class StopWithoutFinishing extends ConsumerWidget {
+  const StopWithoutFinishing({super.key,this.type});
+  final String? type;
+
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       title: Row(
@@ -86,6 +90,9 @@ class StopWithoutFinishing extends StatelessWidget {
             color: Colors.transparent,
             child: InkWell(
               onTap: () {
+                if(type=='full-body'){
+                  ref.read(workoutProvider.notifier).clearSelection();
+                }
                 Navigator.of(context).pop(); 
                 context.goNamed('home'); 
               },

@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:trackntrain/components/meal_logger.dart';
 import 'package:trackntrain/components/mood_dropdown.dart';
 import 'package:trackntrain/components/nutrition_insights_card.dart';
+import 'package:trackntrain/main.dart';
 import 'package:trackntrain/pages/workout_calendar_tab.dart';
+import 'package:trackntrain/utils/connectivity.dart';
 import 'package:trackntrain/utils/db_util_funcs.dart';
 import 'package:trackntrain/utils/misc.dart';
 
@@ -18,7 +20,7 @@ class HomeTab extends ConsumerStatefulWidget {
 class _HomeTabState extends ConsumerState<HomeTab> {
   String? _mood;
   final TextEditingController _weightController = TextEditingController();
-  // String? name;
+  final ConnectivityService _connectivityService = ConnectivityService();
   @override
   void initState() {
     super.initState();
@@ -74,15 +76,6 @@ class _HomeTabState extends ConsumerState<HomeTab> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // const Text(
-                  //   'Welcome Back',
-                  //   style: TextStyle(
-                  //     fontSize: 16,
-                  //     fontWeight: FontWeight.w500,
-                  //     color: Colors.white70,
-                  //     fontFamily: 'Poppins',
-                  //   ),
-                  // ),
                   const SizedBox(height: 4),
                   Text(
                     'Welcome Back',
@@ -120,47 +113,6 @@ class _HomeTabState extends ConsumerState<HomeTab> {
 
             MoodDropdown(),
 
-            const SizedBox(height: 32),
-
-            // Container(
-            //   padding: const EdgeInsets.all(20),
-            //   decoration: BoxDecoration(
-            //     color: Colors.white,
-            //     borderRadius: BorderRadius.circular(16),
-            //     boxShadow: [
-            //       BoxShadow(
-            //         color: Colors.grey.withOpacity(0.1),
-            //         spreadRadius: 0,
-            //         blurRadius: 10,
-            //         offset: const Offset(0, 4),
-            //       ),
-            //     ],
-            //   ),
-            //   child: Column(
-            //     crossAxisAlignment: CrossAxisAlignment.start,
-            //     children: [
-            //       Text(
-            //         'Stats',
-            //         style: TextStyle(
-            //           fontSize: 20,
-            //           fontWeight: FontWeight.bold,
-            //           color: Colors.grey[800],
-            //           fontFamily: 'Poppins',
-            //         ),
-            //       ),
-            //       const SizedBox(height: 20),
-            //       Stat(
-            //         icon: FontAwesomeIcons.bolt,
-            //         count: 69,
-            //         subtitle: 'Streak Days',
-            //       ),                  // Stat(
-            //       //   icon: FontAwesomeIcons.personWalking,
-            //       //   count: 10000,
-            //       //   subtitle: 'Steps Taken',
-            //       // ),
-            //     ],
-            //   ),
-            // ),
             const SizedBox(height: 24),
             Row(
               children: [
@@ -316,7 +268,6 @@ class _HomeTabState extends ConsumerState<HomeTab> {
             NutritionInsightsCard(),
             const SizedBox(height: 24),
             const WorkoutCalendarTab(),
-
           ],
         ),
       ),
@@ -417,24 +368,36 @@ class _HomeTabState extends ConsumerState<HomeTab> {
                 ),
               ),
               ElevatedButton(
-                onPressed: () {
+                onPressed: () async {
                   if (_weightController.text.isNotEmpty) {
                     final double? weight = double.tryParse(
                       _weightController.text,
                     );
                     if (weight != null) {
-                      print('Weight saved: $weight kg');
+                      final isConnected=await _connectivityService.checkAndShowError(context,'No internet connection : Cannot log to database');
+                      if (!isConnected){
+                        _weightController.clear();
+                        if(context.mounted)Navigator.pop(context);
+                        return;
+                      }
+                      try {
+                        await updateWeightMeta(weight);
 
-                      updateWeightMeta(weight);
-
-                      _weightController.clear();
-                      Navigator.pop(context);
-
-                      showCustomSnackBar(
-                        context: context,
-                        message: 'Weight logged: $weight kg',
-                        type: 'success',
-                      );
+                        _weightController.clear();
+                        if(context.mounted)Navigator.pop(context);
+                        showGlobalSnackBar(message: 
+                          'Weight logged successfully',
+                          type: 'success',
+                        );
+                      }
+                      catch (e) {
+                        _weightController.clear();
+                        if(context.mounted)Navigator.pop(context);
+                        showGlobalSnackBar(
+                          message: 'Error logging weight: $e',
+                          type: 'error',
+                        );
+                      }
                     }
                   }
                 },

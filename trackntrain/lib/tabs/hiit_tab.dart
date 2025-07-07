@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
-import 'package:trackntrain/components/prev_workout_card.dart';
 
 class HiitTab extends StatelessWidget {
   const HiitTab({super.key});
@@ -34,7 +33,6 @@ class HiitTab extends StatelessWidget {
             children: [
               const SizedBox(height: 10),
               
-              // Header Card
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(24),
@@ -93,7 +91,6 @@ class HiitTab extends StatelessWidget {
               
               const SizedBox(height: 32),
               
-              // Previous Workouts Section
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),
@@ -192,7 +189,6 @@ class HiitTab extends StatelessWidget {
               
               const SizedBox(height: 32),
               
-              // Action Buttons Section
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),
@@ -243,7 +239,6 @@ class HiitTab extends StatelessWidget {
                       constraints: const BoxConstraints(maxWidth: 300),
                       child: OutlinedButton(
                         onPressed: () {
-                          print('Create your Workout');
                           context.goNamed('create-hiit');
                         },
                         style: OutlinedButton.styleFrom(

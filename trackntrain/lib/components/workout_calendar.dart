@@ -29,10 +29,9 @@ class _MonthlyScreenState extends State<MonthlyScreen> {
       setState(() {
         isLoading = true;
       });
-      print('Checking sharedPrefs for active dates...');
       activeDates=await getActiveDates();
       if (activeDates.isEmpty) {
-        print('No active dates found in sharedPrefs, fetching from Firestore...');
+        int lastDayofMonth=DateTime(currentMonth.year, currentMonth.month + 1, 0).day;
         final querySnapShot =
             await FirebaseFirestore.instance
                 .collection('userMetaLogs')
@@ -50,34 +49,31 @@ class _MonthlyScreenState extends State<MonthlyScreen> {
                   isLessThanOrEqualTo: DateTime(
                     currentMonth.year,
                     currentMonth.month,
-                    DateTime.now().day + 1,
+                    lastDayofMonth,
+                    23,
+                    59,
+                    59
                   ),
                 )
                 .orderBy('createdAt')
                 .get();
 
-        print('Query Snapshot: ${querySnapShot.docs.length} documents found');
 
         activeDates =
             querySnapShot.docs
                 .where((doc) => (doc.data()['hasWorkedOut'] ?? false) == true)
-                .map(
-                  (doc) =>
-                      (doc.data()['createdAt'] as Timestamp)
-                          .toDate()
-                          .day
-                          .toString(),
-                )
+                .map((doc){
+                  DateTime date=(doc.data()['createdAt'] as Timestamp).toDate();
+                  return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+                })
                 .toList();
         }
 
         await setActiveDates(activeDates);
 
 
-      print('Active Dates : $activeDates');
 
     } catch (e) {
-      print('Error loading data: $e');
     } finally {
       setState(() {
         isLoading = false;
@@ -162,7 +158,8 @@ class _MonthlyScreenState extends State<MonthlyScreen> {
                   date.year == DateTime.now().year &&
                   date.month == DateTime.now().month &&
                   date.day == DateTime.now().day;
-              bool isActive = activeDates.contains(date.day.toString());
+              String dateString = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+              bool isActive = activeDates.contains(dateString);
               return Padding(
                 padding: const EdgeInsets.all(4.0),
                 child: CircleAvatar(

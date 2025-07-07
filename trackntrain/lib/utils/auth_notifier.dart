@@ -7,7 +7,6 @@ import 'package:trackntrain/utils/auth_service.dart';
 
 class AuthNotifier extends ChangeNotifier{
   late StreamSubscription<User?> _authSubscription;
-  late StreamSubscription<User?> _userSubscription;
   User? _currentUser;
   User? get currentUser => _currentUser;
   bool get isAuthenticated => _currentUser != null;
@@ -15,14 +14,11 @@ class AuthNotifier extends ChangeNotifier{
   AuthNotifier(){
     _currentUser = AuthService.currentUser;
     _authSubscription=AuthService.authStateChanges.listen((User? user){
-      print('AuthNotifier: User state changed: ${user?.uid}');
+      // print('AuthNotifier: User state changed: ${user?.uid}');
       _currentUser = user; 
       notifyListeners();
     });
   }
-
-
-
 
   @override
   void dispose() {

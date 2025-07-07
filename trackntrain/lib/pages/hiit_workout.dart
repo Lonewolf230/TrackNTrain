@@ -6,6 +6,7 @@ import 'package:trackntrain/components/end_workout.dart';
 import 'package:trackntrain/components/stop_without_finishing.dart';
 import 'package:trackntrain/utils/auth_service.dart';
 import 'package:trackntrain/utils/classes.dart';
+import 'package:trackntrain/utils/connectivity.dart';
 import 'package:trackntrain/utils/db_util_funcs.dart';
 import 'package:trackntrain/utils/misc.dart';
 
@@ -52,11 +53,16 @@ class _HiitWorkoutState extends State<HiitWorkout>
 
   String _currentExercise = '';
 
+  bool _isConnected = true;
+  late ConnectivityService connectivityService;
+  StreamSubscription<bool>? _connectivitySubscription;
+
   @override
   void initState() {
     super.initState();
     _currentExercise = widget.exercises[0];
-
+    connectivityService = ConnectivityService();
+    _listenToConnectivity();
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1000),
@@ -68,8 +74,17 @@ class _HiitWorkoutState extends State<HiitWorkout>
       });
   }
 
+  void _listenToConnectivity() {
+    _connectivitySubscription = connectivityService.connectivityStream.listen((isConnected) {
+      setState(() {
+        _isConnected = isConnected;
+      });
+    });
+  }
+
   @override
   void dispose() {
+    _connectivitySubscription?.cancel();
     _timer?.cancel();
     _controller.dispose();
     super.dispose();
@@ -94,7 +109,7 @@ class _HiitWorkoutState extends State<HiitWorkout>
         if (_remainingTime > 0) {
           _remainingTime--;
           _animateProgress();
-          if(_remainingTime<=3) AudioManager.playBeep();
+          if (_remainingTime <= 2) AudioManager.playBeep();
         } else {
           timer.cancel();
           _startWorkPhase();
@@ -121,7 +136,7 @@ class _HiitWorkoutState extends State<HiitWorkout>
         if (_remainingTime > 0) {
           _remainingTime--;
           _animateProgress();
-          if(_remainingTime<=3) AudioManager.playBeep();
+          if (_remainingTime <= 2) AudioManager.playBeep();
         } else {
           timer.cancel();
 
@@ -160,7 +175,7 @@ class _HiitWorkoutState extends State<HiitWorkout>
         if (_remainingTime > 0) {
           _remainingTime--;
           _animateProgress();
-          if(_remainingTime<=3) AudioManager.playBeep();
+          if (_remainingTime <= 2) AudioManager.playBeep();
         } else {
           timer.cancel();
           _startGetReadyPhase();
@@ -201,8 +216,7 @@ class _HiitWorkoutState extends State<HiitWorkout>
           );
           saveHiit(hiitWorkout, context);
         } else if (widget.mode == 'reuse' && widget.workoutId != null) {
-          print('Updating existing HIIT workout with ID: ${widget.workoutId!}');
-          changeUpdatedAt(widget.workoutId!,'userHiitWorkouts');
+          changeUpdatedAt(widget.workoutId!, 'userHiitWorkouts');
         }
         updateWorkoutStatus();
         context.goNamed('home');
@@ -396,6 +410,17 @@ class _HiitWorkoutState extends State<HiitWorkout>
                                 fontFamily: 'Poppins',
                               ),
                             ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: ConnectivityStatusWidget(isConnected: _isConnected),
                           ),
                         ],
                       ),

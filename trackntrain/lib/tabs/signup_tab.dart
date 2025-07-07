@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:trackntrain/components/custom_snack_bar.dart';
+import 'package:trackntrain/main.dart';
 import 'package:trackntrain/utils/auth_service.dart';
 import 'package:trackntrain/utils/classes.dart';
 import 'package:trackntrain/utils/google_auth_utils.dart';
@@ -65,25 +65,21 @@ class _SignUpTabState extends State<SignUpTab> {
               'userId': message,
               'date': today,
               'createdAt': FieldValue.serverTimestamp(),
-              'sleep': 0,
               'hasWorkedOut': false,
               'weight': null,
               'mood': null,
+              'lastAIResponse':"",
+              'lastAIResponseAt': null,
             });
       }
     } on Exception catch (e) {
-      print('Sign up message: ${e.toString()}');
 
       if (mounted) {
         setState(() {
           isLoading = false;
         });
         if (e.toString() != null || e.toString()?.isNotEmpty == true) {
-          showCustomSnackBar(
-            context: context,
-            message: cleanErrorMessage(e.toString()),
-            type: 'error',
-          );
+          showGlobalSnackBar(message: cleanErrorMessage(e.toString()), type: 'error');
         }
       }
     }
@@ -95,7 +91,6 @@ class _SignUpTabState extends State<SignUpTab> {
     });
     try {
       final message = await signInWithGoogle();
-      print('Sign up with Google message: $message');
 
       if (message != null) {
         UserData userData = UserData(userId: message);
@@ -129,11 +124,7 @@ class _SignUpTabState extends State<SignUpTab> {
           isLoading = false;
         });
         if (e.toString() != null || e.toString().isNotEmpty) {
-          showCustomSnackBar(
-            context: context,
-            message: cleanErrorMessage(e.toString()),
-            type: 'error',
-          );
+          showGlobalSnackBar(message: cleanErrorMessage(e.toString()), type: 'error');
         }
       }
     }

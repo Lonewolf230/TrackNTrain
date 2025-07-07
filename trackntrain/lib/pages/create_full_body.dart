@@ -192,8 +192,6 @@ class CreateFullBody extends ConsumerWidget {
                       onPressed: selectedExercisesList.isEmpty
                           ? null
                           : () {
-                              print('Start Workout');
-                              print('Selected Exercises: $selectedExercisesList');
                               _showOrderSheet(context, ref);
                             },
                       style: ElevatedButton.styleFrom(
@@ -228,7 +226,6 @@ class CreateFullBody extends ConsumerWidget {
                   Expanded(
                     child: OutlinedButton(
                       onPressed: () {
-                        print(filters);
                         _showFilterSheet(context, ref);
                       },
                       style: OutlinedButton.styleFrom(

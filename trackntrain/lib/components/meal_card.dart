@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:trackntrain/utils/db_util_funcs.dart';
+import 'package:trackntrain/utils/misc.dart';
 
 class MealCard extends StatelessWidget {
   final DateTime date;
@@ -58,8 +59,9 @@ class MealCard extends StatelessWidget {
         deleteDoc(mealLogId, 'userMeals', context);
     }
     catch(e){
-      print('Error deleting workout: $e');
-
+      showCustomSnackBar(
+        context: context, 
+        message: '');
     }
   }
 

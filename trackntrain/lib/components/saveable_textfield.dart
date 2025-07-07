@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:trackntrain/utils/misc.dart';
 
 class SaveableTextField extends StatefulWidget {
   final String? initialValue;
@@ -40,6 +41,11 @@ class _SaveableTextFieldState extends State<SaveableTextField> {
       _isEditing = false;
     });
     widget.onSave?.call(_controller.text);
+    showCustomSnackBar(
+      context: context,
+      message: 'Profile updated successfully',
+      disableCloseButton: true,
+    );
   }
 
   void _cancel() {
@@ -103,10 +109,6 @@ class _SaveableTextFieldState extends State<SaveableTextField> {
                   ),
                 ],
               )
-            // : IconButton(
-            //     icon: const Icon(Icons.edit, color: Colors.red),
-            //     onPressed: _startEditing,
-            //   ),
         ),
       ),
     );

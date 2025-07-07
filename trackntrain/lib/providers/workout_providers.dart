@@ -240,3 +240,7 @@ final filtersAppliedProvider = Provider<bool>((ref) {
 final selectedExercisesCountProvider = Provider<int>((ref) {
   return ref.watch(workoutProvider).selectedExercisesList.length;
 });
+
+final clearSelectionProvider = Provider<void>((ref) {
+  ref.read(workoutProvider.notifier).clearSelection();
+});

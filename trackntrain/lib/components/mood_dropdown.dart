@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:trackntrain/components/custom_snack_bar.dart';
+import 'package:trackntrain/main.dart';
 import 'package:trackntrain/utils/auth_service.dart';
+import 'package:trackntrain/utils/connectivity.dart';
 import 'package:trackntrain/utils/db_util_funcs.dart';
 import 'package:trackntrain/utils/misc.dart';
 
@@ -19,7 +21,7 @@ class _MoodDropdownState extends State<MoodDropdown> {
   bool _isLoading = false;
   Timer? _dayCheckTimer;
   String? _currentDay;
-
+  final ConnectivityService _connectivityService = ConnectivityService();
   @override
   void initState() {
     super.initState();
@@ -49,24 +51,7 @@ class _MoodDropdownState extends State<MoodDropdown> {
         setState(() {
           _mood = null;
         });
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            content: const Text(
-              'Daily preferences reset. Mood cleared.',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            backgroundColor: Theme.of(context).primaryColor,
-          ),
-        );
+        showGlobalSnackBar(message: 'Daily preferences reset. Mood cleared.', type: 'success');
       }
     }
   }
@@ -92,7 +77,6 @@ class _MoodDropdownState extends State<MoodDropdown> {
       String? mood = await getMood();
 
       if (mood == null || mood.isEmpty) {
-        print("No mood found in SharedPreferences, checking Firestore...");
         final docRef = FirebaseFirestore.instance
             .collection('userMetaLogs')
             .doc('${uid}_$today');
@@ -103,8 +87,6 @@ class _MoodDropdownState extends State<MoodDropdown> {
           mood = docMap?['mood'];
           
           if (mood != null && mood.isNotEmpty) {
-            print("Mood found in Firestore: $mood");
-            print("Saving mood to SharedPreferences: $mood");
             await setMood(mood);
           }
         }
@@ -117,7 +99,7 @@ class _MoodDropdownState extends State<MoodDropdown> {
         });
       }
     } catch (e) {
-      print("Error loading mood: $e");
+      // print("Error loading mood: $e");
       if (mounted) {
         setState(() {
           _mood = null;
@@ -135,22 +117,28 @@ class _MoodDropdownState extends State<MoodDropdown> {
       await removeMood();
       return;
     }
+    
+
+    final isConnected=await _connectivityService.checkAndShowError(context,'No internet connection : Cannot log to database');
+    if(!isConnected){
+      return;
+    }
 
     try {
-      print('Saving to firestore: $value');
+      // print('Saving to firestore: $value');
       await updateMoodMeta(value);
-      print('Saving to SharedPreferences: $value');
+      // print('Saving to SharedPreferences: $value');
       await setMood(value);
       
       setState(() {
         _mood = value;
       });
+
+      showGlobalSnackBar(message: 'Mood logged Successfully', type: 'success');
+      
     } catch (e) {
-      print('Error saving mood: $e');
-      if (context.mounted) {
-        CustomSnackBar(message: 'Error logging mood', type: 'error')
-            .buildSnackBar(context);
-      }
+      // print('Error saving mood: $e');
+      showGlobalSnackBar(message: 'Error saving mood: $e', type: 'error');
     }
   }
 
