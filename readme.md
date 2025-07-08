@@ -745,3 +745,13 @@ firebase deploy --only functions: <name1> <name2>
 While doing so firebase will prompt you for the SECRET (Gemini API Key) which will be stored in the Google Cloud Secrets Manager in a safe manner.
 
 Any dependencies related to the cloud functions must be installed inside the ```/functions``` folder and not the root folder of the ```backend```.
+
+
+# Future improvements
+
+- Enabling push notifications for regular reminders and gamification.
+- Inclusion of social features to create a more engaged community.
+- Addition of exercise preview videos or GIFs to show how it is to be performed.
+- Adding a ML model to verify form and correct the users to prevent injuries.
+- Offline persistence and pushing to firestore when connected to internet later.
+
