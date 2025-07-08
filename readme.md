@@ -350,112 +350,6 @@ This backend handles user fitness data management, automated daily log creation,
 - Workout records (full body, HIIT, walking)
 - Automatic data expiration (90-day TTL)
 
-## API Endpoints
-
-### POST /handleDeletion
-Completely removes all user data from the system including meta logs, meal logs, workout records, and user document.
-Uses the user's ```idToken``` to determine whether the person is authenticated and is the same person requesting the delete.
-
-**Response:**
-- `200`: All data deleted successfully
-- `400`: Missing userId
-- `500`: Error during deletion
-
-### POST /getAIInsights
-Generates personalized AI-powered fitness insights based on the user's previous week's data.
-Uses the user's ```idToken``` to determine whether the person is authenticated and is the same person requesting the insight.
-
-**Response:**
-```json
-{
-  "prompt": "string",
-  "aiResponse": "string",
-  "weightSummary": {
-    "min": "number",
-    "max": "number",
-    "average": "number",
-    "message": "string"
-  },
-  "moodSummary": {
-    "energetic": "string",
-    "sore": "string", 
-    "cannot": "string",
-    "message": "string"
-  },
-  "mealSummary": {
-    "message": "string",
-    "mostFrequentFoods": "object"
-  },
-  "userGoal": "string"
-}
-```
-
-## Scheduled Functions
-
-### metaLogCreation
-Runs daily at midnight (Asia/Kolkata timezone) to create meta logs for all registered users.
-
-**Schedule:** `0 0 * * *` (Daily at midnight)
-
-**Features:**
-- Processes users in batches of 500
-- Carries forward previous day's weight data
-- Sets 90-day expiration for automatic cleanup
-- Handles errors gracefully with retry logic
-
-## Configuration
-
-### Environment Variables
-- `GEMINI_API_KEY`: Secret for Google Gemini AI API access
-
-### Firebase Settings
-- **Region**: asia-south1
-- **Memory**: 256MiB
-- **Timeout**: 300 seconds (AI endpoint), 180 seconds (deletion)
-- **Timezone**: Asia/Kolkata
-
-## Data Models
-
-### Meta Log Document
-```typescript
-{
-  userId: string,
-  date: string,
-  createdAt: Timestamp,
-  updatedAt: Timestamp,
-  hasWorkedOut: boolean,
-  mood: "energetic" | "sore" | "cannot" | null,
-  weight: number,
-  sleep?: number,
-  expireAt: Timestamp
-}
-```
-
-### Meal Document
-```typescript
-{
-  userId: string,
-  breakfast?: {
-    mealName: string,
-    description?: string,
-    mealType: string
-  },
-  lunch?: {
-    mealName: string,
-    description?: string,
-    mealType: string
-  },
-  dinner?: {
-    mealName: string,
-    description?: string,
-    mealType: string
-  },
-  snacks?: Array,
-  createdAt: Timestamp,
-  updatedAt?: Timestamp,
-  expireAt?: Timestamp
-}
-```
 
 # Fitness Tracker Backend
 
@@ -484,30 +378,9 @@ This backend handles user fitness data management, automated daily log creation,
 ### GET /helloWorld
 Basic health check endpoint that returns a simple greeting message.
 
-### POST /metaLogSpotCreation
-Creates a daily meta log for a specific user.
-
-**Request Body:**
-```json
-{
-  "userId": "string"
-}
-```
-
-**Response:**
-- `201`: Meta log created successfully
-- `400`: Missing userId
-- `500`: Error creating meta log
-
 ### POST /handleDeletion
 Completely removes all user data from the system including meta logs, meal logs, workout records, and user document.
-
-**Request Body:**
-```json
-{
-  "userId": "string"
-}
-```
+Uses the user's ```idToken``` to determine whether the person is authenticated and is the same person requesting the delete.
 
 **Response:**
 - `200`: All data deleted successfully
@@ -516,13 +389,7 @@ Completely removes all user data from the system including meta logs, meal logs,
 
 ### POST /getAIInsights
 Generates personalized AI-powered fitness insights based on the user's previous week's data.
-
-**Request Body:**
-```json
-{
-  "userId": "string"
-}
-```
+Uses the user's ```idToken``` to determine whether the person is authenticated and is the same person requesting the insight.
 
 **Response:**
 ```json
