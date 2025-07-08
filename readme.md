@@ -324,6 +324,9 @@ class AppConfig{
 }
 ```
 
+# Cloud Firestore rules
+It is important to set rules for cloud firestore to prevent unauthorised access and writes and deletes. The app uses rules to ensure that any write, read, update and delete is performed only if authenticated and if the user requesting the service is the same as the document's owner. 
+
 # Backend
 
 Our backend just consists of serverless Firebase Cloud functions
@@ -351,13 +354,7 @@ This backend handles user fitness data management, automated daily log creation,
 
 ### POST /handleDeletion
 Completely removes all user data from the system including meta logs, meal logs, workout records, and user document.
-
-**Request Body:**
-```json
-{
-  "userId": "string"
-}
-```
+Uses the user's ```idToken``` to determine whether the person is authenticated and is the same person requesting the delete.
 
 **Response:**
 - `200`: All data deleted successfully
@@ -366,13 +363,7 @@ Completely removes all user data from the system including meta logs, meal logs,
 
 ### POST /getAIInsights
 Generates personalized AI-powered fitness insights based on the user's previous week's data.
-
-**Request Body:**
-```json
-{
-  "userId": "string"
-}
-```
+Uses the user's ```idToken``` to determine whether the person is authenticated and is the same person requesting the insight.
 
 **Response:**
 ```json
